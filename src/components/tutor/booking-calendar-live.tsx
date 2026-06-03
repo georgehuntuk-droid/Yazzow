@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BookingCalendar } from "@/components/tutor/booking-calendar";
 import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { OpenSlot, TutorProfile } from "@/lib/types";
 
 type BookingCalendarLiveProps = {
@@ -44,6 +45,10 @@ export function BookingCalendarLive({
   }, [initialSlots]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      return;
+    }
+
     const supabase = createClient();
     const channel = supabase
       .channel(`availability:${tutor.id}`)

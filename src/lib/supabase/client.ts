@@ -6,11 +6,10 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/env";
 
+/** Browser client for realtime only — sign-in uses server actions. */
 export function createClient() {
   if (!isSupabaseConfigured()) {
-    throw new Error(
-      "Sign-in is not configured on this site yet. Add Supabase keys to the host environment.",
-    );
+    throw new Error("Supabase is not configured in this build.");
   }
   return createBrowserClient(getSupabaseUrl(), getSupabasePublishableKey());
 }

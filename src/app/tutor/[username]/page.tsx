@@ -20,6 +20,7 @@ import {
   getDemoTutorByUsername,
 } from "@/lib/demo-data";
 import { fulfillLessonBookingFromCheckoutSessionId } from "@/lib/stripe/fulfill-lesson-booking";
+import { bookingManageUrl as buildBookingManageUrl } from "@/lib/bookings/manage-token";
 import { isStripeConfigured } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TutorProfileRow } from "@/lib/supabase/database.types";
@@ -66,6 +67,8 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     notFound();
   }
 
+  let bookingManageUrl: string | null = null;
+
   if (
     liveTutor &&
     query.booked === "1" &&
@@ -84,10 +87,13 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
 
     if (stripeAccountId) {
       try {
-        await fulfillLessonBookingFromCheckoutSessionId(
+        const fulfilled = await fulfillLessonBookingFromCheckoutSessionId(
           query.session_id,
           stripeAccountId,
         );
+        if (fulfilled.ok && fulfilled.bookingId) {
+          bookingManageUrl = buildBookingManageUrl(fulfilled.bookingId);
+        }
       } catch (err) {
         console.error("Checkout return fulfillment failed:", err);
       }
@@ -154,7 +160,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
         <PublicProfile tutor={tutor} />
 
         <Suspense fallback={null}>
-          <BookingStatusBanner />
+          <BookingStatusBanner manageUrl={bookingManageUrl} />
         </Suspense>
 
         {liveTutor ? <JoinTutorFamily tutor={tutor} tutorUsername={username} /> : null}

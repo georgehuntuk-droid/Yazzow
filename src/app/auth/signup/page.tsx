@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { AuthConfigNotice } from "@/components/auth/auth-config-notice";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { BRAND_NAME } from "@/lib/constants";
@@ -14,6 +15,7 @@ export default function SignupPage() {
       title="Get started in minutes"
       subtitle="Free to join. Claim a phonetic username, share your private link, and let parents book and pay on your page alone."
     >
+      <AuthConfigNotice />
       <Suspense>
         <AuthForm mode="signup" />
       </Suspense>

@@ -80,7 +80,7 @@ Netlify → **Site configuration** → **Environment variables**. Add from `.env
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable |
 | `STRIPE_WEBHOOK_SECRET` | after Stripe webhook (below) |
 
-Optional: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form and booking emails.
+Optional: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form, **booking confirmation emails**, **parent cancel links**, and slot-opened alerts when a lesson is cancelled.
 
 Click **Deploy site**.
 
@@ -107,12 +107,29 @@ Use exact values from **Netlify → Domain management** (they can differ from th
 
 Check DNS on your PC: `nslookup yazzow.com` should return Netlify IPs. If it does and the browser still errors, work on Netlify **Deploys** and **Environment variables**, not the registrar.
 
-### 4. Supabase
+### 4. Supabase (accounts must work)
+
+**Authentication** → **Providers** → enable **Email** (sign up + sign in).
 
 **Authentication** → **URL configuration**:
 
 - Site URL: `https://yazzow.com`
-- Redirect URLs: `https://yazzow.com/auth/callback`
+- Redirect URLs (add each line):
+  - `https://yazzow.com/auth/callback`
+  - `https://yazzow.com/**` (wildcard — covers password reset and email confirm)
+
+**Important for Netlify:** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must exist **before** you run **Deploy site** (or trigger **Clear cache and deploy site** after adding them). Next.js bakes `NEXT_PUBLIC_*` into the client bundle at build time; adding keys later without redeploying leaves old builds broken.
+
+Auth flows on the live site:
+
+| Page | Purpose |
+|------|---------|
+| `/auth/signup` | Create account |
+| `/auth/login` | Sign in |
+| `/auth/forgot-password` | Request reset email |
+| `/auth/reset-password` | Set new password (after email link) |
+| `/auth/check-email` | Resend confirmation |
+| `/auth/callback` | Email confirm + reset link handler (do not link manually) |
 
 ### 5. Stripe
 

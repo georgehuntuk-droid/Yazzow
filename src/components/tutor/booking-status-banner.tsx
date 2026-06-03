@@ -1,8 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export function BookingStatusBanner() {
+type BookingStatusBannerProps = {
+  manageUrl?: string | null;
+};
+
+export function BookingStatusBanner({ manageUrl }: BookingStatusBannerProps) {
   const searchParams = useSearchParams();
   const booked = searchParams.get("booked") === "1";
   const cancelled = searchParams.get("cancelled") === "1";
@@ -18,6 +23,17 @@ export function BookingStatusBanner() {
         <p className="font-medium">Lesson booked and paid</p>
         <p className="mt-1 text-muted-foreground">
           Your tutor has been notified. That time slot is no longer available to book.
+          {manageUrl ? (
+            <>
+              {" "}
+              <Link href={manageUrl} className="font-medium text-primary hover:underline">
+                Manage or cancel this lesson
+              </Link>
+              — we also emailed you a link.
+            </>
+          ) : (
+            " Check your inbox for a confirmation email with a link to manage or cancel."
+          )}
         </p>
       </div>
     );

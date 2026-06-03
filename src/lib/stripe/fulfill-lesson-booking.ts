@@ -75,6 +75,19 @@ export async function fulfillLessonBookingFromSession(
     return { ok: false };
   }
 
+  const [{ data: slotRow }, { data: tutorRow }] = await Promise.all([
+    admin
+      .from("availability_slots")
+      .select("starts_at, ends_at")
+      .eq("id", slotId)
+      .maybeSingle(),
+    admin
+      .from("tutor_profiles")
+      .select("display_name, username, currency")
+      .eq("id", tutorId)
+      .maybeSingle(),
+  ]);
+
   try {
     await syncBookingToGoogleCalendar(bookingRow.id);
   } catch (err) {
@@ -100,6 +113,25 @@ export async function fulfillLessonBookingFromSession(
     },
     { onConflict: "tutor_id,parent_email" },
   );
+
+  if (slotRow && tutorRow) {
+    const { sendBookingConfirmationEmail } = await import(
+      "@/lib/notifications/booking-confirmation"
+    );
+    void sendBookingConfirmationEmail({
+      bookingId: bookingRow.id,
+      to: parentEmail,
+      tutorName: tutorRow.display_name,
+      tutorUsername: tutorRow.username,
+      studentName,
+      slotStartsAt: slotRow.starts_at,
+      slotEndsAt: slotRow.ends_at,
+      amountCents,
+      currency: tutorRow.currency,
+    }).catch((err) => {
+      console.error("Booking confirmation email failed:", err);
+    });
+  }
 
   return { ok: true, bookingId: bookingRow.id };
 }

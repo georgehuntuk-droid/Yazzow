@@ -2,6 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import {
+  applyAuthCookieOptions,
+  isRememberMeEnabled,
+  REMEMBER_ME_COOKIE,
+} from "@/lib/auth/session-cookie";
 import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 /**
@@ -10,6 +15,9 @@ import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
  */
 export async function createAuthCallbackClient(redirectUrl: string) {
   const cookieStore = await cookies();
+  const rememberMe = isRememberMeEnabled(
+    cookieStore.get(REMEMBER_ME_COOKIE)?.value,
+  );
   const response = NextResponse.redirect(redirectUrl);
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
@@ -19,8 +27,9 @@ export async function createAuthCallbackClient(redirectUrl: string) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-          response.cookies.set(name, value, options);
+          const cookieOptions = applyAuthCookieOptions(options, rememberMe);
+          cookieStore.set(name, value, cookieOptions);
+          response.cookies.set(name, value, cookieOptions);
         });
       },
     },

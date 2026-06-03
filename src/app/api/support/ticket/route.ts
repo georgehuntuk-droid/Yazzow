@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { isSlackConfigured, sendSlackTicket } from "@/lib/slack/webhook";
+import {
+  isSupportEmailConfigured,
+  sendSupportTicketEmail,
+} from "@/lib/notifications/support-email";
 
 const CATEGORIES = new Set(["bug", "billing", "account", "feature", "other"]);
 
 export async function POST(request: Request) {
-  if (!isSlackConfigured()) {
+  if (!isSupportEmailConfigured()) {
     return NextResponse.json(
       {
         error:
-          "Support tickets are not wired yet. Add SLACK_WEBHOOK_URL to .env.local (free Slack Incoming Webhook).",
+          "Online support is not wired yet. Email us directly — the address is shown on the support page.",
       },
       { status: 503 },
     );
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await sendSlackTicket({ name, email, category, message, source: body.source });
+    await sendSupportTicketEmail({ name, email, category, message, source: body.source });
     return NextResponse.json({ ok: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Could not send ticket.";

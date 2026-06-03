@@ -3,10 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 
 import { syncBookingToGoogleCalendar } from "@/lib/calendar/sync-booking";
-import { formatMoney, formatSlotRange } from "@/lib/format";
-import { sendSlackBookingNotification } from "@/lib/slack/webhook";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { TutorProfileRow } from "@/lib/supabase/database.types";
 import { getStripe } from "@/lib/stripe/server";
 
 export type FulfillLessonResult = {
@@ -104,14 +101,6 @@ export async function fulfillLessonBookingFromSession(
     { onConflict: "tutor_id,parent_email" },
   );
 
-  await notifyTutorOfBooking({
-    tutorId,
-    parentEmail,
-    studentName,
-    slotId,
-    amountCents,
-  });
-
   return { ok: true, bookingId: bookingRow.id };
 }
 
@@ -126,41 +115,4 @@ export async function fulfillLessonBookingFromCheckoutSessionId(
     { stripeAccount: stripeAccountId },
   );
   return fulfillLessonBookingFromSession(session);
-}
-
-async function notifyTutorOfBooking(input: {
-  tutorId: string;
-  parentEmail: string;
-  studentName: string | null;
-  slotId: string;
-  amountCents: number;
-}) {
-  const admin = createAdminClient();
-
-  const [{ data: tutor }, { data: slot }] = await Promise.all([
-    admin.from("tutor_profiles").select("*").eq("id", input.tutorId).maybeSingle(),
-    admin
-      .from("availability_slots")
-      .select("starts_at, ends_at")
-      .eq("id", input.slotId)
-      .maybeSingle(),
-  ]);
-
-  const profile = tutor as TutorProfileRow | null;
-  if (!profile || !slot) return;
-
-  const slotRange = formatSlotRange(slot.starts_at, slot.ends_at);
-  const amountLabel = formatMoney(input.amountCents, profile.currency);
-
-  try {
-    await sendSlackBookingNotification({
-      tutorName: profile.display_name,
-      parentEmail: input.parentEmail,
-      studentName: input.studentName,
-      slotRange,
-      amountLabel,
-    });
-  } catch (err) {
-    console.error("Slack booking notification failed:", err);
-  }
 }

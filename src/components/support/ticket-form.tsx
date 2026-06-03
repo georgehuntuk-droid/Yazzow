@@ -25,12 +25,14 @@ type SupportTicketFormProps = {
   source?: string;
   className?: string;
   configured?: boolean;
+  supportEmail: string;
 };
 
 export function SupportTicketForm({
   source = "support page",
   className,
-  configured = true,
+  configured = false,
+  supportEmail,
 }: SupportTicketFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,6 +41,15 @@ export function SupportTicketForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+
+  const categoryLabel =
+    categories.find((item) => item.value === category)?.label ?? "Support";
+
+  const mailtoHref = `mailto:${encodeURIComponent(supportEmail)}?subject=${encodeURIComponent(
+    `[Yazzow] ${categoryLabel}`,
+  )}&body=${encodeURIComponent(
+    `Name: ${name || ""}\nEmail: ${email || ""}\n\n${message || ""}`,
+  )}`;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -53,12 +64,12 @@ export function SupportTicketForm({
       });
       const data = (await response.json()) as { ok?: boolean; error?: string };
       if (!response.ok) {
-        setError(data.error ?? "Could not send ticket.");
+        setError(data.error ?? "Could not send message.");
         return;
       }
       setSent(true);
     } catch {
-      setError("Network error. Try again.");
+      setError("Network error. Try again or email us directly.");
     } finally {
       setLoading(false);
     }
@@ -68,9 +79,9 @@ export function SupportTicketForm({
     return (
       <Card className={cn("yazz-surface border-primary/20", className)}>
         <CardHeader>
-          <CardTitle className="font-heading text-xl">Ticket sent</CardTitle>
+          <CardTitle className="font-heading text-xl">Message sent</CardTitle>
           <CardDescription>
-            We&apos;ve notified the team in Slack. We&apos;ll reply to {email} as soon as we can.
+            Thanks — we&apos;ve received your message and will reply to {email} as soon as we can.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -80,19 +91,27 @@ export function SupportTicketForm({
   return (
     <Card className={cn("yazz-surface", className)}>
       <CardHeader>
-        <CardTitle className="font-heading text-xl">Open a support ticket</CardTitle>
+        <CardTitle className="font-heading text-xl">Contact support</CardTitle>
         <CardDescription>
-          Free Slack integration — your message lands in our team channel instantly.
+          Send a message below, or email{" "}
+          <a href={`mailto:${supportEmail}`} className="font-medium text-primary hover:underline">
+            {supportEmail}
+          </a>{" "}
+          directly.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {!configured ? (
-          <p className="rounded-xl border border-dashed border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-            Tickets are ready to wire. Add{" "}
-            <code className="text-xs">SLACK_WEBHOOK_URL</code> to{" "}
-            <code className="text-xs">.env.local</code> (Slack → Apps → Incoming Webhooks — free
-            on Slack Free).
-          </p>
+          <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            <p>
+              The form sends to <strong className="text-foreground">{supportEmail}</strong> once
+              Resend is connected. Until then, use{" "}
+              <a href={mailtoHref} className="font-medium text-primary hover:underline">
+                email us
+              </a>{" "}
+              (opens your mail app).
+            </p>
+          </div>
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
@@ -157,9 +176,19 @@ export function SupportTicketForm({
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <Button type="submit" className="w-full sm:w-auto" disabled={loading || !configured}>
-            {loading ? "Sending…" : "Send ticket to Slack"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={loading || !configured}>
+              {loading ? "Sending…" : "Send message"}
+            </Button>
+            {!configured ? (
+              <a
+                href={mailtoHref}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted"
+              >
+                Email {supportEmail}
+              </a>
+            ) : null}
+          </div>
         </form>
       </CardContent>
     </Card>

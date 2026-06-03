@@ -11,7 +11,7 @@ export function PortalThemeWrapper({ tutor, children }: PortalThemeWrapperProps)
 
   return (
     <div
-      className="tutor-portal-theme min-h-full"
+      className="tutor-portal-theme min-h-screen"
       style={
         {
           "--primary": accent,

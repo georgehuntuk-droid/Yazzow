@@ -80,8 +80,7 @@ Netlify → **Site configuration** → **Environment variables**. Add from `.env
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable |
 | `STRIPE_WEBHOOK_SECRET` | after Stripe webhook (below) |
 
-Optional: `SLACK_WEBHOOK_URL`  
-Skip Google calendar vars for now.
+Optional: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form and booking emails.
 
 Click **Deploy site**.
 

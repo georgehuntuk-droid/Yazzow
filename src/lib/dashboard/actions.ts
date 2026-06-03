@@ -2,7 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 
+import { cancelLessonBooking } from "@/lib/bookings/cancel-booking";
+import { sendRunningLateNotice } from "@/lib/bookings/running-late";
 import { requireTutorProfile } from "@/lib/auth/session";
+import {
+  LESSON_SLOT_DURATION_MINUTES,
+  MAX_AVAILABILITY_BLOCK_HOURS,
+} from "@/lib/constants";
+import {
+  countHourlySlots,
+  rangesOverlap,
+  splitAvailabilityIntoHourlySlots,
+} from "@/lib/scheduling/hourly-slots";
 import { formatSupabaseError } from "@/lib/supabase/errors";
 import { createClient } from "@/lib/supabase/server";
 import { removeTutorFiles, uploadTutorFile } from "@/lib/supabase/tutor-storage";
@@ -44,22 +55,120 @@ export async function createAvailabilitySlot(input: {
   }
 
   if (startsAt <= new Date()) {
-    return { ok: false as const, error: "Slot must be in the future." };
+    return { ok: false as const, error: "Availability must be in the future." };
+  }
+
+  const hourlyWindows = splitAvailabilityIntoHourlySlots(startsAt, endsAt);
+  if (hourlyWindows.length === 0) {
+    const hours = (endsAt.getTime() - startsAt.getTime()) / (60 * 60 * 1000);
+    if (hours > MAX_AVAILABILITY_BLOCK_HOURS) {
+      return {
+        ok: false as const,
+        error: `Maximum block is ${MAX_AVAILABILITY_BLOCK_HOURS} hours per add.`,
+      };
+    }
+    return {
+      ok: false as const,
+      error: `Use whole-hour blocks (e.g. 2:00pm–5:00pm creates three 1-hour bookable slots). Each slot is ${LESSON_SLOT_DURATION_MINUTES} minutes.`,
+    };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("availability_slots").insert({
-    tutor_id: profile.id,
-    starts_at: startsAt.toISOString(),
-    ends_at: endsAt.toISOString(),
+  const { data: existing } = await supabase
+    .from("availability_slots")
+    .select("starts_at, ends_at")
+    .eq("tutor_id", profile.id)
+    .gte("ends_at", new Date().toISOString());
+
+  const conflicts: string[] = [];
+  const toInsert = hourlyWindows.filter((window) => {
+    const clash = (existing ?? []).some((row) =>
+      rangesOverlap(
+        window.startsAt,
+        window.endsAt,
+        new Date(row.starts_at),
+        new Date(row.ends_at),
+      ),
+    );
+    if (clash) {
+      conflicts.push(
+        `${window.startsAt.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit" })}`,
+      );
+      return false;
+    }
+    return true;
   });
+
+  if (toInsert.length === 0) {
+    return {
+      ok: false as const,
+      error: "All of those hour slots already exist on your calendar.",
+    };
+  }
+
+  const { error } = await supabase.from("availability_slots").insert(
+    toInsert.map((window) => ({
+      tutor_id: profile.id,
+      starts_at: window.startsAt.toISOString(),
+      ends_at: window.endsAt.toISOString(),
+    })),
+  );
 
   if (error) {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 
   await revalidateTutor(profile.username);
+
+  const skipped = hourlyWindows.length - toInsert.length;
+  return {
+    ok: true as const,
+    created: toInsert.length,
+    skipped,
+    message:
+      skipped > 0
+        ? `Added ${toInsert.length} hour slot(s). ${skipped} overlapped existing times.`
+        : `Added ${toInsert.length} one-hour bookable slot(s).`,
+  };
+}
+
+export async function cancelBooking(bookingId: string) {
+  const { profile } = await requireTutorProfile();
+  const result = await cancelLessonBooking({
+    bookingId,
+    tutorId: profile.id,
+    cancelledBy: "tutor",
+  });
+
+  if (!result.ok) {
+    return { ok: false as const, error: result.error };
+  }
+
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard");
   return { ok: true as const };
+}
+
+export async function notifyRunningLate(bookingId: string, note?: string) {
+  const { profile } = await requireTutorProfile();
+  const result = await sendRunningLateNotice({
+    bookingId,
+    tutorId: profile.id,
+    note,
+  });
+
+  if (!result.ok) {
+    return { ok: false as const, error: result.error };
+  }
+
+  revalidatePath("/dashboard");
+  return {
+    ok: true as const,
+    emailed: result.emailed,
+    message: result.emailed
+      ? "Running late email sent to the parent."
+      : "Saved on the booking. Add RESEND_API_KEY to email parents automatically.",
+  };
 }
 
 export async function deleteAvailabilitySlot(slotId: string) {
@@ -239,6 +348,84 @@ export async function addStudent(input: {
     if (error.code === "23505") {
       return { ok: false as const, error: "This student is already in your ledger." };
     }
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function updateStudentStatus(
+  studentId: string,
+  status: "active" | "archived",
+) {
+  const { profile } = await requireTutorProfile();
+  const { getSchemaFeatures } = await import("@/lib/supabase/schema-features");
+  const features = await getSchemaFeatures();
+  if (!features.studentStatus) {
+    return {
+      ok: false as const,
+      error:
+        "Student archive is not available until database migration 008 is applied (Supabase GitHub sync or SQL Editor).",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("students")
+    .update({
+      status,
+      archived_at: status === "archived" ? new Date().toISOString() : null,
+    })
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function saveLessonFeedback(input: {
+  bookingId: string;
+  feedback?: string;
+  lessonRating?: number | null;
+}) {
+  const { profile } = await requireTutorProfile();
+  const { getSchemaFeatures } = await import("@/lib/supabase/schema-features");
+  const features = await getSchemaFeatures();
+  if (!features.lessonFeedback) {
+    return {
+      ok: false as const,
+      error:
+        "Lesson feedback is not available until database migration 008 is applied.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const feedback = input.feedback?.trim() || null;
+  const lessonRating =
+    input.lessonRating != null &&
+    input.lessonRating >= 1 &&
+    input.lessonRating <= 5
+      ? input.lessonRating
+      : null;
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      tutor_lesson_feedback: feedback,
+      lesson_rating: lessonRating,
+    })
+    .eq("id", input.bookingId)
+    .eq("tutor_id", profile.id)
+    .eq("status", "confirmed");
+
+  if (error) {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 

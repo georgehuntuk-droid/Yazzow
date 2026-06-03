@@ -1,9 +1,10 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 
 export async function SiteHeader() {
   let user: { id: string } | null = null;
@@ -18,44 +19,68 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background">
-      <div className="yazz-container flex h-16 items-center justify-between gap-6">
-        <div className="flex min-w-0 items-center gap-8">
+      <div className="yazz-container flex h-16 items-center justify-between gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-8">
           <Logo size="header" />
-          <nav className="hidden items-center gap-1 lg:flex">
-            <Button variant="ghost" size="sm" render={<Link href="/#features" />}>
+          <nav className="hidden min-w-0 items-center gap-1 lg:flex">
+            <Link
+              href="/#features"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
               Features
-            </Button>
-            <Button variant="ghost" size="sm" render={<Link href="/#pricing" />}>
+            </Link>
+            <Link
+              href="/#pricing"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
               Pricing
-            </Button>
-            <Button variant="ghost" size="sm" render={<Link href="/tutor/demo" />}>
+            </Link>
+            <Link
+              href="/tutor/demo"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
               Sample portal
-            </Button>
-            <Button variant="ghost" size="sm" render={<Link href="/support" />}>
+            </Link>
+            <Link
+              href="/support"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
               Support
-            </Button>
+            </Link>
           </nav>
         </div>
-        <nav className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <nav className="flex shrink-0 items-center gap-2">
           {user ? (
             <>
-              <Button variant="ghost" size="sm" render={<Link href="/dashboard" />}>
+              <Link
+                href="/dashboard"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
                 Dashboard
-              </Button>
+              </Link>
               <form action="/auth/signout" method="post">
-                <Button type="submit" variant="outline" size="sm">
+                <button
+                  type="submit"
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                >
                   Sign out
-                </Button>
+                </button>
               </form>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" render={<Link href="/auth/login" />}>
+              <Link
+                href="/auth/login"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
                 Sign in
-              </Button>
-              <Button size="sm" render={<Link href="/auth/signup" />}>
+              </Link>
+              <Link
+                href="/auth/signup"
+                className={cn(buttonVariants({ variant: "default", size: "sm" }))}
+              >
                 Get started
-              </Button>
+              </Link>
             </>
           )}
         </nav>

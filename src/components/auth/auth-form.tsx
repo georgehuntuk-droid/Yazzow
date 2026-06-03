@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthFormProps = {
@@ -35,7 +36,22 @@ export function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
+    if (!isSupabaseConfigured()) {
+      setError(
+        "Sign-in is not available on this deployment yet. Please try again later or contact support.",
+      );
+      setLoading(false);
+      return;
+    }
+
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not connect to sign-in.");
+      setLoading(false);
+      return;
+    }
 
     if (mode === "signup") {
       const { data, error: signUpError } = await supabase.auth.signUp({

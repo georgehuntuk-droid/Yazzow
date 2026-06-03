@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
+import { AuthShell } from "@/components/layout/auth-shell";
 import {
   Card,
   CardContent,
@@ -17,25 +16,26 @@ export const metadata = {
 
 export default function CheckEmailPage() {
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="border-b border-border/60 px-4 py-4 sm:px-6">
-        <Logo size="header" />
-      </header>
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <Card className="mx-auto w-full max-w-md border-border/80">
-          <CardHeader>
-            <CardTitle className="font-heading text-2xl">Check your inbox</CardTitle>
-            <CardDescription>
-              We sent a confirmation link. Click it to finish setting up your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full" render={<Link href="/auth/login" />}>
-              Back to sign in
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+    <AuthShell
+      title="Almost there"
+      subtitle="Confirm your email to finish creating your Yazzow account and claim your portal link."
+    >
+      <Card className="yazz-surface w-full border-border/80">
+        <CardHeader>
+          <CardTitle className="font-heading text-2xl">Check your inbox</CardTitle>
+          <CardDescription>
+            We sent a confirmation link. Click it to finish setting up your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link
+            href="/auth/login"
+            className="inline-flex h-9 w-full items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium hover:bg-muted"
+          >
+            Back to sign in
+          </Link>
+        </CardContent>
+      </Card>
+    </AuthShell>
   );
 }

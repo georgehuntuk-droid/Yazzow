@@ -24,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${plusJakarta.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    <html lang="en" className={`${plusJakarta.variable} min-h-screen antialiased`}>
+      <body className="min-h-screen flex flex-col font-sans">{children}</body>
     </html>
   );
 }

@@ -1,7 +1,11 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
+import Link from "next/link";
+
 import { Logo } from "@/components/brand/logo";
+import { buttonVariants } from "@/components/ui/button";
+import { BookingCalendar } from "@/components/tutor/booking-calendar";
 import { BookingCalendarLive } from "@/components/tutor/booking-calendar-live";
 import { BookingStatusBanner } from "@/components/tutor/booking-status-banner";
 import { JoinTutorFamily } from "@/components/tutor/join-tutor-family";
@@ -43,12 +47,19 @@ export async function generateMetadata({ params }: TutorPortalPageProps) {
   };
 }
 
+const DEMO_USERNAMES = new Set(["demo", "maya-chen"]);
+
 export default async function TutorPortalPage({ params, searchParams }: TutorPortalPageProps) {
   const { username } = await params;
   const query = await searchParams;
 
-  const liveTutor = await getTutorByUsername(username);
-  const demoTutor = !liveTutor ? getDemoTutorByUsername(username) : null;
+  const isSamplePortal = DEMO_USERNAMES.has(username);
+  const liveTutor = isSamplePortal ? null : await getTutorByUsername(username);
+  const demoTutor = isSamplePortal
+    ? getDemoTutorByUsername(username)
+    : !liveTutor
+      ? getDemoTutorByUsername(username)
+      : null;
   const tutor = liveTutor ?? demoTutor;
 
   if (!tutor) {
@@ -109,11 +120,33 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="yazz-container flex h-16 max-w-5xl items-center justify-between">
-          <Logo size="header" />
-          <p className="hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground sm:block">
-            Private portal · not in any directory
-          </p>
+        <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
+          <Logo size="header" href="/" />
+          {isSamplePortal ? (
+            <>
+              <p className="hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground md:block">
+                Sample portal · preview only
+              </p>
+              <nav className="flex shrink-0 items-center gap-2">
+                <Link
+                  href="/auth/login?next=/tutor/demo"
+                  className={buttonVariants({ variant: "ghost", size: "sm" })}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className={buttonVariants({ variant: "default", size: "sm" })}
+                >
+                  Get started
+                </Link>
+              </nav>
+            </>
+          ) : (
+            <p className="hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground sm:block">
+              Private portal · not in any directory
+            </p>
+          )}
         </div>
       </header>
 
@@ -140,7 +173,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
               <div className="yazz-panel px-6 py-14 text-center text-muted-foreground">
                 No open slots right now. Check back soon or message your tutor directly.
               </div>
-            ) : (
+            ) : liveTutor ? (
               <BookingCalendarLive
                 tutor={tutor}
                 tutorUsername={username}
@@ -148,6 +181,14 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 paymentsEnabled={paymentsEnabled}
                 paymentsBlockedReason={paymentsBlockedReason}
                 paymentsBlockedMessage={paymentsBlockedMessage}
+              />
+            ) : (
+              <BookingCalendar
+                tutor={tutor}
+                slots={slots.filter((s) => s.available)}
+                paymentsEnabled={false}
+                paymentsBlockedReason="demo"
+                paymentsBlockedMessage="This is a sample portal. Create your own account to accept real bookings."
               />
             )}
           </TabsContent>

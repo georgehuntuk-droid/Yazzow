@@ -2,8 +2,7 @@ import Link from "next/link";
 
 import { isSlackConfigured } from "@/lib/slack/webhook";
 import { SupportTicketForm } from "@/components/support/ticket-form";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { MarketingShell } from "@/components/layout/marketing-shell";
 import { BRAND_NAME } from "@/lib/constants";
 
 export const metadata = {
@@ -14,10 +13,9 @@ export default function SupportPage() {
   const configured = isSlackConfigured();
 
   return (
-    <>
-      <SiteHeader />
-      <main className="flex-1 py-16 sm:py-20">
-        <div className="yazz-container grid gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
+    <MarketingShell>
+      <div className="yazz-container flex-1 py-16 sm:py-20">
+        <div className="grid gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
           <div>
             <p className="text-sm font-medium text-primary">Help centre</p>
             <h1 className="mt-2 font-heading text-4xl font-semibold">Support tickets</h1>
@@ -48,8 +46,7 @@ export default function SupportPage() {
           </div>
           <SupportTicketForm configured={configured} />
         </div>
-      </main>
-      <SiteFooter />
-    </>
+      </div>
+    </MarketingShell>
   );
 }

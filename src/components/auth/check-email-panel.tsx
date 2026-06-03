@@ -48,12 +48,25 @@ export function CheckEmailPanel() {
       <CardHeader>
         <CardTitle className="font-heading text-2xl">Check your inbox</CardTitle>
         <CardDescription>
-          We sent a confirmation link. Click it to finish setting up your account, then sign in.
+          Account emails (sign-up confirm, password reset) are sent by Supabase — not the same
+          as booking alerts on Netlify. Until Resend SMTP is connected in Supabase, mail may not
+          arrive.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Didn&apos;t get it? Check spam, or resend below.
+          Check spam/junk. Wait a few minutes, then resend below. To fix delivery permanently:
+          Supabase → Authentication → Email → SMTP Settings → use Resend (
+          <code className="text-xs">smtp.resend.com</code>, user{" "}
+          <code className="text-xs">resend</code>, password = your Resend API key, sender{" "}
+          <code className="text-xs">bookings@yazzow.com</code>).
+        </p>
+        <p className="text-sm text-muted-foreground">
+          If you already signed up, try{" "}
+          <Link href="/auth/login" className="font-medium text-primary hover:underline">
+            signing in again
+          </Link>{" "}
+          — your account may already be active.
         </p>
         <div className="space-y-2">
           <label htmlFor="confirm-email" className="text-sm font-medium">

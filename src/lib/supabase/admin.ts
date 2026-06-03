@@ -3,9 +3,16 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 import { getSupabaseAdminKey } from "@/lib/supabase/admin-key";
+import { getSupabaseUrl } from "@/lib/supabase/env";
 
 export function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let url: string;
+  try {
+    url = getSupabaseUrl();
+  } catch {
+    url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  }
+
   const key = getSupabaseAdminKey();
 
   if (!url || !key) {

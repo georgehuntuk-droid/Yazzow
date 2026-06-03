@@ -122,6 +122,24 @@ Check DNS on your PC: `nslookup yazzow.com` should return Netlify IPs. If it doe
   - `https://yazzow.com/auth/callback`
   - `https://yazzow.com/**` (wildcard — covers password reset and email confirm)
 
+**Authentication emails (sign-up confirm, password reset)** — Supabase sends these, **not** Netlify/Resend env vars alone.
+
+1. Supabase → **Authentication** → **Email** → **SMTP Settings** → enable custom SMTP
+2. Use your Resend account (domain `yazzow.com` must be verified in Resend):
+
+| Field | Value |
+|-------|--------|
+| Host | `smtp.resend.com` (no trailing spaces) |
+| Port | `465` |
+| Username | `resend` |
+| Password | your Resend API key (`re_…`) — use a **full access** key if possible |
+| Sender email | `bookings@yazzow.com` (or another `@yazzow.com` address) |
+| Sender name | `Yazzow` |
+
+3. Save, then test sign-up or password reset. Check **Resend → Logs** if mail still fails.
+
+Without SMTP, Supabase’s built-in mail is unreliable in production (rate limits, may not reach all inboxes). Yazzow also auto-confirms new tutor sign-ups when `SUPABASE_SECRET_KEY` is set, so you can reach onboarding without the email — but password reset still needs SMTP.
+
 **Important for Netlify:** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must exist **before** you run **Deploy site** (or trigger **Clear cache and deploy site** after adding them). Next.js bakes `NEXT_PUBLIC_*` into the client bundle at build time; adding keys later without redeploying leaves old builds broken.
 
 Auth flows on the live site:

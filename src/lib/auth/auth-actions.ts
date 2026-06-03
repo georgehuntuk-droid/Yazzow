@@ -9,6 +9,11 @@ import {
   rememberMePreferenceOptions,
   REMEMBER_ME_COOKIE,
 } from "@/lib/auth/session-cookie";
+import { confirmUserEmail, confirmUserEmailByAddress } from "@/lib/auth/confirm-email";
+import {
+  sendMagicLinkViaResend,
+  sendRecoveryLinkViaResend,
+} from "@/lib/auth/send-auth-email";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvHint, isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -56,13 +61,28 @@ export async function signInAction(
   );
 
   const supabase = await createClient();
+  const normalizedEmail = email.trim().toLowerCase();
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: email.trim().toLowerCase(),
+    email: normalizedEmail,
     password,
   });
 
   if (error) {
+    const lower = error.message.toLowerCase();
+    if (lower.includes("email not confirmed")) {
+      const confirmed = await confirmUserEmailByAddress(normalizedEmail);
+      if (confirmed) {
+        const retry = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (!retry.error) {
+          return { ok: true };
+        }
+      }
+    }
+
     return { ok: false, error: friendlyAuthError(error.message) };
   }
 
@@ -89,9 +109,10 @@ export async function signUpAction(
   const next = sanitizeNext(nextPath, "/onboarding");
   const origin = await getAuthRedirectOrigin();
   const supabase = await createClient();
+  const normalizedEmail = email.trim().toLowerCase();
 
   const { data, error } = await supabase.auth.signUp({
-    email: email.trim().toLowerCase(),
+    email: normalizedEmail,
     password,
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
@@ -106,10 +127,35 @@ export async function signUpAction(
     return { ok: true };
   }
 
+  if (data.user?.id && (await confirmUserEmail(data.user.id))) {
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+    if (!signInError) {
+      return { ok: true };
+    }
+  }
+
+  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const emailed = await sendMagicLinkViaResend({
+    email: normalizedEmail,
+    redirectTo,
+  });
+
+  if (emailed) {
+    return {
+      ok: true,
+      needsEmailConfirmation: true,
+      message: "Check your inbox for a confirmation link from Yazzow.",
+    };
+  }
+
   return {
     ok: true,
     needsEmailConfirmation: true,
-    message: "Check your inbox for a confirmation link to finish creating your account.",
+    message:
+      "Account created. Try signing in — if that fails, add RESEND_API_KEY on Netlify and redeploy.",
   };
 }
 
@@ -121,14 +167,27 @@ export async function requestPasswordResetAction(
   }
 
   const origin = await getAuthRedirectOrigin();
+  const normalizedEmail = email.trim().toLowerCase();
+  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`;
+
+  const emailed = await sendRecoveryLinkViaResend({
+    email: normalizedEmail,
+    redirectTo,
+  });
+
+  if (emailed) {
+    return {
+      ok: true,
+      message:
+        "If an account exists for that email, we sent a reset link. Check spam too — it expires after a while.",
+    };
+  }
+
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.resetPasswordForEmail(
-    email.trim().toLowerCase(),
-    {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
-    },
-  );
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo,
+  });
 
   if (error) {
     return { ok: false, error: friendlyAuthError(error.message) };
@@ -181,14 +240,31 @@ export async function resendConfirmationEmailAction(
   }
 
   const origin = await getAuthRedirectOrigin();
+  const normalizedEmail = email.trim().toLowerCase();
+  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`;
+
+  if (await confirmUserEmailByAddress(normalizedEmail)) {
+    return {
+      ok: true,
+      message: "Your email is confirmed. You can sign in now.",
+    };
+  }
+
+  const emailed = await sendMagicLinkViaResend({ email: normalizedEmail, redirectTo });
+
+  if (emailed) {
+    return {
+      ok: true,
+      message: "Confirmation email sent. Check your inbox and spam folder.",
+    };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resend({
     type: "signup",
-    email: email.trim().toLowerCase(),
-    options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`,
-    },
+    email: normalizedEmail,
+    options: { emailRedirectTo: redirectTo },
   });
 
   if (error) {

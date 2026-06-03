@@ -96,7 +96,17 @@ Click **Deploy site**.
 | A | `@` | `75.2.60.5` |
 | CNAME | `www` | `your-site.netlify.app` |
 
-Use exact values from Netlify if they differ. HTTPS is automatic.
+Use exact values from **Netlify → Domain management** (they can differ from the table above). HTTPS is automatic.
+
+**DNS vs “site broken”**
+
+| What you see | Meaning |
+|--------------|---------|
+| Browser can’t find the site / connection refused | DNS not pointing at Netlify yet, or wrong A/CNAME |
+| Netlify page: “This page couldn’t load” / server error | **DNS is usually fine** — fix **deploy** (build log) or **env vars** (runtime 500) |
+| Latest deploy failed in Netlify | Old/broken build still live — fix build, then redeploy |
+
+Check DNS on your PC: `nslookup yazzow.com` should return Netlify IPs. If it does and the browser still errors, work on Netlify **Deploys** and **Environment variables**, not the registrar.
 
 ### 4. Supabase
 

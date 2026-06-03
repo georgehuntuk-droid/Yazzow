@@ -2,13 +2,19 @@ import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export async function SiteHeader() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: { id: string } | null = null;
+
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    const {
+      data: { user: sessionUser },
+    } = await supabase.auth.getUser();
+    user = sessionUser;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background">

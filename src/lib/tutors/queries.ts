@@ -1,3 +1,4 @@
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import type { TutorProfileRow } from "@/lib/supabase/database.types";
 import { rowToTutorProfile } from "@/lib/tutors/utils";
@@ -6,6 +7,8 @@ import type { TutorProfile } from "@/lib/types";
 export async function getTutorByUsername(
   username: string,
 ): Promise<TutorProfile | null> {
+  if (!isSupabaseConfigured()) return null;
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tutor_profiles")
@@ -24,6 +27,8 @@ export async function getTutorByUsername(
 export async function getTutorProfileForUser(
   userId: string,
 ): Promise<TutorProfile | null> {
+  if (!isSupabaseConfigured()) return null;
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tutor_profiles")
@@ -36,6 +41,8 @@ export async function getTutorProfileForUser(
 }
 
 export async function isUsernameAvailable(username: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tutor_profiles")

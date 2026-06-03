@@ -1,0 +1,5 @@
+# Linked Supabase project (GitHub integration applies supabase/migrations/ on deploy)
+project_id = "gswwefxejsqqgxyefqpi"
+
+[db]
+major_version = 15

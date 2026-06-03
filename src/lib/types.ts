@@ -1,0 +1,43 @@
+export type TutorProfile = {
+  id: string;
+  username: string;
+  displayName: string;
+  headline: string;
+  bio: string;
+  avatarUrl?: string;
+  coverUrl?: string;
+  lessonPriceCents: number;
+  currency: string;
+};
+
+export type OpenSlot = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  available: boolean;
+};
+
+export type DigitalResource = {
+  id: string;
+  title: string;
+  description: string;
+  priceCents: number;
+  thumbnailUrl?: string;
+  currency: string;
+  isPublished?: boolean;
+};
+
+export type TutorSlot = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  isBooked: boolean;
+};
+
+export type StudentLedgerEntry = {
+  id: string;
+  studentName: string;
+  parentEmail: string;
+  lessonsCompleted: number;
+  totalRevenueCents: number;
+};

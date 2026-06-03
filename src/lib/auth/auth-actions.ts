@@ -10,7 +10,7 @@ import {
   REMEMBER_ME_COOKIE,
 } from "@/lib/auth/session-cookie";
 import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getSupabaseEnvHint, isSupabaseConfigured } from "@/lib/supabase/env";
 
 export type AuthActionResult =
   | { ok: true; needsEmailConfirmation?: boolean; message?: string }
@@ -35,13 +35,17 @@ async function getAuthRedirectOrigin(): Promise<string> {
   return PUBLIC_SITE_URL.replace(/\/$/, "");
 }
 
+function supabaseSetupError(): string {
+  return getSupabaseEnvHint() || authConfigErrorMessage();
+}
+
 export async function signInAction(
   email: string,
   password: string,
   rememberMe = true,
 ): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: authConfigErrorMessage() };
+    return { ok: false, error: supabaseSetupError() };
   }
 
   const cookieStore = await cookies();
@@ -72,7 +76,7 @@ export async function signUpAction(
   rememberMe = true,
 ): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: authConfigErrorMessage() };
+    return { ok: false, error: supabaseSetupError() };
   }
 
   const cookieStore = await cookies();
@@ -113,7 +117,7 @@ export async function requestPasswordResetAction(
   email: string,
 ): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: authConfigErrorMessage() };
+    return { ok: false, error: supabaseSetupError() };
   }
 
   const origin = await getAuthRedirectOrigin();
@@ -141,7 +145,7 @@ export async function updatePasswordAction(
   password: string,
 ): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: authConfigErrorMessage() };
+    return { ok: false, error: supabaseSetupError() };
   }
 
   if (password.length < 8) {
@@ -173,7 +177,7 @@ export async function resendConfirmationEmailAction(
   email: string,
 ): Promise<AuthActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: authConfigErrorMessage() };
+    return { ok: false, error: supabaseSetupError() };
   }
 
   const origin = await getAuthRedirectOrigin();

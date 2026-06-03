@@ -3,10 +3,10 @@ import { Sparkles } from "lucide-react";
 import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 const stats = [
+  { value: "Instant", label: "slot alert emails" },
   { value: "0%", label: "fee per lesson booking" },
   { value: `${PLATFORM_FEES.digitalGoodsPercent}%`, label: "on digital packs" },
   { value: TUTOR_SUBSCRIPTION.label, label: "tutor subscription" },
-  { value: "100%", label: "your brand, your link" },
 ] as const;
 
 export function MarketingSocialProof() {

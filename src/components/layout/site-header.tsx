@@ -36,6 +36,12 @@ export async function SiteHeader() {
               Pricing
             </Link>
             <Link
+              href="/#slot-alerts"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
+              Slot alerts
+            </Link>
+            <Link
               href="/tutor/demo"
               className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
             >

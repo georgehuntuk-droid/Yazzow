@@ -23,8 +23,8 @@ export function MarketingCta() {
               Ready to launch on {BRAND_NAME}?
             </h2>
             <p className="mx-auto mt-5 max-w-lg text-base yazz-muted sm:text-lg">
-              Claim your username, connect payouts, and send parents a link that feels like{" "}
-              <em className="text-foreground not-italic font-medium">your</em> business — not a crowded marketplace.
+              Claim your username, connect payouts, and give parents a link where they can book,
+              cancel fairly, and let your other pupils know the second a slot opens.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href="/auth/signup" className="yazz-btn-primary group h-12 px-8">

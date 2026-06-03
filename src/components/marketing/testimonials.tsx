@@ -5,7 +5,7 @@ import { SpotlightCard } from "@/components/brand/spotlight-card";
 const testimonials = [
   {
     quote:
-      "I stopped worrying about parents comparing me to ten other tutors on the same page. My link feels like my studio.",
+      "A cancellation used to mean a dead hour. Now two other families get emailed automatically — I rebooked the slot the same evening.",
     name: "Maya Chen",
     role: "GCSE Maths · London",
     initials: "MC",

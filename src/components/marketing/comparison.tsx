@@ -4,6 +4,21 @@ import { BRAND_NAME } from "@/lib/constants";
 
 const rows = [
   {
+    label: "Parents cancel & slot alerts",
+    yazzow: true,
+    marketplace: false,
+  },
+  {
+    label: "Instant email when a slot opens",
+    yazzow: true,
+    marketplace: false,
+  },
+  {
+    label: "Live calendar on your portal",
+    yazzow: true,
+    marketplace: "Rare",
+  },
+  {
     label: "Your own branded page",
     yazzow: true,
     marketplace: false,

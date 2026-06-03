@@ -68,17 +68,21 @@ Netlify redeploys automatically if you connected GitHub (Part B).
 
 ### 2. Environment variables (before first deploy)
 
-Netlify → **Site configuration** → **Environment variables**. Add from `.env.local`:
+Netlify → **Site configuration** → **Environment variables**. Add from `.env.local` (Supabase → **Project Settings → API**):
 
-| Variable | Production value |
-|----------|------------------|
-| `NEXT_PUBLIC_SITE_URL` | `https://yazzow.com` |
-| `NEXT_PUBLIC_SUPABASE_URL` | your Supabase URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publishable key |
-| `SUPABASE_SECRET_KEY` | secret key |
-| `STRIPE_SECRET_KEY` | Stripe secret |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable |
-| `STRIPE_WEBHOOK_SECRET` | after Stripe webhook (below) |
+| Variable | Value | Notes |
+|----------|--------|--------|
+| `SUPABASE_URL` | `https://YOUR_REF.supabase.co` | Same as project URL — **use this name on Netlify** |
+| `SUPABASE_ANON_KEY` | publishable or anon key | Server sign-in reads this at **runtime** |
+| `SUPABASE_SECRET_KEY` | secret key (`sb_secret_…`) | Server-only |
+| `NEXT_PUBLIC_SITE_URL` | `https://yazzow.com` | |
+| `NEXT_PUBLIC_SUPABASE_URL` | same as `SUPABASE_URL` | Needed for client features after rebuild |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | same as anon/publishable key | Needed for client features after rebuild |
+| `STRIPE_SECRET_KEY` | Stripe secret | |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable | |
+| `STRIPE_WEBHOOK_SECRET` | after Stripe webhook (below) | |
+
+Set each variable’s scope to **All** (or Build + Functions). **Do not only refresh the browser** — after adding or changing vars, go to **Deploys → Trigger deploy → Clear cache and deploy site**.
 
 Optional: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form, **booking confirmation emails**, **parent cancel links**, and slot-opened alerts when a lesson is cancelled.
 

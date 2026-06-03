@@ -1,4 +1,5 @@
 import { MarketingComparison } from "@/components/marketing/comparison";
+import { MarketingSlotAlerts } from "@/components/marketing/slot-alerts";
 import { MarketingCta } from "@/components/marketing/cta";
 import { MarketingFeatures } from "@/components/marketing/features";
 import { MarketingHero } from "@/components/marketing/hero";
@@ -15,6 +16,7 @@ export default function HomePage() {
       <SiteHeader />
       <main className="flex-1">
         <MarketingHero />
+        <MarketingSlotAlerts />
         <MarketingSocialProof />
         <MarketingFeatures />
         <MarketingHowItWorks />

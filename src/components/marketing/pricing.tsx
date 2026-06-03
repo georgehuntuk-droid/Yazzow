@@ -13,7 +13,7 @@ const plans = [
     description:
       "Run your private portal, accept lesson bookings, and manage students. No per-lesson platform fee.",
     highlights: [
-      "Unlimited portal & schedule",
+      "Instant slot alerts included",
       "100% of lesson price to you",
       "Cancel anytime",
     ],
@@ -26,7 +26,7 @@ const plans = [
     feeSuffix: "Yazzow fee per booking",
     description:
       "Parents pay your lesson price upfront. You keep the full amount (Stripe processing applies as usual).",
-    highlights: ["Paid upfront at booking", "Automatic Stripe payouts", "Included in tutor plan"],
+    highlights: ["Paid upfront at booking", "Parent cancel links", "Slot alerts to waiting families"],
   },
   {
     icon: BookOpen,

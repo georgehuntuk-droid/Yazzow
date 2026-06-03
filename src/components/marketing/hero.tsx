@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CreditCard, Link2, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, Bell, CalendarDays, CreditCard, Shield, Sparkles } from "lucide-react";
 
 import { HeroPreview } from "@/components/brand/hero-preview";
 import { BRAND_NAME, PLATFORM_FEES, TUTOR_PUBLIC_PATH, TUTOR_SUBSCRIPTION } from "@/lib/constants";
@@ -34,17 +34,35 @@ export function PortalPreviewMockup() {
         <div className="grid grid-cols-2 gap-2">
           {[
             { label: "Thu 4 Jun · 4pm", price: "£45" },
-            { label: "Fri 5 Jun · 10am", price: "£45" },
+            { label: "Fri 5 Jun · 10am", price: "£45", opened: true },
           ].map((slot) => (
             <button
               key={slot.label}
               type="button"
-              className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-left transition duration-200 hover:border-primary/40 hover:bg-primary/10 hover:shadow-[0_4px_16px_oklch(0.42_0.15_286/0.12)]"
+              className={`rounded-xl border px-3 py-2.5 text-left transition duration-200 ${
+                slot.opened
+                  ? "border-primary/40 bg-primary/10 shadow-[0_4px_16px_oklch(0.42_0.15_286/0.15)] ring-1 ring-primary/20"
+                  : "border-primary/20 bg-primary/5 hover:border-primary/40 hover:bg-primary/10 hover:shadow-[0_4px_16px_oklch(0.42_0.15_286/0.12)]"
+              }`}
             >
               <p className="text-xs text-muted-foreground">{slot.label}</p>
               <p className="text-sm font-bold text-primary">{slot.price}</p>
+              {slot.opened ? (
+                <p className="mt-1 flex items-center gap-1 text-[10px] font-medium text-primary">
+                  <Bell className="size-3" aria-hidden />
+                  Just reopened
+                </p>
+              ) : null}
             </button>
           ))}
+        </div>
+
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
+          <Bell className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
+          <span>
+            <span className="font-medium text-foreground">Slot alert sent</span> — 2 families
+            notified when a cancellation freed Friday 10am.
+          </span>
         </div>
 
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
@@ -78,7 +96,10 @@ export function MarketingHero() {
             </h1>
             <p className="yazz-fade-in yazz-fade-in-delay-2 mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
               {BRAND_NAME} gives every educator a private dashboard and a shareable link.
-              Parents book lessons and buy worksheet packs on <em className="text-foreground not-italic font-medium">your</em> page alone.
+              Parents book on <em className="font-medium text-foreground not-italic">your</em> page,
+              cancel when plans change, and your other families get{" "}
+              <em className="font-medium text-foreground not-italic">instant alerts</em> when a slot
+              opens up.
             </p>
 
             <div className="yazz-fade-in yazz-fade-in-delay-3 mt-9 flex flex-col gap-3 sm:flex-row">
@@ -93,13 +114,13 @@ export function MarketingHero() {
 
             <dl className="yazz-fade-in yazz-fade-in-delay-4 mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {[
+                { icon: Bell, label: "Slot alerts", value: "Instant email" },
                 { icon: CalendarDays, label: "Bookings", value: "Paid upfront" },
                 {
                   icon: CreditCard,
                   label: "Pricing",
                   value: `${TUTOR_SUBSCRIPTION.label} · ${PLATFORM_FEES.digitalGoodsPercent}% packs`,
                 },
-                { icon: Shield, label: "Visibility", value: "Your link only" },
               ].map((item) => (
                 <div key={item.label} className="yazz-panel group px-4 py-3.5">
                   <item.icon className="mb-2 size-4 text-primary transition group-hover:scale-110" />

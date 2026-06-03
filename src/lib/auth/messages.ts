@@ -25,7 +25,7 @@ export function friendlyAuthError(message: string): string {
 }
 
 export function authConfigErrorMessage(): string {
-  return "Sign-in is not set up on this server yet. In Netlify → Environment variables, add NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SECRET_KEY, then trigger Clear cache and deploy site.";
+  return "Sign-in is not configured. Add Supabase keys in Netlify and redeploy.";
 }
 
 export const AUTH_CALLBACK_ERRORS: Record<string, string> = {

@@ -1,4 +1,4 @@
-import { Link2, Palette, Wallet } from "lucide-react";
+import { Bell, Link2, Palette, Wallet } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
 
@@ -19,6 +19,13 @@ const steps = [
   },
   {
     step: "03",
+    icon: Bell,
+    title: "Cancellations refill themselves",
+    description:
+      "When a parent frees a slot, Yazzow emails your waiting families and updates your live calendar. Less chasing, more booked hours.",
+  },
+  {
+    step: "04",
     icon: Wallet,
     title: "Get paid upfront",
     description:
@@ -41,10 +48,10 @@ export function MarketingHowItWorks() {
           </p>
         </div>
 
-        <ol className="relative grid gap-8 md:grid-cols-3 md:gap-6">
+        <ol className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           <div
             aria-hidden
-            className="absolute left-[16.67%] right-[16.67%] top-12 hidden h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent md:block"
+            className="absolute left-[12.5%] right-[12.5%] top-12 hidden h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent lg:block"
           />
           {steps.map((item) => (
             <li key={item.step} className="relative">

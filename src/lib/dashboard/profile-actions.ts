@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireTutorProfile } from "@/lib/auth/session";
 import {
   LESSON_PRICE_LIMITS,
+  PORTAL_ACCENT_PRESETS,
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
 } from "@/lib/constants";
@@ -102,6 +103,33 @@ export async function updatePortalProfile(input: {
       bio: bio || null,
       lesson_price_cents: lessonPriceCents,
       currency,
+    })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function updatePortalStyle(input: {
+  portalWelcomeMessage: string;
+  portalAccentPresetId: string;
+}) {
+  const { profile } = await requireTutorProfile();
+
+  const portalWelcomeMessage = input.portalWelcomeMessage.trim();
+  const preset = PORTAL_ACCENT_PRESETS.find((p) => p.id === input.portalAccentPresetId);
+  const portalAccentOklch = preset?.oklch ?? null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({
+      portal_welcome_message: portalWelcomeMessage || null,
+      portal_accent_oklch: portalAccentOklch,
     })
     .eq("id", profile.id);
 

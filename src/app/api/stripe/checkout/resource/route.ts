@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { DigitalResourceRow, TutorProfileRow } from "@/lib/supabase/database.types";
 import { calculatePlatformFee } from "@/lib/stripe/fees";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
+import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
 
 type ResourceCheckoutBody = {
   resourceId: string;
@@ -40,6 +41,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const subscription = await getTutorSubscriptionState(tutor.id);
+  if (!subscription.active) {
+    return NextResponse.json(
+      { error: "This tutor's storefront is not active right now." },
+      { status: 403 },
+    );
+  }
+
   const { data: resourceData } = await admin
     .from("digital_resources")
     .select("*")
@@ -54,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Resource not found." }, { status: 404 });
   }
 
-  const platformFeeCents = calculatePlatformFee(resource.price_cents, "digital");
+  const platformFeeCents = calculatePlatformFee(resource.price_cents);
   const stripe = getStripe();
 
   const session = await stripe.checkout.sessions.create(

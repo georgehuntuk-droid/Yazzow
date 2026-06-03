@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/format";
-import { PLATFORM_FEES } from "@/lib/constants";
+import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
 import { tutorPayoutCents } from "@/lib/stripe/fees";
 
 type FeeSummaryProps = {
@@ -37,13 +37,11 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
   const digitalRows = purchases ?? [];
 
   const lessonGross = lessonRows.reduce((sum, row) => sum + row.amount_cents, 0);
-  const lessonFees = lessonRows.reduce((sum, row) => sum + row.platform_fee_cents, 0);
   const digitalGross = digitalRows.reduce((sum, row) => sum + row.amount_cents, 0);
   const digitalFees = digitalRows.reduce((sum, row) => sum + row.platform_fee_cents, 0);
 
   const totalGross = lessonGross + digitalGross;
-  const totalFees = lessonFees + digitalFees;
-  const totalNet = totalGross - totalFees;
+  const totalNet = lessonGross + (digitalGross - digitalFees);
   const transactionCount = lessonRows.length + digitalRows.length;
 
   return (
@@ -51,8 +49,9 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
       <CardHeader>
         <CardTitle className="font-heading">This week&apos;s activity</CardTitle>
         <CardDescription>
-          Fees are taken per payment ({PLATFORM_FEES.lessonBookingPercent}% lessons,{" "}
-          {PLATFORM_FEES.digitalGoodsPercent}% digital) — not invoiced weekly.
+          Lessons: no per-booking fee (you keep the lesson price). Digital packs:{" "}
+          {PLATFORM_FEES.digitalGoodsPercent}% platform fee. Your {TUTOR_SUBSCRIPTION.label}{" "}
+          subscription is billed separately.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -67,9 +66,9 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
               <dd className="text-xl font-semibold">{formatMoney(totalGross)}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Platform fees (Yazzow)</dt>
+              <dt className="text-xs text-muted-foreground">Digital platform fees</dt>
               <dd className="text-xl font-semibold text-muted-foreground">
-                −{formatMoney(totalFees)}
+                −{formatMoney(digitalFees)}
               </dd>
             </div>
             <div>
@@ -79,9 +78,9 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
           </dl>
         )}
         <p className="mt-4 text-xs text-muted-foreground">
-          Example: a {formatMoney(4500)} lesson → you receive about{" "}
-          {formatMoney(tutorPayoutCents(4500, "lesson"))} after the{" "}
-          {PLATFORM_FEES.lessonBookingPercent}% fee.
+          Example: a {formatMoney(1200)} worksheet pack → you receive about{" "}
+          {formatMoney(tutorPayoutCents(1200))} after the{" "}
+          {PLATFORM_FEES.digitalGoodsPercent}% fee.
         </p>
       </CardContent>
     </Card>

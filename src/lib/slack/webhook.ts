@@ -55,3 +55,52 @@ export async function sendSlackTicket(payload: SlackTicketPayload): Promise<void
 export function isSlackConfigured(): boolean {
   return Boolean(process.env.SLACK_WEBHOOK_URL);
 }
+
+type SlackBookingPayload = {
+  tutorName: string;
+  parentEmail: string;
+  studentName?: string | null;
+  slotRange: string;
+  amountLabel: string;
+};
+
+export async function sendSlackBookingNotification(
+  payload: SlackBookingPayload,
+): Promise<void> {
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  const studentLine = payload.studentName
+    ? `*Student:*\n${payload.studentName}`
+    : "*Student:*\n(not provided)";
+
+  const body = {
+    text: `New lesson booked with ${payload.tutorName}`,
+    blocks: [
+      {
+        type: "header",
+        text: { type: "plain_text", text: "📅 New lesson booking", emoji: true },
+      },
+      {
+        type: "section",
+        fields: [
+          { type: "mrkdwn", text: `*Tutor:*\n${payload.tutorName}` },
+          { type: "mrkdwn", text: `*When:*\n${payload.slotRange}` },
+          { type: "mrkdwn", text: `*Parent:*\n${payload.parentEmail}` },
+          { type: "mrkdwn", text: studentLine },
+          { type: "mrkdwn", text: `*Paid:*\n${payload.amountLabel}` },
+        ],
+      },
+    ],
+  };
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Slack webhook failed (${response.status})`);
+  }
+}

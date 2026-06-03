@@ -65,10 +65,9 @@ export function StripeConnectPanel({ configured, status }: StripeConnectPanelPro
           <div>
             <CardTitle className="font-heading">Stripe payouts</CardTitle>
             <CardDescription className="mt-1">
-              Connect once to accept lesson payments and worksheet sales. Yazzow
-              takes {PLATFORM_FEES.lessonBookingPercent}% on lessons and{" "}
-              {PLATFORM_FEES.digitalGoodsPercent}% on digital goods — automatically
-              on each checkout, not as a weekly bill.
+              Connect once so lesson and worksheet payments go to your bank. Lessons have no
+              per-booking Yazzow fee; digital packs include {PLATFORM_FEES.digitalGoodsPercent}%
+              at checkout.
             </CardDescription>
           </div>
           <Badge variant={ready ? "default" : "secondary"}>
@@ -79,8 +78,8 @@ export function StripeConnectPanel({ configured, status }: StripeConnectPanelPro
       <CardContent className="space-y-4">
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li>Parents pay full price upfront at booking or purchase.</li>
-          <li>Your share lands in your Stripe balance; Stripe pays out to your bank on their schedule (typically weekly).</li>
-          <li>Yazzow&apos;s platform fee is deducted instantly — you never receive an invoice.</li>
+          <li>Your share lands in your Stripe balance; Stripe pays out on their schedule.</li>
+          <li>Worksheet sales: Yazzow&apos;s {PLATFORM_FEES.digitalGoodsPercent}% fee is deducted automatically.</li>
         </ul>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <Button onClick={handleConnect} disabled={loading}>

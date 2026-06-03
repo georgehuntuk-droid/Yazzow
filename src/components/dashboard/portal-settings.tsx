@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ExternalLink, ImageIcon, Trash2 } from "lucide-react";
 
+import { PortalThemeWrapper } from "@/components/tutor/portal-theme-wrapper";
 import { PublicProfile } from "@/components/tutor/public-profile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  PORTAL_ACCENT_PRESETS,
   SUPPORTED_CURRENCIES,
   TUTOR_PUBLIC_PATH,
   tutorPublicUrl,
@@ -20,6 +22,7 @@ import {
   removePortalAvatar,
   removePortalCover,
   updatePortalProfile,
+  updatePortalStyle,
   uploadPortalAvatar,
   uploadPortalCover,
 } from "@/lib/dashboard/profile-actions";
@@ -46,8 +49,18 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [coverUrl, setCoverUrl] = useState(profile.coverUrl);
+  const [portalWelcomeMessage, setPortalWelcomeMessage] = useState(
+    profile.portalWelcomeMessage ?? "",
+  );
+  const [accentPresetId, setAccentPresetId] = useState<string>(() => {
+    const match = PORTAL_ACCENT_PRESETS.find(
+      (p) => p.oklch === profile.portalAccentOklch,
+    );
+    return match?.id ?? PORTAL_ACCENT_PRESETS[0].id;
+  });
 
   const [profileLoading, setProfileLoading] = useState(false);
+  const [styleLoading, setStyleLoading] = useState(false);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
@@ -65,8 +78,24 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       currency,
       avatarUrl,
       coverUrl,
+      portalWelcomeMessage: portalWelcomeMessage || undefined,
+      portalAccentOklch:
+        PORTAL_ACCENT_PRESETS.find((p) => p.id === accentPresetId)?.oklch ??
+        profile.portalAccentOklch,
     }),
-    [profile, displayName, headline, bio, username, lessonPrice, currency, avatarUrl, coverUrl],
+    [
+      profile,
+      displayName,
+      headline,
+      bio,
+      username,
+      lessonPrice,
+      currency,
+      avatarUrl,
+      coverUrl,
+      portalWelcomeMessage,
+      accentPresetId,
+    ],
   );
 
   const portalPreview = tutorPublicUrl(slugifyUsername(username) || profile.username);
@@ -99,6 +128,27 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
     flashSuccess("Profile updated.");
     router.refresh();
     setProfileLoading(false);
+  }
+
+  async function handleSaveStyle(event: React.FormEvent) {
+    event.preventDefault();
+    setStyleLoading(true);
+    setError(null);
+
+    const result = await updatePortalStyle({
+      portalWelcomeMessage,
+      portalAccentPresetId: accentPresetId,
+    });
+
+    if (!result.ok) {
+      setError(result.error);
+      setStyleLoading(false);
+      return;
+    }
+
+    flashSuccess("Portal style updated.");
+    router.refresh();
+    setStyleLoading(false);
   }
 
   async function handleSaveUsername(event: React.FormEvent) {
@@ -293,6 +343,56 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
 
         <Card className="yazz-surface">
           <CardHeader>
+            <CardTitle>Your style & welcome</CardTitle>
+            <CardDescription>
+              A personal welcome for parents and an accent colour on your booking page — your
+              &ldquo;swing&rdquo; on top of the standard layout.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveStyle} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="portal-welcome" className="text-sm font-medium">
+                  Welcome message
+                </label>
+                <textarea
+                  id="portal-welcome"
+                  rows={3}
+                  value={portalWelcomeMessage}
+                  onChange={(e) => setPortalWelcomeMessage(e.target.value)}
+                  placeholder="Welcome to my teaching portal — book a lesson or browse revision packs below."
+                  className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Shown prominently under your photo. Ask parents to join your group first.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="portal-accent" className="text-sm font-medium">
+                  Accent colour
+                </label>
+                <select
+                  id="portal-accent"
+                  value={accentPresetId}
+                  onChange={(e) => setAccentPresetId(e.target.value)}
+                  className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  {PORTAL_ACCENT_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button type="submit" variant="outline" disabled={styleLoading}>
+                {styleLoading ? "Saving…" : "Save style"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="yazz-surface">
+          <CardHeader>
             <CardTitle>Portal link</CardTitle>
             <CardDescription>
               Your private booking URL. Changing this updates the link you share with parents.
@@ -425,7 +525,9 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
             <ExternalLink className="size-3.5" data-icon="inline-end" />
           </Button>
         </div>
-        <PublicProfile tutor={previewProfile} />
+        <PortalThemeWrapper tutor={previewProfile}>
+          <PublicProfile tutor={previewProfile} />
+        </PortalThemeWrapper>
       </div>
     </div>
   );

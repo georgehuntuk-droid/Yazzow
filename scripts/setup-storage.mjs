@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import pg from "pg";
 
+config({ path: ".env" });
 config({ path: ".env.local" });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

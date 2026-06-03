@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:check": "node scripts/db-check.mjs",
+    "db:validate-url": "node scripts/db-validate-url.mjs",
     "db:setup-storage": "node scripts/setup-storage.mjs",
     "deploy:netlify": "netlify deploy --prod --build"
   },

@@ -13,8 +13,17 @@ import {
   toggleDigitalResourcePublished,
   uploadDigitalResource,
 } from "@/lib/dashboard/actions";
+import { PLATFORM_FEES } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
+import { calculatePlatformFee, tutorPayoutCents } from "@/lib/stripe/fees";
 import type { DigitalResource } from "@/lib/types";
+
+function parsePricePreview(raw: string): number | null {
+  const normalized = raw.replace(/[£,\s]/g, "");
+  const value = Number.parseFloat(normalized);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return Math.round(value * 100);
+}
 
 type StorefrontManagerProps = {
   resources: DigitalResource[];
@@ -26,6 +35,7 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pricePreview, setPricePreview] = useState("");
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,9 +82,11 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
     <div className="space-y-6">
       <Card className="yazz-surface">
         <CardHeader>
-          <CardTitle>Upload a worksheet pack</CardTitle>
+          <CardTitle>Upload a learning pack</CardTitle>
           <CardDescription>
-            PDF or DOCX, up to 50 MB. Parents get secure download after checkout.
+            PDF or DOCX (up to 50 MB). Parents buy from <strong>The shelf</strong> on your portal.
+            You set the price — Yazzow takes {PLATFORM_FEES.digitalGoodsPercent}% per sale only;
+            lesson bookings are not commission-based.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,7 +113,23 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
                   required
                   placeholder="4.99"
                   inputMode="decimal"
+                  value={pricePreview}
+                  onChange={(e) => setPricePreview(e.target.value)}
                 />
+                {(() => {
+                  const cents = parsePricePreview(pricePreview);
+                  if (cents === null) return null;
+                  const fee = calculatePlatformFee(cents);
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      At {formatMoney(cents, currency)}: you receive about{" "}
+                      <span className="font-medium text-foreground">
+                        {formatMoney(tutorPayoutCents(cents), currency)}
+                      </span>{" "}
+                      per sale (−{formatMoney(fee, currency)} Yazzow fee).
+                    </p>
+                  );
+                })()}
               </div>
             </div>
             <div className="space-y-2">

@@ -15,7 +15,8 @@ White-labeled SaaS for solo educators and small agencies — private dashboard p
 
 ## Monetization
 
-- **Lesson bookings:** 100% upfront; **2%** platform fee
+- **Tutor subscription:** **£25/month** — portal, schedule, and bookings (no per-lesson platform fee)
+- **Lesson bookings:** parents pay 100% upfront; tutors keep the lesson price (Stripe processing applies). Availability is added in **1-hour slots** (a 2–5pm block becomes separate bookable hours).
 - **Digital worksheet packs:** **5%** platform fee; secure download after purchase
 
 ## Auth setup (Supabase dashboard)
@@ -27,30 +28,45 @@ White-labeled SaaS for solo educators and small agencies — private dashboard p
 
 ## Database migration
 
-Migrations live in `supabase/migrations/` and run in order:
+Migrations live in `supabase/migrations/` and run in **filename order** when you use `npm run db:migrate` (`001` … `008`).
 
-| File | Purpose |
-| --- | --- |
-| `001_initial_schema.sql` | Core tables, RLS, storage bucket |
-| `002_extended_schema.sql` | Indexes, schedule rules, schema cache reload |
-| `003_calendar_integration.sql` | iCal feed token, Google Calendar fields |
+**Where env vars live**
 
-Add your database password to `.env.local`:
+| Environment | File / place | Used by |
+| --- | --- | --- |
+| Local dev | **`.env.local` only** (copy from `.env.example`) | `npm run dev`, `npm run db:migrate` |
+| Production | **Netlify → Environment variables** | Live site at yazzow.com |
+
+`npm run db:migrate` does **not** read Netlify. If the DB password is only in Netlify, add the same value to `.env.local` on your PC (or run SQL in the dashboard — below).
+
+**Option A — CLI (recommended)**
+
+In [Supabase](https://supabase.com/dashboard) → your project → **Settings → Database**, copy or reset the **database password**. Put it in `.env.local` (not only in Netlify):
 
 ```env
 SUPABASE_DB_PASSWORD=your-database-password
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_REF.supabase.co
 ```
 
-Then run:
+Optional: **Connect → Session pooler** → copy the URI into `.env.local` as `DATABASE_URL=` (often more reliable than guessing the pooler region).
+
+Then from the project folder:
 
 ```bash
 npm run db:migrate
 ```
 
-Or paste both SQL files into Supabase → SQL Editor (run `001` first, then `002`).
+If you see `password authentication failed`, the password in `.env.local` does not match that Supabase project — reset the DB password in the dashboard, update `.env.local`, save, wait 1–2 minutes, retry.
 
-After migrating, retry **Launch my portal** on `/onboarding`.
+**Option B — SQL Editor (no password on your PC)**
+
+Supabase → **SQL Editor** → run each file in `supabase/migrations/` in order (`001` through `008`), skipping any you already ran.
+
+**“Database tables are not set up yet” in the app**
+
+That means the **hosted** Supabase project is missing tables or a newer migration (e.g. student archive / lesson feedback needs `008`). Fix the database once (CLI or SQL Editor); redeploying Netlify alone does not apply SQL.
+
+After migrating, refresh the dashboard.
 
 ## Go live (GitHub + Netlify)
 
@@ -124,6 +140,6 @@ GOOGLE_CLIENT_SECRET=...
 
 1. Supabase Auth + tutor onboarding (username claim, Stripe Connect Express)
 2. Schedule CRUD → public slot availability
-3. Stripe Checkout for bookings (2% application fee) and resources (5%)
+3. Stripe Billing for tutor subscription (£25/month) and Connect checkout for lessons (no app fee) and resources (5%)
 4. Secure file storage (Supabase Storage) + purchase email with download token
 5. Student ledger backed by bookings + purchases

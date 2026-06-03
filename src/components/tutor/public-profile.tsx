@@ -52,6 +52,11 @@ export function PublicProfile({ tutor }: PublicProfileProps) {
             ) : null}
           </div>
         </div>
+        {tutor.portalWelcomeMessage ? (
+          <p className="mt-5 max-w-2xl rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-base leading-relaxed text-foreground/90">
+            {tutor.portalWelcomeMessage}
+          </p>
+        ) : null}
         {tutor.bio ? (
           <p className="mt-5 max-w-2xl leading-relaxed text-foreground/90">{tutor.bio}</p>
         ) : null}

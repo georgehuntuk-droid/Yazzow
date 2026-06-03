@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { syncBookingToGoogleCalendar } from "@/lib/calendar/sync-booking";
+import { fulfillLessonBookingFromSession } from "@/lib/stripe/fulfill-lesson-booking";
+import {
+  fulfillTutorSubscriptionCheckout,
+  syncTutorSubscriptionFromStripe,
+} from "@/lib/stripe/subscription";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
 
@@ -39,6 +43,29 @@ export async function POST(request: Request) {
     await handleCheckoutCompleted(session);
   }
 
+  if (
+    event.type === "customer.subscription.updated" ||
+    event.type === "customer.subscription.created"
+  ) {
+    const subscription = event.data.object as Stripe.Subscription;
+    await syncTutorSubscriptionFromStripe(subscription);
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object as Stripe.Subscription;
+    const tutorId = subscription.metadata?.tutor_id;
+    if (tutorId) {
+      const admin = createAdminClient();
+      await admin
+        .from("tutor_profiles")
+        .update({
+          subscription_status: "canceled",
+          stripe_subscription_id: null,
+        })
+        .eq("id", tutorId);
+    }
+  }
+
   return NextResponse.json({ received: true });
 }
 
@@ -47,59 +74,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const type = metadata.type;
   const admin = createAdminClient();
 
+  if (type === "tutor_subscription" || session.mode === "subscription") {
+    await fulfillTutorSubscriptionCheckout(session);
+    return;
+  }
+
   if (type === "lesson") {
-    const slotId = metadata.slot_id;
-    const tutorId = metadata.tutor_id;
-    const parentEmail = metadata.parent_email;
-    const studentName = metadata.student_name || null;
-    const platformFeeCents = Number(metadata.platform_fee_cents ?? 0);
-    const amountCents = session.amount_total ?? 0;
-
-    if (!slotId || !tutorId || !parentEmail) return;
-
-    await admin
-      .from("availability_slots")
-      .update({ is_booked: true })
-      .eq("id", slotId)
-      .eq("is_booked", false);
-
-    const { data: bookingRow } = await admin
-      .from("bookings")
-      .insert({
-        slot_id: slotId,
-        tutor_id: tutorId,
-        parent_email: parentEmail,
-        student_name: studentName,
-        amount_cents: amountCents,
-        platform_fee_cents: platformFeeCents,
-        stripe_payment_intent_id:
-          typeof session.payment_intent === "string"
-            ? session.payment_intent
-            : session.payment_intent?.id ?? null,
-        status: "confirmed",
-      })
-      .select("id")
-      .single();
-
-    if (bookingRow?.id) {
-      try {
-        await syncBookingToGoogleCalendar(bookingRow.id);
-      } catch (err) {
-        console.error("Google Calendar sync failed:", err);
-      }
-    }
-
-    if (studentName) {
-      await admin.from("students").upsert(
-        {
-          tutor_id: tutorId,
-          student_name: studentName,
-          parent_email: parentEmail,
-        },
-        { onConflict: "tutor_id,parent_email,student_name" },
-      );
-    }
-
+    await fulfillLessonBookingFromSession(session);
     return;
   }
 

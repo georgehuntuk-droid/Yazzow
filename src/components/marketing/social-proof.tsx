@@ -1,9 +1,11 @@
 import { Sparkles } from "lucide-react";
 
+import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+
 const stats = [
-  { value: "2%", label: "on lesson bookings" },
-  { value: "5%", label: "on digital packs" },
-  { value: "£0", label: "monthly subscription" },
+  { value: "0%", label: "fee per lesson booking" },
+  { value: `${PLATFORM_FEES.digitalGoodsPercent}%`, label: "on digital packs" },
+  { value: TUTOR_SUBSCRIPTION.label, label: "tutor subscription" },
   { value: "100%", label: "your brand, your link" },
 ] as const;
 

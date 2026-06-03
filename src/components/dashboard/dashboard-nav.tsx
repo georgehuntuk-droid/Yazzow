@@ -23,7 +23,7 @@ const navItems = [
   { href: "/dashboard/settings", label: "Portal", icon: Palette },
   { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
   { href: "/dashboard#schedule", label: "Schedule", icon: CalendarRange },
-  { href: "/dashboard#storefront", label: "Storefront", icon: BookOpen },
+  { href: "/dashboard#storefront", label: "Learning packs", icon: BookOpen },
   { href: "/dashboard#ledger", label: "Students", icon: Users },
 ] as const;
 

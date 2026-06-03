@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, CreditCard, Link2, Shield, Sparkles } from "lucide-react";
 
 import { HeroPreview } from "@/components/brand/hero-preview";
-import { BRAND_NAME, PLATFORM_FEES, TUTOR_PUBLIC_PATH } from "@/lib/constants";
+import { BRAND_NAME, PLATFORM_FEES, TUTOR_PUBLIC_PATH, TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 export function PortalPreviewMockup() {
   return (
@@ -96,8 +96,8 @@ export function MarketingHero() {
                 { icon: CalendarDays, label: "Bookings", value: "Paid upfront" },
                 {
                   icon: CreditCard,
-                  label: "Platform fee",
-                  value: `${PLATFORM_FEES.lessonBookingPercent}% / ${PLATFORM_FEES.digitalGoodsPercent}%`,
+                  label: "Pricing",
+                  value: `${TUTOR_SUBSCRIPTION.label} · ${PLATFORM_FEES.digitalGoodsPercent}% packs`,
                 },
                 { icon: Shield, label: "Visibility", value: "Your link only" },
               ].map((item) => (

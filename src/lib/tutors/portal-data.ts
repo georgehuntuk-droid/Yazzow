@@ -1,6 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
-import type { AvailabilitySlotRow, DigitalResourceRow } from "@/lib/supabase/database.types";
-import type { DigitalResource, OpenSlot, TutorSlot } from "@/lib/types";
+import type {
+  AvailabilitySlotRow,
+  BookingRow,
+  DigitalResourceRow,
+} from "@/lib/supabase/database.types";
+import { LESSON_SLOT_DURATION_MINUTES } from "@/lib/constants";
+import type { DigitalResource, OpenSlot, RecentBooking, TutorSlot } from "@/lib/types";
+
+const LESSON_SLOT_MS = LESSON_SLOT_DURATION_MINUTES * 60 * 1000;
+
+function isHourlySlot(startsAt: string, endsAt: string): boolean {
+  return new Date(endsAt).getTime() - new Date(startsAt).getTime() === LESSON_SLOT_MS;
+}
 
 export async function getOpenSlotsForTutor(tutorId: string): Promise<OpenSlot[]> {
   const supabase = await createClient();
@@ -16,12 +27,14 @@ export async function getOpenSlotsForTutor(tutorId: string): Promise<OpenSlot[]>
 
   if (error || !data) return [];
 
-  return (data as AvailabilitySlotRow[]).map((row) => ({
-    id: row.id,
-    startsAt: row.starts_at,
-    endsAt: row.ends_at,
-    available: !row.is_booked,
-  }));
+  return (data as AvailabilitySlotRow[])
+    .filter((row) => isHourlySlot(row.starts_at, row.ends_at))
+    .map((row) => ({
+      id: row.id,
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+      available: !row.is_booked,
+    }));
 }
 
 export async function getPublishedResourcesForTutor(
@@ -91,12 +104,119 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
   }));
 }
 
+export async function getRecentBookingsForTutor(
+  tutorId: string,
+  limit = 10,
+): Promise<RecentBooking[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(
+      `
+      id,
+      slot_id,
+      parent_email,
+      student_name,
+      amount_cents,
+      status,
+      running_late_sent_at,
+      running_late_note,
+      created_at,
+      availability_slots (starts_at, ends_at)
+    `,
+    )
+    .eq("tutor_id", tutorId)
+    .eq("status", "confirmed")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((row) => {
+    const booking = row as BookingRow & {
+      slot_id: string;
+      availability_slots:
+        | Pick<AvailabilitySlotRow, "starts_at" | "ends_at">
+        | Pick<AvailabilitySlotRow, "starts_at" | "ends_at">[]
+        | null;
+    };
+    const slot = Array.isArray(booking.availability_slots)
+      ? booking.availability_slots[0]
+      : booking.availability_slots;
+    return {
+      id: booking.id,
+      slotId: booking.slot_id,
+      parentEmail: booking.parent_email,
+      studentName: booking.student_name,
+      amountCents: booking.amount_cents,
+      status: booking.status,
+      runningLateSentAt: booking.running_late_sent_at ?? null,
+      runningLateNote: booking.running_late_note ?? null,
+      createdAt: booking.created_at,
+      startsAt: slot?.starts_at ?? booking.created_at,
+      endsAt: slot?.ends_at ?? booking.created_at,
+    };
+  });
+}
+
+export type DigitalPackSale = {
+  id: string;
+  resourceTitle: string;
+  buyerEmail: string;
+  amountCents: number;
+  platformFeeCents: number;
+  tutorNetCents: number;
+  createdAt: string;
+};
+
+export async function getDigitalSalesForTutor(
+  tutorId: string,
+  limit = 25,
+): Promise<DigitalPackSale[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("resource_purchases")
+    .select(
+      `
+      id,
+      buyer_email,
+      amount_cents,
+      platform_fee_cents,
+      created_at,
+      digital_resources (title)
+    `,
+    )
+    .eq("tutor_id", tutorId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((row) => {
+    const resources = row.digital_resources as { title: string } | { title: string }[] | null;
+    const title = Array.isArray(resources)
+      ? resources[0]?.title
+      : resources?.title;
+
+    return {
+      id: row.id,
+      resourceTitle: title ?? "Worksheet pack",
+      buyerEmail: row.buyer_email,
+      amountCents: row.amount_cents,
+      platformFeeCents: row.platform_fee_cents,
+      tutorNetCents: row.amount_cents - row.platform_fee_cents,
+      createdAt: row.created_at,
+    };
+  });
+}
+
 export async function getStudentsForTutor(tutorId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("students")
     .select("*")
     .eq("tutor_id", tutorId)
+    .eq("status", "active")
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];

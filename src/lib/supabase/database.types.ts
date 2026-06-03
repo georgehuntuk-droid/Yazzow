@@ -6,9 +6,15 @@ export type TutorProfileRow = {
   bio: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  portal_welcome_message: string | null;
+  portal_accent_oklch: string | null;
   lesson_price_cents: number;
   currency: string;
   stripe_account_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  subscription_current_period_end: string | null;
   calendar_feed_token: string | null;
   google_refresh_token: string | null;
   google_calendar_id: string | null;
@@ -44,6 +50,8 @@ export type StudentRow = {
   student_name: string;
   parent_email: string;
   notes: string | null;
+  status: string;
+  archived_at: string | null;
   created_at: string;
 };
 
@@ -58,6 +66,12 @@ export type BookingRow = {
   stripe_payment_intent_id: string | null;
   status: string;
   google_calendar_event_id: string | null;
+  cancelled_at: string | null;
+  cancelled_by: string | null;
+  running_late_sent_at: string | null;
+  running_late_note: string | null;
+  tutor_lesson_feedback: string | null;
+  lesson_rating: number | null;
   created_at: string;
 };
 
@@ -142,6 +156,24 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<ScheduleRuleRow>;
+      };
+      slot_alert_subscribers: {
+        Row: {
+          id: string;
+          tutor_id: string;
+          parent_email: string;
+          student_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          tutor_id: string;
+          parent_email: string;
+          student_name?: string | null;
+        };
+        Update: Partial<{
+          parent_email: string;
+          student_name: string | null;
+        }>;
       };
     };
   };

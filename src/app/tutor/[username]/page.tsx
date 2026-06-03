@@ -1,7 +1,11 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { Logo } from "@/components/brand/logo";
-import { BookingCalendar } from "@/components/tutor/booking-calendar";
+import { BookingCalendarLive } from "@/components/tutor/booking-calendar-live";
+import { BookingStatusBanner } from "@/components/tutor/booking-status-banner";
+import { JoinTutorFamily } from "@/components/tutor/join-tutor-family";
+import { PortalThemeWrapper } from "@/components/tutor/portal-theme-wrapper";
 import { PublicProfile } from "@/components/tutor/public-profile";
 import { ResourceShelf } from "@/components/tutor/resource-shelf";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,16 +15,22 @@ import {
   DEMO_RESOURCES,
   getDemoTutorByUsername,
 } from "@/lib/demo-data";
-import { createClient } from "@/lib/supabase/server";
+import { fulfillLessonBookingFromCheckoutSessionId } from "@/lib/stripe/fulfill-lesson-booking";
 import { isStripeConfigured } from "@/lib/stripe/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { TutorProfileRow } from "@/lib/supabase/database.types";
+import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import { getTutorByUsername } from "@/lib/tutors/queries";
 import {
   getOpenSlotsForTutor,
   getPublishedResourcesForTutor,
 } from "@/lib/tutors/portal-data";
 
+export const dynamic = "force-dynamic";
+
 type TutorPortalPageProps = {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ booked?: string; cancelled?: string; session_id?: string }>;
 };
 
 export async function generateMetadata({ params }: TutorPortalPageProps) {
@@ -33,8 +43,9 @@ export async function generateMetadata({ params }: TutorPortalPageProps) {
   };
 }
 
-export default async function TutorPortalPage({ params }: TutorPortalPageProps) {
+export default async function TutorPortalPage({ params, searchParams }: TutorPortalPageProps) {
   const { username } = await params;
+  const query = await searchParams;
 
   const liveTutor = await getTutorByUsername(username);
   const demoTutor = !liveTutor ? getDemoTutorByUsername(username) : null;
@@ -44,6 +55,34 @@ export default async function TutorPortalPage({ params }: TutorPortalPageProps) 
     notFound();
   }
 
+  if (
+    liveTutor &&
+    query.booked === "1" &&
+    query.session_id &&
+    isStripeConfigured()
+  ) {
+    const admin = createAdminClient();
+    const { data: tutorRow } = await admin
+      .from("tutor_profiles")
+      .select("stripe_account_id")
+      .eq("id", liveTutor.id)
+      .maybeSingle();
+
+    const stripeAccountId = (tutorRow as Pick<TutorProfileRow, "stripe_account_id"> | null)
+      ?.stripe_account_id;
+
+    if (stripeAccountId) {
+      try {
+        await fulfillLessonBookingFromCheckoutSessionId(
+          query.session_id,
+          stripeAccountId,
+        );
+      } catch (err) {
+        console.error("Checkout return fulfillment failed:", err);
+      }
+    }
+  }
+
   const slots = liveTutor
     ? await getOpenSlotsForTutor(liveTutor.id)
     : DEMO_OPEN_SLOTS;
@@ -51,18 +90,23 @@ export default async function TutorPortalPage({ params }: TutorPortalPageProps) 
     ? await getPublishedResourcesForTutor(liveTutor.id)
     : DEMO_RESOURCES;
 
-  let paymentsEnabled = false;
-  if (liveTutor && isStripeConfigured()) {
-    const supabase = await createClient();
-    const { data: paymentRow } = await supabase
-      .from("tutor_profiles")
-      .select("stripe_account_id")
-      .eq("id", liveTutor.id)
-      .maybeSingle();
-    paymentsEnabled = Boolean(paymentRow?.stripe_account_id);
-  }
+  const portalBooking = liveTutor
+    ? await getPortalBookingStatus(liveTutor.id)
+    : await getPortalBookingStatus("", { isDemo: true });
+
+  const paymentsEnabled = portalBooking.canAcceptBookings;
+  const paymentsBlockedReason =
+    portalBooking.blockedReason === "subscription_inactive"
+      ? "subscription"
+      : portalBooking.blockedReason === "demo"
+        ? "demo"
+        : portalBooking.blockedReason
+          ? "stripe"
+          : undefined;
+  const paymentsBlockedMessage = portalBooking.parentMessage;
 
   return (
+    <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="yazz-container flex h-16 max-w-5xl items-center justify-between">
@@ -76,6 +120,12 @@ export default async function TutorPortalPage({ params }: TutorPortalPageProps) 
       <main className="yazz-container max-w-5xl space-y-8 py-8 sm:space-y-10 sm:py-10">
         <PublicProfile tutor={tutor} />
 
+        <Suspense fallback={null}>
+          <BookingStatusBanner />
+        </Suspense>
+
+        {liveTutor ? <JoinTutorFamily tutor={tutor} tutorUsername={username} /> : null}
+
         <Tabs defaultValue="book">
           <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">
             <TabsTrigger value="book" className="rounded-lg px-4">
@@ -86,15 +136,18 @@ export default async function TutorPortalPage({ params }: TutorPortalPageProps) 
             </TabsTrigger>
           </TabsList>
           <TabsContent value="book" className="mt-6">
-            {slots.length === 0 ? (
+            {slots.filter((s) => s.available).length === 0 ? (
               <div className="yazz-panel px-6 py-14 text-center text-muted-foreground">
                 No open slots right now. Check back soon or message your tutor directly.
               </div>
             ) : (
-              <BookingCalendar
+              <BookingCalendarLive
                 tutor={tutor}
-                slots={slots}
+                tutorUsername={username}
+                initialSlots={slots.filter((s) => s.available)}
                 paymentsEnabled={paymentsEnabled}
+                paymentsBlockedReason={paymentsBlockedReason}
+                paymentsBlockedMessage={paymentsBlockedMessage}
               />
             )}
           </TabsContent>
@@ -108,5 +161,6 @@ export default async function TutorPortalPage({ params }: TutorPortalPageProps) 
         </Tabs>
       </main>
     </div>
+    </PortalThemeWrapper>
   );
 }

@@ -4,10 +4,16 @@ export const BRAND_NAME = "Yazzow" as const;
 export const PUBLIC_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://yazzow.com";
 
+/** Tutor SaaS plan — billed to the tutor (Stripe Billing on the platform account). */
+export const TUTOR_SUBSCRIPTION = {
+  amountCents: 2500,
+  currency: "gbp",
+  interval: "month" as const,
+  label: "£25/month",
+} as const;
+
 export const PLATFORM_FEES = {
-  /** Lesson bookings: 2% platform fee; remainder to tutor via Stripe Connect. */
-  lessonBookingPercent: 2,
-  /** Digital worksheet packs: 5% platform fee. */
+  /** Digital worksheet packs: 5% platform fee at checkout (Stripe Connect). */
   digitalGoodsPercent: 5,
 } as const;
 
@@ -20,6 +26,23 @@ export const LESSON_PRICE_LIMITS = {
   minCents: 500,
   maxCents: 999_00,
 } as const;
+
+/** Each bookable lesson slot is exactly one hour. */
+export const LESSON_SLOT_DURATION_MINUTES = 60;
+
+export const MAX_AVAILABILITY_BLOCK_HOURS = 12;
+
+/** Tutor portal accent presets (OKLCH — applied on public /tutor/[username] pages). */
+export const PORTAL_ACCENT_PRESETS = [
+  { id: "violet", label: "Classic violet", oklch: "oklch(0.42 0.15 286)" },
+  { id: "teal", label: "Calm teal", oklch: "oklch(0.45 0.12 195)" },
+  { id: "rose", label: "Warm rose", oklch: "oklch(0.52 0.14 15)" },
+  { id: "amber", label: "Golden amber", oklch: "oklch(0.62 0.14 75)" },
+  { id: "forest", label: "Forest green", oklch: "oklch(0.45 0.1 155)" },
+  { id: "slate", label: "Professional slate", oklch: "oklch(0.4 0.03 260)" },
+] as const;
+
+export const DEFAULT_PORTAL_ACCENT = PORTAL_ACCENT_PRESETS[0].oklch;
 
 export function publicSiteHost(): string {
   try {

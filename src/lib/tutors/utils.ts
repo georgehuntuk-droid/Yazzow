@@ -10,6 +10,8 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     bio: row.bio ?? "",
     avatarUrl: row.avatar_url ?? undefined,
     coverUrl: row.cover_url ?? undefined,
+    portalWelcomeMessage: row.portal_welcome_message ?? undefined,
+    portalAccentOklch: row.portal_accent_oklch ?? undefined,
     lessonPriceCents: row.lesson_price_cents,
     currency: row.currency,
   };

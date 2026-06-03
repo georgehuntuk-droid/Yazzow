@@ -82,8 +82,8 @@ export function LessonCheckoutButton({ tutor, slot }: LessonCheckoutButtonProps)
           : `Pay ${formatMoney(tutor.lessonPriceCents, tutor.currency)} · secure checkout`}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Full price charged now. Yazzow takes a small platform fee; the rest goes
-        to your tutor via Stripe.
+        Full lesson price charged now. Your tutor receives the booking amount via Stripe
+        (card processing fees apply as usual).
       </p>
     </div>
   );

@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { BookOpen, CalendarRange, Users } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
-import { PLATFORM_FEES } from "@/lib/constants";
+import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 const features = [
   {
@@ -36,8 +36,8 @@ export function MarketingFeatures() {
             Everything in one place
           </h2>
           <p className="mt-4 yazz-muted">
-            Free to join. {PLATFORM_FEES.lessonBookingPercent}% on lesson bookings,{" "}
-            {PLATFORM_FEES.digitalGoodsPercent}% on digital goods — collected automatically at
+            {TUTOR_SUBSCRIPTION.label} for your portal and bookings.{" "}
+            {PLATFORM_FEES.digitalGoodsPercent}% on digital worksheet sales only — collected at
             checkout via Stripe Connect.
           </p>
         </div>

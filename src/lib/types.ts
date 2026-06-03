@@ -6,6 +6,8 @@ export type TutorProfile = {
   bio: string;
   avatarUrl?: string;
   coverUrl?: string;
+  portalWelcomeMessage?: string;
+  portalAccentOklch?: string;
   lessonPriceCents: number;
   currency: string;
 };
@@ -32,6 +34,20 @@ export type TutorSlot = {
   startsAt: string;
   endsAt: string;
   isBooked: boolean;
+};
+
+export type RecentBooking = {
+  id: string;
+  slotId: string;
+  parentEmail: string;
+  studentName: string | null;
+  amountCents: number;
+  status: string;
+  createdAt: string;
+  startsAt: string;
+  endsAt: string;
+  runningLateSentAt: string | null;
+  runningLateNote: string | null;
 };
 
 export type StudentLedgerEntry = {

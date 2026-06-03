@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { PUBLIC_SITE_URL } from "@/lib/constants";
+import { LESSON_SLOT_DURATION_MINUTES, PUBLIC_SITE_URL } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TutorProfileRow } from "@/lib/supabase/database.types";
-import { calculatePlatformFee } from "@/lib/stripe/fees";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
+import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
 
 type LessonCheckoutBody = {
   slotId: string;
@@ -41,6 +41,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const subscription = await getTutorSubscriptionState(tutor.id);
+  if (!subscription.active) {
+    return NextResponse.json(
+      { error: "This tutor's booking portal is not active right now." },
+      { status: 403 },
+    );
+  }
+
   const { data: slot } = await admin
     .from("availability_slots")
     .select("*")
@@ -53,8 +61,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "That slot is no longer available." }, { status: 409 });
   }
 
+  const slotDurationMs =
+    new Date(slot.ends_at).getTime() - new Date(slot.starts_at).getTime();
+  const expectedMs = LESSON_SLOT_DURATION_MINUTES * 60 * 1000;
+  if (slotDurationMs !== expectedMs) {
+    return NextResponse.json(
+      { error: "This slot is not a valid one-hour booking." },
+      { status: 400 },
+    );
+  }
+
   const amountCents = tutor.lesson_price_cents;
-  const platformFeeCents = calculatePlatformFee(amountCents, "lesson");
   const stripe = getStripe();
 
   const session = await stripe.checkout.sessions.create(
@@ -74,18 +91,15 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      payment_intent_data: {
-        application_fee_amount: platformFeeCents,
-      },
       metadata: {
         type: "lesson",
         slot_id: slotId,
         tutor_id: tutor.id,
         parent_email: parentEmail,
         student_name: studentName ?? "",
-        platform_fee_cents: String(platformFeeCents),
+        platform_fee_cents: "0",
       },
-      success_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?booked=1`,
+      success_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?booked=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?cancelled=1`,
     },
     { stripeAccount: tutor.stripe_account_id },

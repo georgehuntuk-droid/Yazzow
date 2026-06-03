@@ -108,8 +108,12 @@ Use exact values from Netlify if they differ. HTTPS is automatic.
 ### 5. Stripe
 
 - Webhook: `https://yazzow.com/api/stripe/webhook`
-- Event: `checkout.session.completed`
+- Events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+- **Connect:** enable **“Listen to events on Connected accounts”** for lesson/resource checkouts on connected accounts.
+- **Subscriptions:** tutor £25/month billing runs on your **platform** Stripe account (not Connect).
 - Add signing secret to Netlify → **Trigger deploy** (or push a commit)
+
+Bookings are also confirmed when parents return from Stripe Checkout (`session_id` in the success URL), so slots still update even if the webhook is misconfigured.
 
 ### 6. Database (if not done)
 
@@ -117,6 +121,9 @@ Supabase SQL editor — run:
 
 1. `supabase/migrations/001_initial_schema.sql`
 2. `supabase/migrations/002_extended_schema.sql`
+3. `supabase/migrations/005_hourly_slots_and_alerts.sql` (hourly slots, cancellations, realtime)
+
+Optional: `RESEND_API_KEY` in Netlify so families get email when a slot reopens after cancellation.
 
 ---
 

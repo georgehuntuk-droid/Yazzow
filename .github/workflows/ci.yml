@@ -1,3 +1,6 @@
+# Runs on GitHub when you push to main (separate from Netlify deploy).
+# A red X here does NOT take yazzow.com offline — check Netlify → Deploys for the live site.
+
 name: CI
 
 on:
@@ -19,8 +22,7 @@ jobs:
       - run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: https://yazzow.com
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
-          SUPABASE_SECRET_KEY: placeholder
+          # Omit Supabase keys so CI does not call a fake project during build.
+          # Netlify production uses real vars from Site configuration → Environment variables.
           STRIPE_SECRET_KEY: sk_test_placeholder
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder

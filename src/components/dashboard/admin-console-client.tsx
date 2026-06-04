@@ -1,0 +1,322 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  CheckCircle,
+  ExternalLink,
+  Globe,
+  Loader2,
+  Mail,
+  Search,
+  ShieldCheck,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatMoney } from "@/lib/format";
+import {
+  updateTutorSubscriptionStatus,
+  deleteTutorProfileAndUser,
+} from "@/lib/dashboard/admin-actions";
+
+export type AdminTutorData = {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string | null;
+  lessonPriceCents: number;
+  currency: string;
+  stripeAccountId: string | null;
+  subscriptionStatus: string | null;
+  subscriptionCurrentPeriodEnd: string | null;
+  createdAt: string;
+  lessonCount: number;
+  lessonVolumeCents: number;
+  resourceCount: number;
+  resourceVolumeCents: number;
+};
+
+type AdminConsoleClientProps = {
+  tutors: AdminTutorData[];
+  platformStats: any;
+};
+
+export function AdminConsoleClient({ tutors, platformStats }: AdminConsoleClientProps) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
+  const [isPending, startTransition] = useTransition();
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Search and filter logic
+  const filteredTutors = tutors.filter((tutor) => {
+    const matchesSearch =
+      tutor.displayName.toLowerCase().includes(search.toLowerCase()) ||
+      tutor.username.toLowerCase().includes(search.toLowerCase()) ||
+      tutor.email.toLowerCase().includes(search.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    const hasActiveSub = tutor.subscriptionStatus === "active" || tutor.subscriptionStatus === "trialing";
+
+    if (filter === "active_sub") return hasActiveSub;
+    if (filter === "no_sub") return !hasActiveSub;
+    if (filter === "stripe_ok") return tutor.stripeAccountId !== null;
+    if (filter === "stripe_missing") return tutor.stripeAccountId === null;
+
+    return true;
+  });
+
+  const handleCompSubscription = (tutorId: string, currentStatus: string | null) => {
+    const nextStatus = currentStatus === "active" ? "none" : "active";
+    const confirmMsg =
+      nextStatus === "active"
+        ? "Are you sure you want to comp/grant an active subscription to this tutor?"
+        : "Are you sure you want to cancel this tutor's active subscription status?";
+
+    if (!confirm(confirmMsg)) return;
+
+    setActionLoadingId(tutorId);
+    startTransition(async () => {
+      const res = await updateTutorSubscriptionStatus(tutorId, nextStatus);
+      setActionLoadingId(null);
+      if (!res.ok) {
+        alert(`Failed to update subscription: ${res.error}`);
+      }
+    });
+  };
+
+  const handleDeleteTutor = (tutorId: string, displayName: string) => {
+    if (
+      !confirm(
+        `CRITICAL WARNING: Are you absolutely sure you want to delete ${displayName}'s account?\n\nThis will completely delete their tutor profile, custom availability slots, all digital worksheet packs, client ledger entries, and their registered authentication account. This action is permanent and cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setActionLoadingId(tutorId);
+    startTransition(async () => {
+      const res = await deleteTutorProfileAndUser(tutorId);
+      setActionLoadingId(null);
+      if (!res.ok) {
+        alert(`Failed to delete tutor: ${res.error}`);
+      }
+    });
+  };
+
+  const formatDate = (isoString: string) => {
+    return new Date(isoString).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Search & Tabs bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search tutors by name, username, or email..."
+            className="pl-10"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            variant={filter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("all")}
+          >
+            All ({tutors.length})
+          </Button>
+          <Button
+            variant={filter === "active_sub" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("active_sub")}
+          >
+            Subscribed ({tutors.filter((t) => t.subscriptionStatus === "active" || t.subscriptionStatus === "trialing").length})
+          </Button>
+          <Button
+            variant={filter === "no_sub" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("no_sub")}
+          >
+            Not Subscribed ({tutors.filter((t) => t.subscriptionStatus !== "active" && t.subscriptionStatus !== "trialing").length})
+          </Button>
+          <Button
+            variant={filter === "stripe_ok" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("stripe_ok")}
+          >
+            Stripe Connected ({tutors.filter((t) => t.stripeAccountId !== null).length})
+          </Button>
+          <Button
+            variant={filter === "stripe_missing" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("stripe_missing")}
+          >
+            Stripe Missing ({tutors.filter((t) => t.stripeAccountId === null).length})
+          </Button>
+        </div>
+      </div>
+
+      {/* Tutor directory list */}
+      <div className="space-y-4">
+        {filteredTutors.length === 0 ? (
+          <Card className="yazz-surface border-dashed p-10 text-center">
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">No tutors match your search/filters.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredTutors.map((tutor) => {
+            const hasActiveSub = tutor.subscriptionStatus === "active" || tutor.subscriptionStatus === "trialing";
+            const isLoading = actionLoadingId === tutor.id && isPending;
+
+            return (
+              <Card
+                key={tutor.id}
+                className={`yazz-surface transition-all ${
+                  hasActiveSub ? "border-emerald-100 dark:border-emerald-950/40" : "border-border/60"
+                }`}
+              >
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                    {/* Tutor info */}
+                    <div className="flex items-start gap-4">
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                        {tutor.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-heading text-lg font-semibold leading-none text-foreground">
+                            {tutor.displayName}
+                          </h3>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            @{tutor.username}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Mail className="size-3.5 shrink-0" />
+                          <span>{tutor.email}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Registered: <span className="font-medium text-foreground">{formatDate(tutor.createdAt)}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4 border-y border-border/40 py-4 lg:grid-cols-3 lg:border-y-0 lg:py-0">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Lesson Vol (30d)</p>
+                        <p className="text-sm font-semibold">{formatMoney(tutor.lessonVolumeCents, tutor.currency)}</p>
+                        <p className="text-xs text-muted-foreground">{tutor.lessonCount} booking{tutor.lessonCount === 1 ? "" : "s"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Learning Pack Vol</p>
+                        <p className="text-sm font-semibold">{formatMoney(tutor.resourceVolumeCents, tutor.currency)}</p>
+                        <p className="text-xs text-muted-foreground">{tutor.resourceCount} download{tutor.resourceCount === 1 ? "" : "s"}</p>
+                      </div>
+                      <div className="col-span-2 lg:col-span-1">
+                        <p className="text-xs text-muted-foreground">Pricing</p>
+                        <p className="text-sm font-medium">
+                          {formatMoney(tutor.lessonPriceCents, tutor.currency)}/hr
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Status & Actions */}
+                    <div className="flex flex-wrap items-center gap-3 self-end lg:self-start">
+                      {/* Stripe Connect Badge */}
+                      {tutor.stripeAccountId ? (
+                        <Badge variant="secondary" className="gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400">
+                          <CheckCircle className="size-3.5" />
+                          Stripe Connected
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50/50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/10 dark:text-amber-400">
+                          <AlertTriangle className="size-3.5" />
+                          Stripe Missing
+                        </Badge>
+                      )}
+
+                      {/* Subscription Badge */}
+                      {hasActiveSub ? (
+                        <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/10">
+                          <ShieldCheck className="size-3.5" />
+                          Subscribed
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1 text-muted-foreground">
+                          <XCircle className="size-3.5" />
+                          No Subscription
+                        </Badge>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs font-medium"
+                          render={<Link href={`/tutor/${tutor.username}`} target="_blank" />}
+                        >
+                          <Globe className="size-3.5" />
+                          View Portal
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isLoading}
+                          onClick={() => handleCompSubscription(tutor.id, tutor.subscriptionStatus)}
+                          className="h-8 text-xs font-medium"
+                        >
+                          {isLoading ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : hasActiveSub ? (
+                            "Un-Comp"
+                          ) : (
+                            "Comp Sub"
+                          )}
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isLoading}
+                          onClick={() => handleDeleteTutor(tutor.id, tutor.displayName)}
+                          className="h-8 size-8 p-0 text-destructive hover:bg-destructive/10"
+                        >
+                          {isLoading ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}

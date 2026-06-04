@@ -31,9 +31,9 @@ export function MarketingTestimonials() {
     <section className="border-y border-border/50 bg-card/30 py-20 sm:py-28">
       <div className="yazz-container">
         <div className="mx-auto mb-14 max-w-2xl text-center">
-          <p className="yazz-section-label">Tutor stories</p>
-          <h2 className="font-heading text-3xl font-bold sm:text-4xl">
-            Built for educators who already have a following
+          <p className="yazz-section-label">Teacher stories</p>
+          <h2 className="font-heading text-3xl font-black tracking-tight sm:text-4xl">
+            Loved by independent educators
           </h2>
         </div>
 

@@ -75,13 +75,13 @@ export function MarketingComparison() {
     <section className="border-y border-border/50 bg-gradient-to-b from-primary/5 to-transparent py-20 sm:py-28">
       <div className="yazz-container">
         <div className="mx-auto mb-14 max-w-2xl text-center">
-          <p className="yazz-section-label">Why tutors switch</p>
-          <h2 className="font-heading text-3xl font-bold sm:text-4xl">
-            Your brand, not a crowded marketplace
+          <p className="yazz-section-label">Why educators switch</p>
+          <h2 className="font-heading text-3xl font-black tracking-tight sm:text-4xl">
+            Your friendly hub, not a crowded marketplace
           </h2>
-          <p className="mt-4 yazz-muted">
-            Marketplaces help you get discovered — then compete for attention. {BRAND_NAME} is the
-            opposite: a private home for tutors who already have families and referrals.
+          <p className="mt-4 yazz-muted text-base">
+            Marketplaces pit teachers against each other in a race-to-the-bottom comparison. {BRAND_NAME} is the 
+            opposite: a delightful, private home designed for independent tutors who love teaching.
           </p>
         </div>
 

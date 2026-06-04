@@ -20,12 +20,12 @@ export function MarketingCta({ authCta }: { authCta: MarketingAuthCta }) {
           />
           <div className="relative">
             <p className="yazz-section-label mb-4">Get started today</p>
-            <h2 className="font-heading text-3xl font-bold sm:text-4xl lg:text-5xl">
-              Ready to launch on {BRAND_NAME}?
+            <h2 className="font-heading text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+              Ready to open your new classroom?
             </h2>
             <p className="mx-auto mt-5 max-w-lg text-base yazz-muted sm:text-lg">
-              Claim your username, connect payouts, and give parents a link where they can book,
-              cancel fairly, and let your other pupils know the second a slot opens.
+              Set up your custom link, personalize your portal with your favorite accent colors, 
+              and enjoy a stress-free business home built with love for educators.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href={authCta.href} className="yazz-btn-primary group h-12 px-8">

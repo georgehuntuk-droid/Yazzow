@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Palette,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 
@@ -27,7 +28,11 @@ const navItems = [
   { href: "/dashboard#ledger", label: "Students", icon: Users },
 ] as const;
 
-export function DashboardNav() {
+type DashboardNavProps = {
+  isAdmin?: boolean;
+};
+
+export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
   const pathname = usePathname();
 
   return (
@@ -59,6 +64,24 @@ export function DashboardNav() {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <>
+            <Separator className="my-2 hidden bg-sidebar-border lg:block" />
+            <Link
+              href="/dashboard/admin"
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
+                pathname.startsWith("/dashboard/admin")
+                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 shadow-sm ring-1 ring-amber-500/15"
+                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
+              )}
+            >
+              <ShieldCheck className="size-4 shrink-0" />
+              Admin Console
+            </Link>
+          </>
+        )}
       </nav>
       <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
         <Button variant="outline" className="w-full justify-start" render={<Link href="/support" />}>

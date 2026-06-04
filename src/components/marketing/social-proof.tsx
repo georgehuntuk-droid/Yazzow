@@ -20,9 +20,9 @@ export function MarketingSocialProof({ authCta }: MarketingSocialProofProps) {
     <section className="border-y border-border/50 bg-gradient-to-r from-primary/5 via-card/50 to-primary/5 py-12">
       <div className="yazz-container">
         <div className="mb-10 flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-center sm:gap-3">
-          <Sparkles className="size-4 text-primary" aria-hidden />
-          <p className="text-sm font-medium text-muted-foreground">
-            Built for solo tutors who want a professional home — not another marketplace profile
+          <Sparkles className="size-4 text-rose-500 animate-pulse" aria-hidden />
+          <p className="text-sm font-bold text-muted-foreground select-none">
+            A delightful, stress-free space built just for teachers — not another clinical booking tool
           </p>
         </div>
         <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">

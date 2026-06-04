@@ -3,7 +3,7 @@ import { ArrowRight, Bell, BookOpen, CalendarRange, Undo2, Users } from "lucide-
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
 import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import { BRAND_NAME, TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 const features = [
   {
@@ -46,13 +46,13 @@ export function MarketingFeatures({ authCta }: { authCta: MarketingAuthCta }) {
       <div className="yazz-container">
         <div className="mx-auto mb-16 max-w-2xl text-center">
           <p className="yazz-section-label">Features</p>
-          <h2 className="font-heading text-3xl font-bold sm:text-4xl">
-            Built to fill your diary, not just take bookings
+          <h2 className="font-heading text-3xl font-black tracking-tight sm:text-4xl">
+            Built to fill your timetable, not just take bookings
           </h2>
-          <p className="mt-4 yazz-muted">
-            Cancellations happen — {TUTOR_SUBSCRIPTION.label} includes smart slot alerts so other
-            pupils hear the moment a time opens. Plus portal, ledger, and a worksheet shelf you sell
-            yourself.
+          <p className="mt-4 yazz-muted text-base">
+            Teaching keeps you busy enough — let {BRAND_NAME} automate the headache. We manage your 
+            schedule, let parents easily reschedule, send friendly automated notifications, and alert 
+            your waiting list the second a slot frees up.
           </p>
         </div>
 

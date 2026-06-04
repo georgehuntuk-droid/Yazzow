@@ -92,13 +92,13 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
               Your classroom, your rules · No marketplace competition
             </p>
             <h1 className="yazz-fade-in yazz-fade-in-delay-1 text-[2.5rem] font-black leading-[1.15] tracking-tight sm:text-[2.75rem] lg:text-[3.5rem] selection:bg-amber-100">
-              The cozy business home for{" "}
-              <span className="yazz-gradient-text bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600">independent educators</span>
+              The business home for{" "}
+              <span className="yazz-gradient-text bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600">independent tutors</span>
             </h1>
             <p className="yazz-fade-in yazz-fade-in-delay-2 mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              {BRAND_NAME} is built for tutors who want a delightful space, not a sterile portal. 
-              Get your own gorgeous shareable page. Parents book lessons, get instant cancellation 
-              alerts, and buy your custom learning packs with zero hassle.
+              {BRAND_NAME} gives you a private dashboard and a direct booking link. 
+              Parents pay upfront to book, self-cancel if plans change, and your waiting 
+              list gets instant alerts to refill the slot.
             </p>
 
             <div className="yazz-fade-in yazz-fade-in-delay-3 mt-9 flex flex-col gap-3 sm:flex-row">

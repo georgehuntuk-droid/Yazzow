@@ -15,7 +15,7 @@ function readEnv(...keys: string[]): string | undefined {
 function required(name: string, value: string | undefined): string {
   if (!value) {
     throw new Error(
-      `Missing ${name}. Add it to Netlify environment variables (Supabase → Project Settings → API).`,
+      `Missing ${name}. Add it to Vercel environment variables (Supabase → Project Settings → API).`,
     );
   }
   return value;
@@ -67,5 +67,5 @@ export function getSupabaseEnvHint(): string {
   const missing = getMissingSupabaseEnvVars();
   if (missing.length === 0) return "";
 
-  return `Missing on this server: ${missing.join(" and ")}. In Netlify → Environment variables, add them (copy from Supabase → Project Settings → API), scope to All, then Deploys → Clear cache and deploy site.`;
+  return `Missing on this server: ${missing.join(" and ")}. In Vercel → Environment variables, add them (copy from Supabase → Project Settings → API), then trigger a redeploy.`;
 }

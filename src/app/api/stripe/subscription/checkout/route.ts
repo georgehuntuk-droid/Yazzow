@@ -26,6 +26,13 @@ export async function POST() {
     return NextResponse.json({ error: "Tutor profile not found." }, { status: 404 });
   }
 
+  // Safe Diagnostic check to see exactly what key is loaded in memory
+  const rawKey = process.env.STRIPE_SECRET_KEY || "";
+  const keyLength = rawKey.length;
+  const keyLast4 = rawKey.slice(-4);
+  const isTestKey = rawKey.startsWith("sk_test_");
+  const isLiveKey = rawKey.startsWith("sk_live_");
+
   try {
     const url = await createTutorSubscriptionCheckout({
       tutorId: user.id,
@@ -34,7 +41,11 @@ export async function POST() {
     });
     return NextResponse.json({ url });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Checkout failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const stripeMessage = error instanceof Error ? error.message : "Checkout failed.";
+    
+    // Append the safe diagnostic info to the error message so we can verify the environment key immediately
+    const diagnosticMessage = `${stripeMessage} (Server Key Diagnostics: Length: ${keyLength}, Last4: ${keyLast4}, Prefix: ${isTestKey ? "test" : isLiveKey ? "live" : "unknown"})`;
+    
+    return NextResponse.json({ error: diagnosticMessage }, { status: 500 });
   }
 }

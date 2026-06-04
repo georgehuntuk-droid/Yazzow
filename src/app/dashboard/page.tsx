@@ -8,6 +8,7 @@ import { PortalBookingStatusCard } from "@/components/dashboard/portal-booking-s
 import { StorefrontManager } from "@/components/dashboard/storefront-manager";
 import { RecentBookings } from "@/components/dashboard/recent-bookings";
 import { StudentLedger } from "@/components/dashboard/student-ledger";
+import { CopyLinkButton } from "@/components/dashboard/copy-link-button";
 import { requireTutorProfile } from "@/lib/auth/session";
 import {
   Card,
@@ -54,6 +55,7 @@ export default async function DashboardPage() {
         description="Share your portal link — parents join your group and book lessons. List worksheet packs on your shelf for parents to enquire. Customize your page under Portal."
         actions={
           <>
+            <CopyLinkButton url={publicLink} size="sm" />
             <Button variant="outline" size="sm" render={<Link href="/dashboard/settings" />}>
               Customize portal
             </Button>
@@ -85,10 +87,13 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <p className="mb-8 rounded-xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-        Public URL:{" "}
-        <code className="font-medium text-foreground">{publicLink}</code>
-      </p>
+      <div className="mb-8 rounded-xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground flex items-center justify-between gap-4 flex-wrap">
+        <span>
+          Public URL:{" "}
+          <code className="font-medium text-foreground">{publicLink}</code>
+        </span>
+        <CopyLinkButton url={publicLink} variant="outline" size="sm" className="bg-background shadow-sm" />
+      </div>
 
       {!portalBooking.subscriptionActive ? (
         <div className="mb-8 rounded-xl border border-amber-200/70 bg-amber-50/50 px-4 py-4 dark:bg-amber-950/25">

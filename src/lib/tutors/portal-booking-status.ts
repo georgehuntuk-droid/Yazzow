@@ -63,17 +63,7 @@ export async function getPortalBookingStatus(
     };
   }
 
-  const supabase = await createClient();
-  const { data: paymentRow } = await supabase
-    .from("tutor_profiles")
-    .select("stripe_account_id")
-    .eq("id", tutorId)
-    .maybeSingle();
-
-  const [connect, subscription] = await Promise.all([
-    getConnectStatus(paymentRow?.stripe_account_id),
-    getTutorSubscriptionState(tutorId),
-  ]);
+  const subscription = await getTutorSubscriptionState(tutorId);
 
   if (subscription.subscriptionTrackingUnavailable) {
     return {
@@ -81,7 +71,7 @@ export async function getPortalBookingStatus(
       blockedReason: "subscription_inactive",
       subscriptionActive: false,
       subscriptionStatus: "setup required",
-      stripeConnectReady: connect.ready,
+      stripeConnectReady: false,
       stripeConfigured: true,
       parentMessage:
         "This tutor has open times listed, but paid online booking is paused on Yazzow right now. Please message them directly or check back later.",
@@ -98,7 +88,7 @@ export async function getPortalBookingStatus(
       blockedReason: "subscription_inactive",
       subscriptionActive: false,
       subscriptionStatus: status === "none" || !status ? "not subscribed" : status,
-      stripeConnectReady: connect.ready,
+      stripeConnectReady: false,
       stripeConfigured: true,
       parentMessage:
         "This tutor has open times listed, but paid online booking is paused on Yazzow right now. Please message them directly or check back later.",
@@ -106,11 +96,21 @@ export async function getPortalBookingStatus(
     };
   }
 
+  // ONLY query Stripe if subscription is active
+  const supabase = await createClient();
+  const { data: paymentRow } = await supabase
+    .from("tutor_profiles")
+    .select("stripe_account_id")
+    .eq("id", tutorId)
+    .maybeSingle();
+
+  const connect = await getConnectStatus(paymentRow?.stripe_account_id);
+
   if (!connect.ready) {
     return {
       canAcceptBookings: false,
       blockedReason: "stripe_connect_incomplete",
-      subscriptionActive: isTutorSubscriptionLive(subscription),
+      subscriptionActive: true,
       subscriptionStatus: subscription.status,
       stripeConnectReady: false,
       stripeConfigured: true,
@@ -118,8 +118,7 @@ export async function getPortalBookingStatus(
         "This tutor is still setting up card payments, so online checkout is not available yet. Please contact them to arrange payment.",
       tutorFixSteps: [
         "Open Dashboard → Payments.",
-        'Click "Connect Stripe payouts" and finish all steps in Stripe (for lesson bookings only).',
-        "Return to Yazzow — status should show Connected.",
+        "Click 'Connect Stripe payouts' to complete your verification.",
       ],
     };
   }
@@ -127,8 +126,8 @@ export async function getPortalBookingStatus(
   return {
     canAcceptBookings: true,
     blockedReason: null,
-    subscriptionActive: isTutorSubscriptionLive(subscription),
-    subscriptionStatus: subscription.status ?? "active",
+    subscriptionActive: true,
+    subscriptionStatus: subscription.status,
     stripeConnectReady: true,
     stripeConfigured: true,
     parentMessage: "",
@@ -136,28 +135,16 @@ export async function getPortalBookingStatus(
   };
 }
 
-function buildSubscriptionFixSteps(status: string): string[] {
-  if (status === "none" || !status) {
+function buildSubscriptionFixSteps(status: string | null): string[] {
+  if (status === "unpaid" || status === "past_due") {
     return [
       "Open Dashboard → Payments.",
-      'Click "Subscribe · £25/month" and complete checkout in Stripe.',
-      "After payment, refresh your portal — parents can book immediately.",
+      "Click 'Manage billing' and update your card — Stripe is reporting a payment failure.",
     ];
   }
-  if (status === "past_due") {
-    return [
-      "Your subscription payment failed.",
-      "Open Dashboard → Payments → Manage billing and update your card.",
-    ];
-  }
-  if (status === "canceled" || status === "unpaid") {
-    return [
-      "Your Yazzow subscription has ended.",
-      "Open Dashboard → Payments and subscribe again to reopen online booking.",
-    ];
-  }
+
   return [
-    `Subscription status: ${status}.`,
-    "Open Dashboard → Payments to review billing or contact support.",
+    "Open Dashboard → Payments.",
+    "Click 'Subscribe now' to activate your tutor plan.",
   ];
 }

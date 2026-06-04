@@ -51,9 +51,14 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     .single();
 
   const admin = await isPlatformAdmin();
-  const [status, subscription, platformStats] = await Promise.all([
-    configured ? getConnectStatus(row?.stripe_account_id) : Promise.resolve(null),
-    getTutorSubscriptionState(profile.id),
+  
+  // Fast call to get the subscription state
+  const subscription = await getTutorSubscriptionState(profile.id);
+
+  // Only make the slow Stripe Connect API call if they are subscribed and configured!
+  // This speeds up the checkout onboarding flow significantly.
+  const [status, platformStats] = await Promise.all([
+    configured && subscription.active ? getConnectStatus(row?.stripe_account_id) : Promise.resolve(null),
     admin ? getPlatformRevenueStats() : Promise.resolve(null),
   ]);
 

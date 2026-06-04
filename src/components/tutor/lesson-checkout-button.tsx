@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Lock, ShieldCheck, CreditCard, Loader2, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,45 +47,75 @@ export function LessonCheckoutButton({ tutor, slot }: LessonCheckoutButtonProps)
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="parent-email" className="text-sm font-medium">
-          Parent email
+    <div className="space-y-4 pt-1">
+      <div className="space-y-1.5">
+        <label htmlFor="parent-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Parent Email Address
         </label>
-        <Input
-          id="parent-email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@family.com"
-        />
+        <div className="relative">
+          <Input
+            id="parent-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@family.com"
+            className="h-10 bg-background"
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <label htmlFor="student-name" className="text-sm font-medium">
-          Student name (optional)
+      <div className="space-y-1.5">
+        <label htmlFor="student-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Student Name (optional)
         </label>
-        <Input
-          id="student-name"
-          value={studentName}
-          onChange={(e) => setStudentName(e.target.value)}
-          placeholder="Amelia"
-        />
+        <div className="relative">
+          <Input
+            id="student-name"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            placeholder="Amelia"
+            className="h-10 bg-background"
+          />
+        </div>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {error ? (
+        <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive font-medium">
+          {error}
+        </div>
+      ) : null}
+
       <Button
-        className="w-full"
+        className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
         disabled={loading || !email}
         onClick={handleCheckout}
       >
-        {loading
-          ? "Redirecting to Stripe…"
-          : `Pay ${formatMoney(tutor.lessonPriceCents, tutor.currency)} · secure checkout`}
+        {loading ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="size-4 animate-spin" />
+            Redirecting to Stripe…
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5">
+            Book & Pay {formatMoney(tutor.lessonPriceCents, tutor.currency)}
+            <ArrowRight className="size-4" />
+          </span>
+        )}
       </Button>
-      <p className="text-xs text-muted-foreground">
-        Full lesson price charged now. Your tutor receives the booking amount via Stripe
-        (card processing fees apply as usual).
-      </p>
+
+      {/* Trust & Security Badge */}
+      <div className="rounded-xl bg-muted/60 border border-border/40 p-3 flex items-start gap-3">
+        <ShieldCheck className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+            Secure checkout via Stripe
+            <Lock className="size-3 text-muted-foreground" />
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Your card details are fully encrypted and never stored on Yazzow. Billed securely to your tutor.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

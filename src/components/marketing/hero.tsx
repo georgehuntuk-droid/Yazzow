@@ -7,12 +7,12 @@ import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
 
 export function PortalPreviewMockup() {
   return (
-    <div className="yazz-surface relative overflow-hidden p-1.5 shadow-[0_24px_64px_oklch(0.42_0.15_286/0.2)] ring-4 ring-rose-500/5 rounded-3xl border-rose-100/40">
+    <div className="yazz-surface relative overflow-hidden p-1.5 shadow-[0_24px_64px_oklch(0.55_0.18_250/0.15)] ring-4 ring-blue-500/5 rounded-3xl border-blue-100/40">
       <div className="absolute inset-x-0 top-0 h-px yazz-shimmer opacity-60" aria-hidden />
-      <div className="rounded-[calc(var(--radius-xl)-2px)] bg-gradient-to-b from-card via-card to-amber-50/20 p-5 sm:p-6">
+      <div className="rounded-[calc(var(--radius-xl)-2px)] bg-gradient-to-b from-card via-card to-blue-50/20 p-5 sm:p-6">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-400 via-rose-400 to-violet-500 font-heading text-base font-black text-white shadow-sm rotate-3">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 font-heading text-base font-black text-white shadow-sm rotate-3">
               MC
             </div>
             <div>
@@ -20,13 +20,13 @@ export function PortalPreviewMockup() {
               <p className="text-xs font-medium text-muted-foreground">GCSE Maths · Fun, friendly sessions</p>
             </div>
           </div>
-          <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 ring-1 ring-rose-500/15">
+          <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/15">
             Your portal
           </span>
         </div>
 
-        <div className="mb-4 rounded-xl border border-rose-500/10 bg-background/90 p-3 shadow-inner">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-rose-500/80">Your direct link</p>
+        <div className="mb-4 rounded-xl border border-blue-500/10 bg-background/90 p-3 shadow-inner">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-blue-500/80">Your direct link</p>
           <code className="block truncate text-sm font-semibold text-foreground">
             yazzow.com{TUTOR_PUBLIC_PATH}/maya-chen
           </code>
@@ -42,14 +42,14 @@ export function PortalPreviewMockup() {
               type="button"
               className={`rounded-2xl border px-3 py-2.5 text-left transition duration-200 ${
                 slot.opened
-                  ? "border-rose-500/30 bg-rose-500/8 shadow-[0_4px_16px_oklch(0.55_0.15_286/0.12)] ring-1 ring-rose-500/15"
-                  : "border-border bg-card hover:border-rose-500/20 hover:bg-rose-500/5 hover:shadow-sm"
+                  ? "border-blue-500/30 bg-blue-500/8 shadow-[0_4px_16px_oklch(0.55_0.18_250/0.12)] ring-1 ring-blue-500/15"
+                  : "border-border bg-card hover:border-blue-500/20 hover:bg-blue-500/5 hover:shadow-sm"
               }`}
             >
               <p className="text-xs font-semibold text-muted-foreground">{slot.label}</p>
-              <p className="text-sm font-black text-rose-600 dark:text-rose-400">{slot.price}</p>
+              <p className="text-sm font-black text-blue-600 dark:text-blue-400">{slot.price}</p>
               {slot.opened ? (
-                <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400">
                   <Bell className="size-3" aria-hidden />
                   Just reopened!
                 </p>
@@ -66,8 +66,8 @@ export function PortalPreviewMockup() {
           </span>
         </div>
 
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-violet-500/20 bg-violet-500/5 px-3 py-2 text-xs text-muted-foreground">
-          <Shield className="size-3.5 shrink-0 text-violet-500" />
+        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-sky-500/20 bg-sky-500/5 px-3 py-2 text-xs text-muted-foreground">
+          <Shield className="size-3.5 shrink-0 text-sky-500" />
           Private page — 100% focused on you
         </div>
       </div>
@@ -87,18 +87,18 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
       <div className="yazz-container relative">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
-            <p className="yazz-fade-in yazz-eyebrow mb-6 border-rose-300 bg-rose-500/10 text-rose-600 dark:text-rose-400">
+            <p className="yazz-fade-in yazz-eyebrow mb-6 border-blue-300 bg-blue-500/10 text-blue-600 dark:text-blue-400">
               <Sparkles className="size-3.5" />
               Your classroom, your rules · No marketplace competition
             </p>
-            <h1 className="yazz-fade-in yazz-fade-in-delay-1 text-[2.5rem] font-black leading-[1.15] tracking-tight sm:text-[2.75rem] lg:text-[3.5rem] selection:bg-amber-100">
-              The business home for{" "}
-              <span className="yazz-gradient-text bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600">independent tutors</span>
+            <h1 className="yazz-fade-in yazz-fade-in-delay-1 text-[2.5rem] font-black leading-[1.15] tracking-tight sm:text-[2.75rem] lg:text-[3.5rem] selection:bg-blue-100">
+              Your own direct booking link.{" "}
+              <span className="yazz-gradient-text bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600">Zero Commission.</span>
             </h1>
             <p className="yazz-fade-in yazz-fade-in-delay-2 mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              {BRAND_NAME} gives you a private dashboard and a direct booking link. 
-              Parents pay upfront to book, self-cancel if plans change, and your waiting 
-              list gets instant alerts to refill the slot.
+              {BRAND_NAME} is the delightful, blue-and-white portal built for independent teachers. 
+              Share your direct booking page. Parents select empty slots, pay 100% upfront, and other 
+              families get instant automatic emails the second a cancellation happens.
             </p>
 
             <div className="yazz-fade-in yazz-fade-in-delay-3 mt-9 flex flex-col gap-3 sm:flex-row">
@@ -133,7 +133,7 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
           <div className="relative lg:pl-4">
             <div
               aria-hidden
-              className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-transparent to-[oklch(0.52_0.17_286/0.15)] blur-3xl"
+              className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-transparent to-[oklch(0.55_0.18_250/0.15)] blur-3xl"
             />
             <HeroPreview>
               <PortalPreviewMockup />

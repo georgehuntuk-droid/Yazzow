@@ -12,9 +12,9 @@ type LogoProps = {
 
 /** Full wordmark image — icon + YAZZOW text from your original asset. */
 const sizeClasses = {
-  header: "h-10 w-auto sm:h-11",
-  md: "h-12 w-auto sm:h-14",
-  lg: "h-16 w-auto sm:h-[4.5rem]",
+  header: "h-12 w-auto sm:h-[3.25rem]",
+  md: "h-14 w-auto sm:h-16",
+  lg: "h-20 w-auto sm:h-24",
 } as const;
 
 export function Logo({ className, href = "/", size = "header" }: LogoProps) {

@@ -15,16 +15,21 @@ White-labeled SaaS for solo educators and small agencies — private dashboard p
 
 ## Monetization
 
-- **Tutor subscription:** **£25/month** — portal, schedule, and bookings (no per-lesson platform fee)
+- **Tutor subscription:** **£25/month** — portal, schedule, bookings, and worksheet sales (no per-sale commission)
 - **Lesson bookings:** parents pay 100% upfront; tutors keep the lesson price (Stripe processing applies). Availability is added in **1-hour slots** (a 2–5pm block becomes separate bookable hours).
-- **Digital worksheet packs:** **5%** platform fee; secure download after purchase
+- **Digital worksheet packs:** listed on the tutor portal shelf; tutors sell and deliver directly (no in-app checkout)
 
 ## Auth setup (Supabase dashboard)
 
 1. **Authentication → Providers** — enable Email.
-2. **Authentication → URL configuration** — add redirect URL:
-   - `http://localhost:3000/auth/callback`
-3. For production, add `https://yazzow.com/auth/callback` (or your live domain).
+2. **Authentication → URL configuration**
+   - **Site URL:** `https://yazzow.com` (not `http://localhost:3000` on production — or confirmation links open localhost with a raw token in the address bar).
+   - **Redirect URLs** (add all that apply):
+     - `https://yazzow.com/auth/confirm`
+     - `https://yazzow.com/auth/callback`
+     - `http://localhost:3000/auth/confirm`
+     - `http://localhost:3000/auth/callback`
+3. Set **`NEXT_PUBLIC_SITE_URL`** on Netlify to `https://yazzow.com` (no trailing slash).
 
 ## Database migration
 
@@ -140,6 +145,6 @@ GOOGLE_CLIENT_SECRET=...
 
 1. Supabase Auth + tutor onboarding (username claim, Stripe Connect Express)
 2. Schedule CRUD → public slot availability
-3. Stripe Billing for tutor subscription (£25/month) and Connect checkout for lessons (no app fee) and resources (5%)
+3. Stripe Billing for tutor subscription (£25/month) and Connect checkout for lessons and resources (no per-sale app fee)
 4. Secure file storage (Supabase Storage) + purchase email with download token
 5. Student ledger backed by bookings + purchases

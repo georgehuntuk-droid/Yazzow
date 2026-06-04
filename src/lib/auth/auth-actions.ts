@@ -1,9 +1,9 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 
-import { PUBLIC_SITE_URL } from "@/lib/constants";
 import { authConfigErrorMessage, friendlyAuthError } from "@/lib/auth/messages";
+import { authConfirmUrl, getAuthRedirectOrigin } from "@/lib/auth/redirect-origin";
 import {
   rememberMeCookieValue,
   rememberMePreferenceOptions,
@@ -26,18 +26,6 @@ function sanitizeNext(next: string | undefined, fallback: string): string {
     return fallback;
   }
   return next;
-}
-
-async function getAuthRedirectOrigin(): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "https";
-
-  if (host) {
-    return `${proto}://${host}`;
-  }
-
-  return PUBLIC_SITE_URL.replace(/\/$/, "");
 }
 
 function supabaseSetupError(): string {
@@ -111,11 +99,13 @@ export async function signUpAction(
   const supabase = await createClient();
   const normalizedEmail = email.trim().toLowerCase();
 
+  const confirmUrl = authConfirmUrl(origin, next);
+
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: confirmUrl,
     },
   });
 
@@ -137,7 +127,7 @@ export async function signUpAction(
     }
   }
 
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const redirectTo = authConfirmUrl(origin, next);
   const emailed = await sendMagicLinkViaResend({
     email: normalizedEmail,
     redirectTo,
@@ -168,7 +158,7 @@ export async function requestPasswordResetAction(
 
   const origin = await getAuthRedirectOrigin();
   const normalizedEmail = email.trim().toLowerCase();
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`;
+  const redirectTo = authConfirmUrl(origin, "/auth/reset-password");
 
   const emailed = await sendRecoveryLinkViaResend({
     email: normalizedEmail,
@@ -241,7 +231,7 @@ export async function resendConfirmationEmailAction(
 
   const origin = await getAuthRedirectOrigin();
   const normalizedEmail = email.trim().toLowerCase();
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`;
+  const redirectTo = authConfirmUrl(origin, "/onboarding");
 
   if (await confirmUserEmailByAddress(normalizedEmail)) {
     return {

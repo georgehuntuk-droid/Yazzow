@@ -44,7 +44,7 @@ const rows = [
     marketplace: false,
   },
   {
-    label: "Low platform fees",
+    label: "Flat monthly subscription",
     yazzow: true,
     marketplace: false,
   },

@@ -199,11 +199,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
             )}
           </TabsContent>
           <TabsContent value="shelf" className="mt-6">
-            <ResourceShelf
-              resources={resources}
-              tutorUsername={username}
-              paymentsEnabled={paymentsEnabled}
-            />
+            <ResourceShelf resources={resources} />
           </TabsContent>
         </Tabs>
       </main>

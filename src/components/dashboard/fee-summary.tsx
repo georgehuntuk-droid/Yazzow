@@ -7,8 +7,7 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/format";
-import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
-import { tutorPayoutCents } from "@/lib/stripe/fees";
+import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 type FeeSummaryProps = {
   tutorId: string;
@@ -23,12 +22,12 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
   const [{ data: bookings }, { data: purchases }] = await Promise.all([
     supabase
       .from("bookings")
-      .select("amount_cents, platform_fee_cents")
+      .select("amount_cents")
       .eq("tutor_id", tutorId)
       .gte("created_at", since),
     supabase
       .from("resource_purchases")
-      .select("amount_cents, platform_fee_cents")
+      .select("amount_cents")
       .eq("tutor_id", tutorId)
       .gte("created_at", since),
   ]);
@@ -38,10 +37,7 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
 
   const lessonGross = lessonRows.reduce((sum, row) => sum + row.amount_cents, 0);
   const digitalGross = digitalRows.reduce((sum, row) => sum + row.amount_cents, 0);
-  const digitalFees = digitalRows.reduce((sum, row) => sum + row.platform_fee_cents, 0);
-
   const totalGross = lessonGross + digitalGross;
-  const totalNet = lessonGross + (digitalGross - digitalFees);
   const transactionCount = lessonRows.length + digitalRows.length;
 
   return (
@@ -49,9 +45,9 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
       <CardHeader>
         <CardTitle className="font-heading">This week&apos;s activity</CardTitle>
         <CardDescription>
-          Lessons: no per-booking fee (you keep the lesson price). Digital packs:{" "}
-          {PLATFORM_FEES.digitalGoodsPercent}% platform fee. Your {TUTOR_SUBSCRIPTION.label}{" "}
-          subscription is billed separately.
+          Paid lesson bookings on your portal (Stripe processing applies). Your{" "}
+          {TUTOR_SUBSCRIPTION.label} subscription is billed separately. Pack sales are handled
+          outside Yazzow.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -60,27 +56,19 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
             No paid bookings or sales in the last 7 days yet.
           </p>
         ) : (
-          <dl className="grid gap-4 sm:grid-cols-3">
+          <dl className="grid gap-4 sm:grid-cols-2">
             <div>
               <dt className="text-xs text-muted-foreground">Gross volume</dt>
               <dd className="text-xl font-semibold">{formatMoney(totalGross)}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Digital platform fees</dt>
-              <dd className="text-xl font-semibold text-muted-foreground">
-                −{formatMoney(digitalFees)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Your share (before Stripe payout)</dt>
-              <dd className="text-xl font-semibold text-primary">{formatMoney(totalNet)}</dd>
+              <dt className="text-xs text-muted-foreground">Paid transactions</dt>
+              <dd className="text-xl font-semibold">{transactionCount}</dd>
             </div>
           </dl>
         )}
         <p className="mt-4 text-xs text-muted-foreground">
-          Example: a {formatMoney(1200)} worksheet pack → you receive about{" "}
-          {formatMoney(tutorPayoutCents(1200))} after the{" "}
-          {PLATFORM_FEES.digitalGoodsPercent}% fee.
+          Payout timing follows your connected Stripe account schedule.
         </p>
       </CardContent>
     </Card>

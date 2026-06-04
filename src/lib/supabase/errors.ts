@@ -24,15 +24,27 @@ export const STORAGE_BUCKET_NOT_FOUND_MESSAGE =
 export const STORAGE_RLS_MESSAGE =
   'Upload blocked by storage permissions. In Supabase → SQL Editor, run supabase/fix_storage_rls.sql then try again.';
 
+// Production-friendly messages
+const DATABASE_NOT_MIGRATED_MESSAGE_PROD =
+  "Database services are temporarily undergoing maintenance. Please try again in a few minutes or contact support.";
+
+const STORAGE_BUCKET_NOT_FOUND_MESSAGE_PROD =
+  "File storage is temporarily unavailable. Please contact support or try again shortly.";
+
+const STORAGE_RLS_MESSAGE_PROD =
+  "Upload failed due to a permissions issue. Please contact support.";
+
 export function formatSupabaseError(message: string | undefined): string {
+  const isDev = process.env.NODE_ENV === "development";
+
   if (isDatabaseSchemaMissingError(message)) {
-    return DATABASE_NOT_MIGRATED_MESSAGE;
+    return isDev ? DATABASE_NOT_MIGRATED_MESSAGE : DATABASE_NOT_MIGRATED_MESSAGE_PROD;
   }
   if (isStorageBucketMissingError(message)) {
-    return STORAGE_BUCKET_NOT_FOUND_MESSAGE;
+    return isDev ? STORAGE_BUCKET_NOT_FOUND_MESSAGE : STORAGE_BUCKET_NOT_FOUND_MESSAGE_PROD;
   }
   if (message && RLS_VIOLATION_PATTERN.test(message)) {
-    return STORAGE_RLS_MESSAGE;
+    return isDev ? STORAGE_RLS_MESSAGE : STORAGE_RLS_MESSAGE_PROD;
   }
   return message ?? "Something went wrong. Please try again.";
 }

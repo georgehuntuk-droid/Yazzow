@@ -33,7 +33,7 @@ export function DashboardNav() {
   return (
     <aside className="flex w-full flex-col border-b border-sidebar-border bg-sidebar lg:min-h-full lg:w-64 lg:border-b-0 lg:border-r">
       <div className="px-5 py-5">
-        <Logo href="/dashboard" size="header" />
+        <Logo href="/" size="header" />
         <p className="mt-2 text-xs text-muted-foreground">Private tutor workspace</p>
       </div>
       <Separator className="bg-sidebar-border" />

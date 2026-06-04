@@ -74,6 +74,9 @@ export function CalendarSyncPanel({ settings, googleConfigured }: CalendarSyncPa
   }
 
   if (!settings) {
+    const isDev = typeof window !== "undefined" && 
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
     return (
       <Card className="yazz-surface border-dashed">
         <CardHeader>
@@ -82,8 +85,14 @@ export function CalendarSyncPanel({ settings, googleConfigured }: CalendarSyncPa
             Calendar sync
           </CardTitle>
           <CardDescription>
-            Run migration <code className="text-xs">003_calendar_integration.sql</code> in Supabase
-            to enable iCal and Google Calendar.
+            {isDev ? (
+              <>
+                Run migration <code className="text-xs">003_calendar_integration.sql</code> in Supabase
+                to enable iCal and Google Calendar.
+              </>
+            ) : (
+              "Calendar integration is currently undergoing maintenance. Please check back later."
+            )}
           </CardDescription>
         </CardHeader>
       </Card>

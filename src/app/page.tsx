@@ -9,21 +9,24 @@ import { MarketingSocialProof } from "@/components/marketing/social-proof";
 import { MarketingTestimonials } from "@/components/marketing/testimonials";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { getMarketingAuthCta } from "@/lib/marketing/auth-cta";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const authCta = await getMarketingAuthCta();
+
   return (
     <>
       <SiteHeader />
       <main className="flex-1">
-        <MarketingHero />
-        <MarketingSlotAlerts />
-        <MarketingSocialProof />
-        <MarketingFeatures />
+        <MarketingHero authCta={authCta} />
+        <MarketingSlotAlerts authCta={authCta} />
+        <MarketingSocialProof authCta={authCta} />
+        <MarketingFeatures authCta={authCta} />
         <MarketingHowItWorks />
         <MarketingComparison />
-        <MarketingPricing />
+        <MarketingPricing authCta={authCta} />
         <MarketingTestimonials />
-        <MarketingCta />
+        <MarketingCta authCta={authCta} />
       </main>
       <SiteFooter />
     </>

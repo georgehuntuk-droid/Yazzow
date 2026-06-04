@@ -12,10 +12,13 @@ export const TUTOR_SUBSCRIPTION = {
   label: "£25/month",
 } as const;
 
+/** Per-sale platform cut (0 = subscription-only monetization). */
 export const PLATFORM_FEES = {
-  /** Digital worksheet packs: 5% platform fee at checkout (Stripe Connect). */
-  digitalGoodsPercent: 5,
+  digitalGoodsPercent: 0,
 } as const;
+
+/** When false, packs are listed on the portal only — tutors sell them outside Yazzow. */
+export const DIGITAL_PACK_IN_APP_CHECKOUT = false;
 
 export const TUTOR_PUBLIC_PATH = "/tutor" as const;
 

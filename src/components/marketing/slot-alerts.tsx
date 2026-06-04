@@ -3,6 +3,7 @@ import { ArrowRight, Bell, CalendarSync, Mail, Undo2 } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
 import { BRAND_NAME } from "@/lib/constants";
+import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
 
 const flow = [
   {
@@ -25,7 +26,7 @@ const flow = [
   },
 ] as const;
 
-export function MarketingSlotAlerts() {
+export function MarketingSlotAlerts({ authCta }: { authCta: MarketingAuthCta }) {
   return (
     <section
       id="slot-alerts"
@@ -67,10 +68,10 @@ export function MarketingSlotAlerts() {
               </li>
             </ul>
             <Link
-              href="/auth/signup"
+              href={authCta.href}
               className="yazz-btn-primary group mt-10 inline-flex h-11 items-center gap-2 px-6"
             >
-              Try it on your portal
+              {authCta.label}
               <ArrowRight className="size-4 transition group-hover:translate-x-1" />
             </Link>
           </div>

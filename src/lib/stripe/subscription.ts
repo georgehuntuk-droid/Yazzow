@@ -11,13 +11,26 @@ export const ACTIVE_SUBSCRIPTION_STATUSES = ["active", "trialing"] as const;
 export type TutorSubscriptionState = {
   status: string | null;
   currentPeriodEnd: string | null;
+  /** True only after Stripe checkout completed (active sub + customer + subscription id). */
   active: boolean;
   stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  /** Database migration 004 not applied — subscription cannot be tracked yet. */
+  subscriptionTrackingUnavailable: boolean;
 };
 
 export function isSubscriptionActive(status: string | null | undefined): boolean {
   if (!status) return false;
   return (ACTIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
+}
+
+export function isTutorSubscriptionLive(state: TutorSubscriptionState): boolean {
+  if (state.subscriptionTrackingUnavailable) return false;
+  return (
+    isSubscriptionActive(state.status) &&
+    Boolean(state.stripeCustomerId) &&
+    Boolean(state.stripeSubscriptionId)
+  );
 }
 
 export async function getTutorSubscriptionState(
@@ -27,27 +40,50 @@ export async function getTutorSubscriptionState(
   const { data, error } = await admin
     .from("tutor_profiles")
     .select(
-      "subscription_status, subscription_current_period_end, stripe_customer_id",
+      "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id",
     )
     .eq("id", tutorId)
     .maybeSingle();
 
-  if (error?.message?.includes("does not exist")) {
+  const missingSubscriptionColumns =
+    error &&
+    (error.code === "42703" || error.message.includes("does not exist"));
+
+  if (missingSubscriptionColumns) {
     return {
       status: null,
       currentPeriodEnd: null,
-      active: true,
+      active: false,
       stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionTrackingUnavailable: true,
+    };
+  }
+
+  if (error) {
+    return {
+      status: null,
+      currentPeriodEnd: null,
+      active: false,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionTrackingUnavailable: false,
     };
   }
 
   const status = data?.subscription_status ?? null;
-  return {
+  const stripeCustomerId = data?.stripe_customer_id ?? null;
+  const stripeSubscriptionId = data?.stripe_subscription_id ?? null;
+  const state: TutorSubscriptionState = {
     status,
     currentPeriodEnd: data?.subscription_current_period_end ?? null,
-    active: isSubscriptionActive(status),
-    stripeCustomerId: data?.stripe_customer_id ?? null,
+    active: false,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    subscriptionTrackingUnavailable: false,
   };
+  state.active = isTutorSubscriptionLive(state);
+  return state;
 }
 
 export async function syncTutorSubscriptionFromStripe(
@@ -121,24 +157,11 @@ export async function createTutorSubscriptionCheckout(input: {
 }): Promise<string> {
   const stripe = getStripe();
 
-  let customerId = input.existingCustomerId ?? undefined;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: input.email,
-      metadata: { tutor_id: input.tutorId, platform: "Yazzow" },
-    });
-    customerId = customer.id;
-
-    const admin = createAdminClient();
-    await admin
-      .from("tutor_profiles")
-      .update({ stripe_customer_id: customerId })
-      .eq("id", input.tutorId);
-  }
-
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    customer: customerId,
+    ...(input.existingCustomerId
+      ? { customer: input.existingCustomerId }
+      : { customer_email: input.email }),
     line_items: subscriptionLineItems(),
     allow_promotion_codes: true,
     metadata: {

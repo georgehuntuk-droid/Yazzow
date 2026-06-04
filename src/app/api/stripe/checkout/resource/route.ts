@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { PUBLIC_SITE_URL } from "@/lib/constants";
+import { DIGITAL_PACK_IN_APP_CHECKOUT, PUBLIC_SITE_URL } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { DigitalResourceRow, TutorProfileRow } from "@/lib/supabase/database.types";
 import { calculatePlatformFee } from "@/lib/stripe/fees";
@@ -14,6 +14,16 @@ type ResourceCheckoutBody = {
 };
 
 export async function POST(request: Request) {
+  if (!DIGITAL_PACK_IN_APP_CHECKOUT) {
+    return NextResponse.json(
+      {
+        error:
+          "Worksheet pack checkout is not available on Yazzow. Please contact the tutor directly.",
+      },
+      { status: 410 },
+    );
+  }
+
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Payments not configured yet." }, { status: 503 });
   }
@@ -83,9 +93,9 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      payment_intent_data: {
-        application_fee_amount: platformFeeCents,
-      },
+      ...(platformFeeCents > 0
+        ? { payment_intent_data: { application_fee_amount: platformFeeCents } }
+        : {}),
       metadata: {
         type: "digital",
         resource_id: resourceId,

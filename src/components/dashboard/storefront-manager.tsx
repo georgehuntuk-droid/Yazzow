@@ -13,10 +13,7 @@ import {
   toggleDigitalResourcePublished,
   uploadDigitalResource,
 } from "@/lib/dashboard/actions";
-import { PLATFORM_FEES } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
-import { calculatePlatformFee, tutorPayoutCents } from "@/lib/stripe/fees";
-import type { DigitalResource } from "@/lib/types";
 
 function parsePricePreview(raw: string): number | null {
   const normalized = raw.replace(/[£,\s]/g, "");
@@ -24,6 +21,7 @@ function parsePricePreview(raw: string): number | null {
   if (!Number.isFinite(value) || value <= 0) return null;
   return Math.round(value * 100);
 }
+import type { DigitalResource } from "@/lib/types";
 
 type StorefrontManagerProps = {
   resources: DigitalResource[];
@@ -84,9 +82,8 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
         <CardHeader>
           <CardTitle>Upload a learning pack</CardTitle>
           <CardDescription>
-            PDF or DOCX (up to 50 MB). Parents buy from <strong>The shelf</strong> on your portal.
-            You set the price — Yazzow takes {PLATFORM_FEES.digitalGoodsPercent}% per sale only;
-            lesson bookings are not commission-based.
+            PDF or DOCX (up to 50 MB). Listed on <strong>The shelf</strong> on your portal — parents
+            message you to buy. You handle payment yourself; no Stripe Connect needed for packs.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -119,14 +116,13 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
                 {(() => {
                   const cents = parsePricePreview(pricePreview);
                   if (cents === null) return null;
-                  const fee = calculatePlatformFee(cents);
                   return (
                     <p className="text-xs text-muted-foreground">
-                      At {formatMoney(cents, currency)}: you receive about{" "}
+                      Shown on your portal as{" "}
                       <span className="font-medium text-foreground">
-                        {formatMoney(tutorPayoutCents(cents), currency)}
+                        {formatMoney(cents, currency)}
                       </span>{" "}
-                      per sale (−{formatMoney(fee, currency)} Yazzow fee).
+                      — you arrange payment with parents directly.
                     </p>
                   );
                 })()}

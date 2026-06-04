@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { DashboardShell, PageHeader } from "@/components/layout/page-header";
-import { BRAND_NAME, PLATFORM_FEES, tutorPublicUrl } from "@/lib/constants";
+import { BRAND_NAME, TUTOR_SUBSCRIPTION, tutorPublicUrl } from "@/lib/constants";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import {
   getDigitalSalesForTutor,
@@ -51,7 +51,7 @@ export default async function DashboardPage() {
     <DashboardShell>
       <PageHeader
         title={`Welcome, ${profile.displayName}`}
-        description="Share your portal link — parents join your group, then book and buy packs. Customize your page under Portal."
+        description="Share your portal link — parents join your group and book lessons. List worksheet packs on your shelf for parents to enquire. Customize your page under Portal."
         actions={
           <>
             <Button variant="outline" size="sm" render={<Link href="/dashboard/settings" />}>
@@ -90,6 +90,19 @@ export default async function DashboardPage() {
         <code className="font-medium text-foreground">{publicLink}</code>
       </p>
 
+      {!portalBooking.subscriptionActive ? (
+        <div className="mb-8 rounded-xl border border-amber-200/70 bg-amber-50/50 px-4 py-4 dark:bg-amber-950/25">
+          <p className="font-medium text-foreground">Subscribe to turn on paid online booking</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your portal works for worksheets and your schedule, but parents cannot pay for lessons
+            until you complete {TUTOR_SUBSCRIPTION.label} billing.
+          </p>
+          <Button size="sm" className="mt-3" render={<Link href="/dashboard/payments#subscription" />}>
+            Subscribe in Payments
+          </Button>
+        </div>
+      ) : null}
+
       <section id="bookings" className="scroll-mt-8 space-y-4">
         <h2 className="font-heading text-xl font-semibold">Bookings</h2>
         <PortalBookingStatusCard status={portalBooking} />
@@ -114,12 +127,13 @@ export default async function DashboardPage() {
       <section id="storefront" className="scroll-mt-8 space-y-4">
         <h2 className="font-heading text-xl font-semibold">Learning packs</h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Upload worksheets here. Sales are tracked below with the{" "}
-          {PLATFORM_FEES.digitalGoodsPercent}% platform fee shown on each line. Your{" "}
-          {BRAND_NAME} subscription is separate — it is not taken from lesson or pack payouts.
+          Upload packs to showcase on your portal shelf. Parents message you to buy — you handle
+          payment yourself (bank transfer, your own link, etc.). No extra Stripe setup for packs.
         </p>
         <StorefrontManager resources={resources} currency={profile.currency} />
-        <DigitalSalesLedger sales={packSales} currency={profile.currency} />
+        {packSales.length > 0 ? (
+          <DigitalSalesLedger sales={packSales} currency={profile.currency} />
+        ) : null}
       </section>
 
       <Separator className="my-10" />

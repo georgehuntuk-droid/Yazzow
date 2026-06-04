@@ -1,7 +1,10 @@
 import "server-only";
 
 import { getConnectStatus } from "@/lib/stripe/connect";
-import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
+import {
+  getTutorSubscriptionState,
+  isTutorSubscriptionLive,
+} from "@/lib/stripe/subscription";
 import { isStripeConfigured } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,13 +75,29 @@ export async function getPortalBookingStatus(
     getTutorSubscriptionState(tutorId),
   ]);
 
-  if (!subscription.active) {
+  if (subscription.subscriptionTrackingUnavailable) {
+    return {
+      canAcceptBookings: false,
+      blockedReason: "subscription_inactive",
+      subscriptionActive: false,
+      subscriptionStatus: "setup required",
+      stripeConnectReady: connect.ready,
+      stripeConfigured: true,
+      parentMessage:
+        "This tutor has open times listed, but paid online booking is paused on Yazzow right now. Please message them directly or check back later.",
+      tutorFixSteps: [
+        "Billing setup is temporarily undergoing maintenance. Please contact support.",
+      ],
+    };
+  }
+
+  if (!isTutorSubscriptionLive(subscription)) {
     const status = subscription.status ?? "none";
     return {
       canAcceptBookings: false,
       blockedReason: "subscription_inactive",
       subscriptionActive: false,
-      subscriptionStatus: status,
+      subscriptionStatus: status === "none" || !status ? "not subscribed" : status,
       stripeConnectReady: connect.ready,
       stripeConfigured: true,
       parentMessage:
@@ -91,7 +110,7 @@ export async function getPortalBookingStatus(
     return {
       canAcceptBookings: false,
       blockedReason: "stripe_connect_incomplete",
-      subscriptionActive: true,
+      subscriptionActive: isTutorSubscriptionLive(subscription),
       subscriptionStatus: subscription.status,
       stripeConnectReady: false,
       stripeConfigured: true,
@@ -99,7 +118,7 @@ export async function getPortalBookingStatus(
         "This tutor is still setting up card payments, so online checkout is not available yet. Please contact them to arrange payment.",
       tutorFixSteps: [
         "Open Dashboard → Payments.",
-        'Click "Connect Stripe payouts" and finish all steps in Stripe.',
+        'Click "Connect Stripe payouts" and finish all steps in Stripe (for lesson bookings only).',
         "Return to Yazzow — status should show Connected.",
       ],
     };
@@ -108,8 +127,8 @@ export async function getPortalBookingStatus(
   return {
     canAcceptBookings: true,
     blockedReason: null,
-    subscriptionActive: true,
-    subscriptionStatus: subscription.status,
+    subscriptionActive: isTutorSubscriptionLive(subscription),
+    subscriptionStatus: subscription.status ?? "active",
     stripeConnectReady: true,
     stripeConfigured: true,
     parentMessage: "",

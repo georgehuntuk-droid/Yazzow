@@ -8,7 +8,7 @@ export type PlatformRevenueStats = {
   activeSubscriptions: number;
   estimatedSubscriptionMrrCents: number;
   digitalSales30d: number;
-  digitalPlatformFees30d: number;
+  digitalSales30dGrossCents: number;
   lessonBookings30d: number;
   lessonVolume30dCents: number;
 };
@@ -44,10 +44,7 @@ export async function getPlatformRevenueStats(): Promise<PlatformRevenueStats> {
     estimatedSubscriptionMrrCents:
       activeSubscriptions * TUTOR_SUBSCRIPTION.amountCents,
     digitalSales30d: purchases.length,
-    digitalPlatformFees30d: purchases.reduce(
-      (sum, row) => sum + row.platform_fee_cents,
-      0,
-    ),
+    digitalSales30dGrossCents: purchases.reduce((sum, row) => sum + row.amount_cents, 0),
     lessonBookings30d: bookings.length,
     lessonVolume30dCents: bookings.reduce((sum, row) => sum + row.amount_cents, 0),
   };

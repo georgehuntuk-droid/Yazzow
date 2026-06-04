@@ -29,7 +29,7 @@ const steps = [
     icon: Wallet,
     title: "Get paid upfront",
     description:
-      "Lessons are paid before they happen. Digital packs deliver instantly. Stripe Connect handles payouts with transparent fees.",
+      "Lessons are paid before they happen on your portal. List worksheet packs on your shelf — parents message you to buy outside Yazzow.",
   },
 ] as const;
 

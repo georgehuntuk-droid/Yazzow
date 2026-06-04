@@ -43,11 +43,17 @@ export function PortalBookingStatusCard({ status }: PortalBookingStatusCardProps
           <StatusRow
             ok={status.subscriptionActive}
             label="Yazzow subscription"
-            detail={status.subscriptionStatus ?? "not subscribed"}
+            detail={
+              status.subscriptionActive
+                ? (status.subscriptionStatus ?? "active")
+                : status.subscriptionStatus === "setup required"
+                  ? "database setup needed"
+                  : "not subscribed"
+            }
           />
           <StatusRow
             ok={status.stripeConnectReady}
-            label="Stripe payouts"
+            label="Stripe payouts (lessons)"
             detail={status.stripeConnectReady ? "connected" : "setup needed"}
           />
         </ul>

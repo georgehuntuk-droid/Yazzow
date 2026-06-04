@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { BRAND_NAME } from "@/lib/constants";
+import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
 
-export function MarketingCta() {
+export function MarketingCta({ authCta }: { authCta: MarketingAuthCta }) {
   return (
     <section className="py-20 sm:py-28">
       <div className="yazz-container">
@@ -27,8 +28,8 @@ export function MarketingCta() {
               cancel fairly, and let your other pupils know the second a slot opens.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/auth/signup" className="yazz-btn-primary group h-12 px-8">
-                Get started free
+              <Link href={authCta.href} className="yazz-btn-primary group h-12 px-8">
+                {authCta.label}
                 <ArrowRight className="size-4 transition group-hover:translate-x-1" />
               </Link>
               <Link href="/tutor/demo" className="yazz-btn-secondary h-12 px-8">

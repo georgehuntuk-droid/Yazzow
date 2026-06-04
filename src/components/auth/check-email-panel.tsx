@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Mail, ArrowRight } from "lucide-react";
 
 import { resendConfirmationEmailAction } from "@/lib/auth/auth-actions";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ export function CheckEmailPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isDev = process.env.NODE_ENV === "development";
+
   async function handleResend() {
     if (!email.trim()) {
       setError("Enter your email to resend the confirmation link.");
@@ -38,58 +41,79 @@ export function CheckEmailPanel() {
     if (!result.ok) {
       setError(result.error);
     } else {
-      setMessage(result.message ?? "Email sent.");
+      setMessage(result.message ?? "Confirmation email sent successfully.");
     }
     setLoading(false);
   }
 
   return (
-    <Card className="yazz-surface w-full border-border/80">
-      <CardHeader>
-        <CardTitle className="font-heading text-2xl">Check your inbox</CardTitle>
-        <CardDescription>
-          Account emails (sign-up confirm, password reset) are sent by Supabase — not the same
-          as booking alerts on Netlify. Until Resend SMTP is connected in Supabase, mail may not
-          arrive.
+    <Card className="yazz-surface w-full border-primary/10 shadow-[0_8px_32px_oklch(0.42_0.15_286/0.1)]">
+      <CardHeader className="text-center pb-4">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Mail className="size-6" />
+        </div>
+        <CardTitle className="font-heading text-2xl font-bold">Check your inbox</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground mt-1">
+          We&apos;ve sent a secure confirmation link to your email address to verify your account.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Check spam/junk. Wait a few minutes, then resend below. To fix delivery permanently:
-          Supabase → Authentication → Email → SMTP Settings → use Resend (
-          <code className="text-xs">smtp.resend.com</code>, user{" "}
-          <code className="text-xs">resend</code>, password = your Resend API key, sender{" "}
-          <code className="text-xs">bookings@yazzow.com</code>).
-        </p>
-        <p className="text-sm text-muted-foreground">
-          If you already signed up, try{" "}
-          <Link href="/auth/login" className="font-medium text-primary hover:underline">
-            signing in again
-          </Link>{" "}
-          — your account may already be active.
-        </p>
-        <div className="space-y-2">
-          <label htmlFor="confirm-email" className="text-sm font-medium">
-            Your email
-          </label>
-          <Input
-            id="confirm-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+      <CardContent className="space-y-6">
+        <div className="space-y-2 text-sm text-muted-foreground leading-relaxed">
+          <p>
+            Please click the link in the email to confirm your address and claim your private tutor portal.
+          </p>
+          <p>
+            Don&apos;t see it? Check your spam or junk folder, or wait a couple of minutes.
+          </p>
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        {message ? <p className="text-sm text-primary">{message}</p> : null}
-        <Button type="button" variant="outline" onClick={handleResend} disabled={loading}>
-          {loading ? "Sending…" : "Resend confirmation email"}
-        </Button>
-        <Link
-          href="/auth/login"
-          className="inline-flex h-9 w-full items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium hover:bg-muted"
-        >
-          Back to sign in
-        </Link>
+
+        <div className="rounded-xl bg-muted/50 p-4 space-y-3 border border-border/40">
+          <div className="space-y-1.5">
+            <label htmlFor="confirm-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Resend verification link
+            </label>
+            <div className="flex gap-2">
+              <Input
+                id="confirm-email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-background"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleResend} 
+                disabled={loading}
+                className="shrink-0"
+              >
+                {loading ? "Sending…" : "Resend"}
+              </Button>
+            </div>
+          </div>
+          {error ? <p className="text-xs text-destructive font-medium">{error}</p> : null}
+          {message ? <p className="text-xs text-primary font-medium">{message}</p> : null}
+        </div>
+
+        {isDev && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 text-xs text-amber-800 dark:border-amber-950/30 dark:bg-amber-950/10 dark:text-amber-300">
+            <p className="font-semibold mb-1">Developer Notice (visible in dev mode only):</p>
+            <p>
+              Until SMTP is configured in Supabase, mail may not arrive. Configure it in Supabase → Authentication → Email → SMTP Settings using smtp.resend.com.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2 pt-2">
+          <Link
+            href="/auth/login"
+            className="yazz-btn-secondary w-full h-10 inline-flex items-center justify-center gap-1.5 text-sm font-medium"
+          >
+            Back to sign in
+            <ArrowRight className="size-4" />
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

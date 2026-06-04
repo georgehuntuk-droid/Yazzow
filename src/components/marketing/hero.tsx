@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Bell, CalendarDays, CreditCard, Shield, Sparkles } from "lucide-react";
 
 import { HeroPreview } from "@/components/brand/hero-preview";
-import { BRAND_NAME, PLATFORM_FEES, TUTOR_PUBLIC_PATH, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import { BRAND_NAME, TUTOR_PUBLIC_PATH, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
 
 export function PortalPreviewMockup() {
   return (
@@ -74,7 +75,7 @@ export function PortalPreviewMockup() {
   );
 }
 
-export function MarketingHero() {
+export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
   return (
     <section className="relative overflow-hidden pb-16 pt-10 sm:pb-24 sm:pt-14">
       <div aria-hidden className="yazz-grid-bg pointer-events-none absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_80%_70%_at_50%_30%,black,transparent)]" />
@@ -103,8 +104,8 @@ export function MarketingHero() {
             </p>
 
             <div className="yazz-fade-in yazz-fade-in-delay-3 mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href="/auth/signup" className="yazz-btn-primary group h-12 px-7">
-                Get started — free
+              <Link href={authCta.href} className="yazz-btn-primary group h-12 px-7">
+                {authCta.label}
                 <ArrowRight className="size-4 transition group-hover:translate-x-1" />
               </Link>
               <Link href="/tutor/demo" className="yazz-btn-secondary h-12 px-7">
@@ -119,7 +120,7 @@ export function MarketingHero() {
                 {
                   icon: CreditCard,
                   label: "Pricing",
-                  value: `${TUTOR_SUBSCRIPTION.label} · ${PLATFORM_FEES.digitalGoodsPercent}% packs`,
+                  value: `${TUTOR_SUBSCRIPTION.label} flat`,
                 },
               ].map((item) => (
                 <div key={item.label} className="yazz-panel group px-4 py-3.5">

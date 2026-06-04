@@ -271,8 +271,11 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
             <CardTitle>Photos</CardTitle>
           <CardDescription>
             Profile photo and cover banner — shown on your public portal. JPG, PNG, WebP, or GIF up to 5 MB.
-            If upload fails with &ldquo;bucket not found&rdquo;, run{" "}
-            <code className="text-xs">supabase/setup_storage_buckets.sql</code> in Supabase SQL Editor.
+            {typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && (
+              <span className="block mt-1 text-xs text-amber-600">
+                Dev Tip: If upload fails with &ldquo;bucket not found&rdquo;, run <code className="text-xs font-mono bg-amber-50 px-1">supabase/setup_storage_buckets.sql</code> in Supabase SQL Editor.
+              </span>
+            )}
           </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-2">

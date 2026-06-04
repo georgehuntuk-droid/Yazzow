@@ -6,21 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ResourceCheckoutButton } from "@/components/tutor/resource-checkout-button";
 import { formatMoney } from "@/lib/format";
 import type { DigitalResource } from "@/lib/types";
 
 type ResourceShelfProps = {
   resources: DigitalResource[];
-  tutorUsername: string;
-  paymentsEnabled?: boolean;
 };
 
-export function ResourceShelf({
-  resources,
-  tutorUsername,
-  paymentsEnabled = true,
-}: ResourceShelfProps) {
+export function ResourceShelf({ resources }: ResourceShelfProps) {
   if (resources.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-muted-foreground">
@@ -43,15 +36,16 @@ export function ResourceShelf({
             <CardDescription>{resource.description}</CardDescription>
           </CardHeader>
           <CardContent className="flex-1" />
-          <CardFooter className="flex flex-col gap-3 border-t border-border/60 pt-4">
-            <span className="w-full text-lg font-semibold text-primary">
-              {formatMoney(resource.priceCents, resource.currency)}
-            </span>
-            {paymentsEnabled ? (
-              <ResourceCheckoutButton resource={resource} tutorUsername={tutorUsername} />
-            ) : (
-              <p className="text-sm text-muted-foreground">Purchases opening soon.</p>
-            )}
+          <CardFooter className="flex flex-col gap-2 border-t border-border/60 pt-4">
+            {resource.priceCents > 0 ? (
+              <span className="w-full text-lg font-semibold text-primary">
+                {formatMoney(resource.priceCents, resource.currency)}
+              </span>
+            ) : null}
+            <p className="text-sm text-muted-foreground">
+              Message your tutor to arrange payment and receive this pack — purchases are not
+              processed on Yazzow.
+            </p>
           </CardFooter>
         </Card>
       ))}

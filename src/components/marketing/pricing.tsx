@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, CalendarCheck, Sparkles } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
-import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
+import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 const plans = [
   {
@@ -31,27 +32,30 @@ const plans = [
   {
     icon: BookOpen,
     name: "Digital packs",
-    fee: `${PLATFORM_FEES.digitalGoodsPercent}%`,
-    feeSuffix: "per sale",
+    fee: "List",
+    feeSuffix: "on your shelf",
     description:
-      "Upload PDF or DOCX worksheet packs with cover art. Secure download after checkout.",
-    highlights: ["Instant delivery", "Your pricing", "Fee only when you sell"],
+      "Showcase PDF or DOCX packs on your portal. Parents message you — you sell and deliver on your own terms.",
+    highlights: ["No extra Stripe for packs", "Your pricing", "You handle payment"],
   },
 ] as const;
 
-export function MarketingPricing() {
+type MarketingPricingProps = {
+  authCta: MarketingAuthCta;
+};
+
+export function MarketingPricing({ authCta }: MarketingPricingProps) {
   return (
     <section id="pricing" className="py-20 sm:py-28">
       <div className="yazz-container">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <p className="yazz-section-label">Pricing</p>
           <h2 className="font-heading text-3xl font-bold sm:text-4xl">
-            Simple subscription. Fair add-on fee.
+            One simple subscription.
           </h2>
           <p className="mt-4 yazz-muted">
-            Tutors pay {TUTOR_SUBSCRIPTION.label} to run their business on Yazzow. Digital worksheet
-            sales include a {PLATFORM_FEES.digitalGoodsPercent}% platform fee — collected at
-            checkout via Stripe Connect.
+            Tutors pay {TUTOR_SUBSCRIPTION.label} to run their business on Yazzow. Lesson bookings
+            use Stripe Connect on your portal; worksheet packs are listed for parents to enquire.
           </p>
         </div>
 
@@ -92,6 +96,15 @@ export function MarketingPricing() {
                     </li>
                   ))}
                 </ul>
+                {featured ? (
+                  <Link
+                    href={authCta.href}
+                    className="yazz-btn-primary group mt-8 inline-flex h-11 w-full items-center justify-center gap-2 px-4 text-sm"
+                  >
+                    {authCta.label}
+                    <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+                  </Link>
+                ) : null}
               </SpotlightCard>
             );
           })}
@@ -100,10 +113,10 @@ export function MarketingPricing() {
         <p className="mx-auto mt-10 max-w-lg text-center text-sm text-muted-foreground">
           Stripe processing fees apply separately on card payments.{" "}
           <Link
-            href="/auth/signup"
+            href={authCta.href}
             className="group inline-flex items-center gap-1 font-semibold text-primary hover:underline"
           >
-            Start your portal
+            {authCta.label}
             <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
           </Link>
         </p>

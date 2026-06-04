@@ -10,6 +10,7 @@ export function getDigitalFeePercent(): number {
 /** Platform cut in cents (rounded). Tutor receives amountCents - platformFeeCents. */
 export function calculatePlatformFee(amountCents: number): number {
   const percent = getDigitalFeePercent();
+  if (percent <= 0) return 0;
   return Math.max(1, Math.round((amountCents * percent) / 100));
 }
 

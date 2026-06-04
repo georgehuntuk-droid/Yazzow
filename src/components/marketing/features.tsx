@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Bell, BookOpen, CalendarRange, Undo2, Users } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
-import { PLATFORM_FEES, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
+import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 const features = [
   {
@@ -29,7 +30,7 @@ const features = [
     icon: BookOpen,
     title: "Your portal & shelf",
     description:
-      "Upload PDF or DOCX packs with cover art, descriptions, and prices. Secure delivery after checkout.",
+      "Upload PDF or DOCX packs with cover art, descriptions, and guide prices. Parents contact you to buy.",
   },
   {
     icon: Users,
@@ -39,7 +40,7 @@ const features = [
   },
 ] as const;
 
-export function MarketingFeatures() {
+export function MarketingFeatures({ authCta }: { authCta: MarketingAuthCta }) {
   return (
     <section id="features" className="relative border-y border-border/50 bg-card/40 py-20 sm:py-28">
       <div className="yazz-container">
@@ -50,8 +51,8 @@ export function MarketingFeatures() {
           </h2>
           <p className="mt-4 yazz-muted">
             Cancellations happen — {TUTOR_SUBSCRIPTION.label} includes smart slot alerts so other
-            pupils hear the moment a time opens. Plus portal, ledger, and worksheet sales at{" "}
-            {PLATFORM_FEES.digitalGoodsPercent}% on packs only.
+            pupils hear the moment a time opens. Plus portal, ledger, and a worksheet shelf you sell
+            yourself.
           </p>
         </div>
 
@@ -89,10 +90,10 @@ export function MarketingFeatures() {
             ·
           </span>
           <Link
-            href="/auth/signup"
+            href={authCta.href}
             className="group inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline-offset-4 hover:underline"
           >
-            Create your free portal
+            {authCta.label}
             <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
           </Link>
         </div>

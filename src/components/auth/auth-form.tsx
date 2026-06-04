@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
 
 import {
   signInAction,
@@ -32,6 +33,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,35 +96,44 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <Card className="yazz-surface border-primary/10 shadow-[0_8px_32px_oklch(0.42_0.15_286/0.1)]">
-      <CardHeader>
-        <CardTitle className="font-heading text-2xl font-bold">
+    <Card className="yazz-surface border-primary/10 shadow-[0_8px_32px_oklch(0.42_0.15_286/0.1)] overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
+      <CardHeader className="space-y-1.5 pb-6">
+        <CardTitle className="font-heading text-2xl font-bold tracking-tight">
           {mode === "login" ? "Welcome back" : "Create your account"}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm text-muted-foreground">
           {mode === "login"
             ? "Sign in to your Yazzow dashboard."
             : "Free to join — claim your username and portal link."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
+          <div className="space-y-1.5">
+            <label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Email address
             </label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                <Mail className="size-4" />
+              </div>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <label htmlFor="password" className="text-sm font-medium">
+              <label htmlFor="password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Password
               </label>
               {mode === "login" ? (
@@ -134,43 +145,93 @@ export function AuthForm({ mode }: AuthFormProps) {
                 </Link>
               ) : null}
             </div>
-            <Input
-              id="password"
-              type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                <Lock className="size-4" />
+              </div>
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                placeholder="••••••••"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 pr-10 h-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
             {mode === "signup" ? (
-              <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <CheckCircle2 className="size-3.5 text-primary/60" />
+                Must be at least 8 characters.
+              </p>
             ) : null}
           </div>
+
           {mode === "login" ? (
-            <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm py-1">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(event) => handleRememberMeChange(event.target.checked)}
-                className="size-4 rounded border-border accent-primary"
+                className="size-4 rounded border-border accent-primary cursor-pointer"
               />
-              <span>Remember me on this device</span>
+              <span className="text-muted-foreground select-none hover:text-foreground transition-colors">
+                Remember me on this device
+              </span>
             </label>
           ) : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          {info ? <p className="text-sm text-muted-foreground">{info}</p> : null}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+
+          {error ? (
+            <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive font-medium">
+              {error}
+            </div>
+          ) : null}
+
+          {info ? (
+            <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 text-sm text-primary font-medium">
+              {info}
+            </div>
+          ) : null}
+
+          <Button type="submit" className="w-full h-10 text-sm font-semibold" disabled={loading}>
+            {loading ? (
+              "Please wait…"
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                {mode === "login" ? "Sign in" : "Create account"}
+                <ArrowRight className="size-4" />
+              </span>
+            )}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-border/60"></div>
+          <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase tracking-wider font-semibold">or</span>
+          <div className="flex-grow border-t border-border/60"></div>
+        </div>
+
+        <p className="text-center text-sm text-muted-foreground">
           {mode === "login" ? (
             <>
-              New here?{" "}
+              New to Yazzow?{" "}
               <Link
                 href={`/auth/signup?next=${encodeURIComponent(next)}`}
-                className="text-primary hover:underline"
+                className="font-semibold text-primary hover:underline"
               >
                 Create an account
               </Link>
@@ -180,7 +241,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               Already have an account?{" "}
               <Link
                 href={`/auth/login?next=${encodeURIComponent(next)}`}
-                className="text-primary hover:underline"
+                className="font-semibold text-primary hover:underline"
               >
                 Sign in
               </Link>

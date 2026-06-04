@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { getApiUser } from "@/lib/auth/api-session";
-import { createTutorBillingPortalSession } from "@/lib/stripe/subscription";
+import {
+  createTutorBillingPortalSession,
+  getTutorSubscriptionState,
+} from "@/lib/stripe/subscription";
 import { isStripeConfigured } from "@/lib/stripe/server";
-import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
   if (!isStripeConfigured()) {
@@ -15,22 +17,17 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("tutor_profiles")
-    .select("stripe_customer_id")
-    .eq("id", user.id)
-    .single();
+  const subscription = await getTutorSubscriptionState(user.id);
 
-  if (!profile?.stripe_customer_id) {
+  if (!subscription.active || !subscription.stripeCustomerId) {
     return NextResponse.json(
-      { error: "No billing account yet. Subscribe first." },
+      { error: "Subscribe first using the button above." },
       { status: 400 },
     );
   }
 
   try {
-    const url = await createTutorBillingPortalSession(profile.stripe_customer_id);
+    const url = await createTutorBillingPortalSession(subscription.stripeCustomerId);
     return NextResponse.json({ url });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not open billing portal.";

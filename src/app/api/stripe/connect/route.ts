@@ -34,7 +34,10 @@ export async function GET() {
 export async function POST() {
   if (!isStripeConfigured()) {
     return NextResponse.json(
-      { error: "Stripe is not configured. Add STRIPE_SECRET_KEY to .env.local." },
+      {
+        error:
+          "Stripe is not configured. Add STRIPE_SECRET_KEY to Netlify environment variables (or .env.local locally), then redeploy.",
+      },
       { status: 503 },
     );
   }

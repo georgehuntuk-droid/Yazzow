@@ -9,10 +9,10 @@ export function PortalPreviewMockup() {
   return (
     <div className="yazz-surface relative overflow-hidden p-1.5 shadow-[0_24px_64px_oklch(0.55_0.18_250/0.15)] ring-4 ring-blue-500/5 rounded-3xl border-blue-100/40">
       <div className="absolute inset-x-0 top-0 h-px yazz-shimmer opacity-60" aria-hidden />
-      <div className="rounded-[calc(var(--radius-xl)-2px)] bg-gradient-to-b from-card via-card to-blue-50/20 p-5 sm:p-6">
+      <div className="rounded-[calc(var(--radius-xl)-2px)] bg-gradient-to-b from-card via-card to-blue-50/10 p-5 sm:p-6">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 font-heading text-base font-black text-white shadow-sm rotate-3">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-400 via-blue-500 to-indigo-600 font-heading text-base font-black text-white shadow-sm rotate-3">
               MC
             </div>
             <div>
@@ -58,16 +58,16 @@ export function PortalPreviewMockup() {
           ))}
         </div>
 
-        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
-          <Bell className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden />
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-3 py-2.5 text-[11px] leading-snug text-muted-foreground">
+          <Bell className="mt-0.5 size-3.5 shrink-0 text-blue-500" aria-hidden />
           <span>
-            <span className="font-bold text-foreground">Glow Alert!</span> — 2 families
+            <span className="font-bold text-foreground">Slot Alert!</span> — 2 families
             notified instantly when a cancellation freed Friday 10am.
           </span>
         </div>
 
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-sky-500/20 bg-sky-500/5 px-3 py-2 text-xs text-muted-foreground">
-          <Shield className="size-3.5 shrink-0 text-sky-500" />
+        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-blue-500/20 bg-blue-500/5 px-3 py-2 text-xs text-muted-foreground">
+          <Shield className="size-3.5 shrink-0 text-blue-500" />
           Private page — 100% focused on you
         </div>
       </div>
@@ -87,18 +87,16 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
       <div className="yazz-container relative">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>
-            <p className="yazz-fade-in yazz-eyebrow mb-6 border-blue-300 bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Sparkles className="size-3.5" />
-              Your classroom, your rules · No marketplace competition
+            <p className="yazz-fade-in yazz-eyebrow mb-6 border-blue-200 bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <Sparkles className="size-3.5 animate-pulse" />
+              Private Booking Pages · No Marketplace Competition
             </p>
-            <h1 className="yazz-fade-in yazz-fade-in-delay-1 text-[2.5rem] font-black leading-[1.15] tracking-tight sm:text-[2.75rem] lg:text-[3.5rem] selection:bg-blue-100">
-              Your own direct booking link.{" "}
-              <span className="yazz-gradient-text bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600">Zero Commission.</span>
+            <h1 className="yazz-fade-in yazz-fade-in-delay-1 text-[2.75rem] font-black leading-[1.1] tracking-tight sm:text-[3rem] lg:text-[3.75rem] selection:bg-blue-100">
+              The simple booking page for{" "}
+              <span className="yazz-gradient-text bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600">independent tutors.</span>
             </h1>
-            <p className="yazz-fade-in yazz-fade-in-delay-2 mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              {BRAND_NAME} is the delightful, blue-and-white portal built for independent teachers. 
-              Share your direct booking page. Parents select empty slots, pay 100% upfront, and other 
-              families get instant automatic emails the second a cancellation happens.
+            <p className="yazz-fade-in yazz-fade-in-delay-2 mt-4 max-w-xl text-lg font-medium leading-relaxed text-muted-foreground">
+              Get a private booking link, take 100% upfront payments, and automatically fill cancelled slots with instant email alerts.
             </p>
 
             <div className="yazz-fade-in yazz-fade-in-delay-3 mt-9 flex flex-col gap-3 sm:flex-row">
@@ -133,7 +131,7 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
           <div className="relative lg:pl-4">
             <div
               aria-hidden
-              className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-transparent to-[oklch(0.55_0.18_250/0.15)] blur-3xl"
+              className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-transparent to-[oklch(0.52_0.17_286/0.15)] blur-3xl"
             />
             <HeroPreview>
               <PortalPreviewMockup />

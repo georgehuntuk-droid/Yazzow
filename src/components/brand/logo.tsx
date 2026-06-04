@@ -28,8 +28,8 @@ export function Logo({ className, href = "/", size = "header" }: LogoProps) {
       )}
     >
       <div className={cn(
-        "flex items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 shadow-md ring-2 ring-white/20 transition-all group-hover:scale-105 group-hover:rotate-3",
-        isHeader ? "size-12 sm:size-14" : size === "md" ? "size-14 sm:size-16" : "size-20 sm:size-24"
+        "flex items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-500 via-blue-600 to-indigo-600 shadow-md ring-2 ring-white/20 transition-all group-hover:scale-105 group-hover:rotate-3",
+        isHeader ? "size-12 sm:size-14" : size === "md" ? "size-16 sm:size-18" : "size-24 sm:size-28"
       )}>
         <span className={cn(
           "font-heading font-black tracking-tight text-white select-none",

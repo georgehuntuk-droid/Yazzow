@@ -1,16 +1,12 @@
-# Go live on yazzow.com (GitHub + Netlify)
+# Go live on yazzow.com (GitHub + Vercel)
 
-Use **GitHub** for code and **Netlify** for hosting. Every `git push` can auto-deploy.
+Use **GitHub** for code and **Vercel** for hosting. Every `git push` can auto-deploy. Since Vercel is the creator of Next.js, it offers the fastest, most reliable, and out-of-the-box hosting for this stack.
 
 ---
 
 ## Part A — Put the project on GitHub
 
-### 1. Install Git (if needed)
-
-Download: [https://git-scm.com/download/win](https://git-scm.com/download/win)
-
-### 2. Create a GitHub repository
+### 1. Create a GitHub repository
 
 1. Log in at [https://github.com](https://github.com)
 2. **New repository**
@@ -19,13 +15,14 @@ Download: [https://git-scm.com/download/win](https://git-scm.com/download/win)
 5. Click **Create repository**
 6. Copy the repo URL, e.g. `https://github.com/YOUR_USERNAME/yazzow.git`
 
-### 3. Push this folder to GitHub
+### 2. Push this folder to GitHub
 
 In PowerShell:
 
 ```powershell
 cd C:\Users\Gaming\Desktop\Tutorai
 
+# (If Git is not initialized yet)
 git init
 git add .
 git commit -m "Initial commit — Yazzow production ready"
@@ -38,9 +35,9 @@ Replace `YOUR_USERNAME/yazzow` with your real repo.
 
 GitHub will ask you to sign in (browser or personal access token).
 
-**Never commit `.env.local`** — it is in `.gitignore`. Secrets live only in Netlify env vars.
+**Never commit `.env.local`** — it is in `.gitignore`. Secrets live only in Vercel environment variables.
 
-### 4. Day-to-day updates
+### 3. Day-to-day updates
 
 After you change code in Cursor:
 
@@ -51,163 +48,70 @@ git commit -m "Describe what you changed"
 git push
 ```
 
-Netlify redeploys automatically if you connected GitHub (Part B).
+Vercel redeploys automatically once you connected GitHub (Part B).
 
 ---
 
-## Part B — Netlify (auto-deploy from GitHub)
+## Part B — Vercel (auto-deploy from GitHub)
 
 ### 1. Import the repo
 
-1. [app.netlify.com](https://app.netlify.com) → **Add new site** → **Import an existing project**
-2. **GitHub** → authorize Netlify → select your `yazzow` repo
-3. Build settings (from `netlify.toml`):
-   - Branch: `main`
-   - Build command: `npm run build`
-   - Plugin: `@netlify/plugin-nextjs`
+1. Go to [vercel.com](https://vercel.com) and log in.
+2. Click **Add New...** → **Project**
+3. Select your GitHub repository (`yazzow`) and click **Import**
+4. Vercel will automatically detect that this is a **Next.js** project and apply the correct build settings.
 
 ### 2. Environment variables (before first deploy)
 
-Netlify → **Site configuration** → **Environment variables**. Add from `.env.local` (Supabase → **Project Settings → API**):
+Under **Environment Variables** in the Vercel project configuration, add all your variables from `.env.local` (from Supabase under **Project Settings → API**):
 
 | Variable | Value | Notes |
 |----------|--------|--------|
-| `SUPABASE_URL` | `https://YOUR_REF.supabase.co` | Same as project URL — **use this name on Netlify** |
+| `SUPABASE_URL` | `https://YOUR_REF.supabase.co` | Same as project URL |
 | `SUPABASE_ANON_KEY` | publishable or anon key | Server sign-in reads this at **runtime** |
 | `SUPABASE_SECRET_KEY` | secret key (`sb_secret_…`) | Server-only |
-| `NEXT_PUBLIC_SITE_URL` | `https://yazzow.com` | |
+| `NEXT_PUBLIC_SITE_URL` | `https://yazzow.com` or your Vercel deployment URL | |
 | `NEXT_PUBLIC_SUPABASE_URL` | same as `SUPABASE_URL` | Needed for client features after rebuild |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | same as anon/publishable key | Needed for client features after rebuild |
 | `STRIPE_SECRET_KEY` | Stripe secret | |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable | |
 | `STRIPE_WEBHOOK_SECRET` | after Stripe webhook (below) | |
 
-Set each variable’s scope to **All** (or Build + Functions). **Do not only refresh the browser** — after adding or changing vars, go to **Deploys → Trigger deploy → Clear cache and deploy site**.
+*Optional:* `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form, booking confirmations, cancel links, etc.
 
-Optional: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form, **booking confirmation emails**, **parent cancel links**, and slot-opened alerts when a lesson is cancelled.
-
-Click **Deploy site**.
+Click **Deploy**.
 
 ### 3. Custom domain — yazzow.com
 
-1. **Domain management** → add `yazzow.com` and `www.yazzow.com`
-2. Redirect `www` → apex (recommended)
-3. At your registrar: use **Netlify nameservers** (easiest) or:
+1. Inside your Vercel project dashboard, go to **Settings** → **Domains**
+2. Add `yazzow.com` and `www.yazzow.com`
+3. At your domain registrar (e.g. GoDaddy, Namecheap), set up DNS records according to the Vercel instructions:
+   - For apex domain `@`: An **A** record pointing to `76.76.21.21`
+   - For `www` subdomain: A **CNAME** record pointing to `cname.vercel-dns.com`
 
-| Type | Name | Value |
-|------|------|--------|
-| A | `@` | `75.2.60.5` |
-| CNAME | `www` | `your-site.netlify.app` |
+Vercel automatically provisions Let's Encrypt SSL certificates for HTTPS once DNS propagates.
 
-Use exact values from **Netlify → Domain management** (they can differ from the table above). HTTPS is automatic.
+---
 
-**DNS vs “site broken”**
+## Part C — External Services configuration
 
-| What you see | Meaning |
-|--------------|---------|
-| Browser can’t find the site / connection refused | DNS not pointing at Netlify yet, or wrong A/CNAME |
-| Netlify page: “This page couldn’t load” / server error | **DNS is usually fine** — fix **deploy** (build log) or **env vars** (runtime 500) |
-| Latest deploy failed in Netlify | Old/broken build still live — fix build, then redeploy |
-
-Check DNS on your PC: `nslookup yazzow.com` should return Netlify IPs. If it does and the browser still errors, work on Netlify **Deploys** and **Environment variables**, not the registrar.
-
-### 4. Supabase (accounts must work)
+### 1. Supabase
 
 **Authentication** → **Providers** → enable **Email** (sign up + sign in).
 
 **Authentication** → **URL configuration**:
 
-- Site URL: `https://yazzow.com`
-- Redirect URLs (add each line):
+- Site URL: `https://yazzow.com` (or your Vercel address)
+- Redirect URLs:
   - `https://yazzow.com/auth/callback`
-  - `https://yazzow.com/**` (wildcard — covers password reset and email confirm)
+  - `https://yazzow.com/**` (wildcard)
 
-**Authentication emails (sign-up confirm, password reset)** — Supabase sends these, **not** Netlify/Resend env vars alone.
+**Authentication SMTP Settings** (under **Authentication** → **Email** → **SMTP Settings**):
+Use your Resend SMTP credentials so password resets and logins are delivered reliably from `@yazzow.com`.
 
-1. Supabase → **Authentication** → **Email** → **SMTP Settings** → enable custom SMTP
-2. Use your Resend account (domain `yazzow.com` must be verified in Resend):
+### 2. Stripe
 
-| Field | Value |
-|-------|--------|
-| Host | `smtp.resend.com` (no trailing spaces) |
-| Port | `465` |
-| Username | `resend` |
-| Password | your Resend API key (`re_…`) — use a **full access** key if possible |
-| Sender email | `bookings@yazzow.com` (or another `@yazzow.com` address) |
-| Sender name | `Yazzow` |
-
-3. Save, then test sign-up or password reset. Check **Resend → Logs** if mail still fails.
-
-Without SMTP, Supabase’s built-in mail is unreliable in production (rate limits, may not reach all inboxes). Yazzow also auto-confirms new tutor sign-ups when `SUPABASE_SECRET_KEY` is set, so you can reach onboarding without the email — but password reset still needs SMTP.
-
-**Important for Netlify:** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must exist **before** you run **Deploy site** (or trigger **Clear cache and deploy site** after adding them). Next.js bakes `NEXT_PUBLIC_*` into the client bundle at build time; adding keys later without redeploying leaves old builds broken.
-
-Auth flows on the live site:
-
-| Page | Purpose |
-|------|---------|
-| `/auth/signup` | Create account |
-| `/auth/login` | Sign in |
-| `/auth/forgot-password` | Request reset email |
-| `/auth/reset-password` | Set new password (after email link) |
-| `/auth/check-email` | Resend confirmation |
-| `/auth/callback` | Email confirm + reset link handler (do not link manually) |
-
-### 5. Stripe
-
-- Webhook: `https://yazzow.com/api/stripe/webhook`
-- Events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
-- **Connect:** enable **“Listen to events on Connected accounts”** for lesson/resource checkouts on connected accounts.
-- **Subscriptions:** tutor £25/month billing runs on your **platform** Stripe account (not Connect).
-- Add signing secret to Netlify → **Trigger deploy** (or push a commit)
-
-Bookings are also confirmed when parents return from Stripe Checkout (`session_id` in the success URL), so slots still update even if the webhook is misconfigured.
-
-### 6. Database (if not done)
-
-Supabase SQL editor — run:
-
-1. `supabase/migrations/001_initial_schema.sql`
-2. `supabase/migrations/002_extended_schema.sql`
-3. `supabase/migrations/005_hourly_slots_and_alerts.sql` (hourly slots, cancellations, realtime)
-
-Optional: `RESEND_API_KEY` in Netlify so families get email when a slot reopens after cancellation.
-
----
-
-## Workflow summary
-
-```
-Edit code in Cursor
-    → git add . && git commit -m "..." && git push
-    → Netlify builds and publishes automatically
-    → yazzow.com updates (after DNS is connected)
-```
-
----
-
-## Optional — GitHub CLI (faster repo create)
-
-If you install [GitHub CLI](https://cli.github.com/):
-
-```powershell
-gh auth login
-cd C:\Users\Gaming\Desktop\Tutorai
-git init
-git add .
-git commit -m "Initial commit — Yazzow"
-gh repo create yazzow --private --source=. --remote=origin --push
-```
-
-Then connect that repo in Netlify as in Part B.
-
----
-
-## Checklist
-
-- [ ] Repo on GitHub, code pushed
-- [ ] Netlify connected to repo, env vars set
-- [ ] `yazzow.com` DNS pointed at Netlify
-- [ ] Supabase redirect URL added
-- [ ] Stripe webhook configured
-- [ ] Sign up / login works on production
+- Webhook endpoint: `https://yazzow.com/api/stripe/webhook` (or your Vercel address)
+- Selected events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+- Connect Webhooks: Ensure **"Listen to events on Connected accounts"** is checked.
+- Copy the Webhook Signing Secret (`whsec_...`) and save it as `STRIPE_WEBHOOK_SECRET` in your Vercel Project Settings. Remember to redeploy after changing Vercel environment variables!

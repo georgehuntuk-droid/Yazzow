@@ -37,14 +37,13 @@ export function ResourceShelf({ resources }: ResourceShelfProps) {
           </CardHeader>
           <CardContent className="flex-1" />
           <CardFooter className="flex flex-col gap-2 border-t border-border/60 pt-4">
-            {resource.priceCents > 0 ? (
-              <span className="w-full text-lg font-semibold text-primary">
-                {formatMoney(resource.priceCents, resource.currency)}
-              </span>
-            ) : null}
+            <span className="w-full text-lg font-semibold text-primary">
+              {resource.priceCents === 0 ? "Free" : formatMoney(resource.priceCents, resource.currency)}
+            </span>
             <p className="text-sm text-muted-foreground">
-              Message your tutor to arrange payment and receive this pack — purchases are not
-              processed on Yazzow.
+              {resource.priceCents === 0
+                ? "Message your tutor to request a copy of this free worksheet pack."
+                : "Message your tutor to arrange payment and receive this pack — purchases are not processed on Yazzow."}
             </p>
           </CardFooter>
         </Card>

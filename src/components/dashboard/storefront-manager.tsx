@@ -16,9 +16,12 @@ import {
 import { formatMoney } from "@/lib/format";
 
 function parsePricePreview(raw: string): number | null {
-  const normalized = raw.replace(/[£,\s]/g, "");
+  const normalized = raw.replace(/[£,\s]/g, "").trim().toLowerCase();
+  if (normalized === "free" || normalized === "0" || normalized === "") {
+    return 0;
+  }
   const value = Number.parseFloat(normalized);
-  if (!Number.isFinite(value) || value <= 0) return null;
+  if (!Number.isFinite(value) || value < 0) return null;
   return Math.round(value * 100);
 }
 import type { DigitalResource } from "@/lib/types";
@@ -108,8 +111,7 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
                   id="resource-price"
                   name="price"
                   required
-                  placeholder="4.99"
-                  inputMode="decimal"
+                  placeholder="4.99 or Free"
                   value={pricePreview}
                   onChange={(e) => setPricePreview(e.target.value)}
                 />
@@ -120,9 +122,11 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
                     <p className="text-xs text-muted-foreground">
                       Shown on your portal as{" "}
                       <span className="font-medium text-foreground">
-                        {formatMoney(cents, currency)}
-                      </span>{" "}
-                      — you arrange payment with parents directly.
+                        {cents === 0 ? "Free" : formatMoney(cents, currency)}
+                      </span>
+                      {cents === 0
+                        ? " — parents can message you to request this free pack."
+                        : " — you arrange payment with parents directly."}
                     </p>
                   );
                 })()}
@@ -183,7 +187,7 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
               </CardHeader>
               <CardContent className="flex items-center justify-between gap-2">
                 <span className="font-medium text-primary">
-                  {formatMoney(resource.priceCents, resource.currency)}
+                  {resource.priceCents === 0 ? "Free" : formatMoney(resource.priceCents, resource.currency)}
                 </span>
                 <div className="flex gap-1">
                   <Button

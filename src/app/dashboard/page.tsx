@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Globe, Settings, CreditCard, Sparkles, BookOpen, Users, CalendarRange } from "lucide-react";
 
-import { CalendarSyncPanel } from "@/components/dashboard/calendar-sync-panel";
 import { ScheduleEditor } from "@/components/dashboard/schedule-editor";
 import { DigitalSalesLedger } from "@/components/dashboard/digital-sales-ledger";
 import { PortalBookingStatusCard } from "@/components/dashboard/portal-booking-status-card";
@@ -26,8 +25,6 @@ import {
   getSlotsForTutorOwner,
 } from "@/lib/tutors/portal-data";
 import { getStudentsWithLessonsForTutor } from "@/lib/tutors/student-lessons";
-import { getTutorCalendarSettings } from "@/lib/calendar/queries";
-import { isGoogleCalendarConfigured } from "@/lib/calendar/google";
 import { formatMoney } from "@/lib/format";
 
 export const metadata = {
@@ -37,12 +34,11 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile } = await requireTutorProfile();
   const publicLink = tutorPublicUrl(profile.username);
-  const [slots, resources, studentGroups, calendarSettings, recentBookings, packSales, portalBooking] =
+  const [slots, resources, studentGroups, recentBookings, packSales, portalBooking] =
     await Promise.all([
       getSlotsForTutorOwner(profile.id),
       getResourcesForTutorOwner(profile.id),
       getStudentsWithLessonsForTutor(profile.id),
-      getTutorCalendarSettings(profile.id),
       getRecentBookingsForTutor(profile.id),
       getDigitalSalesForTutor(profile.id),
       getPortalBookingStatus(profile.id),
@@ -157,12 +153,6 @@ export default async function DashboardPage() {
             </div>
           </div>
           <ScheduleEditor slots={slots} />
-          <Suspense fallback={null}>
-            <CalendarSyncPanel
-              settings={calendarSettings}
-              googleConfigured={isGoogleCalendarConfigured()}
-            />
-          </Suspense>
         </section>
 
         <Separator className="border-border/50 my-10" />

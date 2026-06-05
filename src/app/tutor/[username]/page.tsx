@@ -33,20 +33,14 @@ import {
 
 export const dynamic = "force-dynamic";
 
+import { generateMetadata } from "./metadata";
+
+export { generateMetadata };
+
 type TutorPortalPageProps = {
   params: Promise<{ username: string }>;
   searchParams: Promise<{ booked?: string; cancelled?: string; session_id?: string }>;
 };
-
-export async function generateMetadata({ params }: TutorPortalPageProps) {
-  const { username } = await params;
-  const tutor = (await getTutorByUsername(username)) ?? getDemoTutorByUsername(username);
-  if (!tutor) return { title: `Tutor not found · ${BRAND_NAME}` };
-  return {
-    title: `${tutor.displayName} · ${BRAND_NAME}`,
-    description: tutor.headline,
-  };
-}
 
 const DEMO_USERNAMES = new Set(["demo", "maya-chen"]);
 

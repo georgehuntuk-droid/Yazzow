@@ -19,8 +19,30 @@ function getInitials(name: string) {
 export function PublicProfile({ tutor }: PublicProfileProps) {
   const initials = getInitials(tutor.displayName);
 
+  // Dynamic JSON-LD Structured Data Schema.org Person/Tutor profile markup
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Tutor",
+    "name": tutor.displayName,
+    "description": tutor.headline || tutor.bio || `${tutor.displayName} - Private Tutor on Yazzow`,
+    "url": `https://yazzow.com/tutor/${tutor.username}`,
+    "image": tutor.avatarUrl || "https://yazzow.com/icon.png",
+    "priceRange": `${formatMoney(tutor.lessonPriceCents, tutor.currency)} / hr`,
+    "offers": {
+      "@type": "Offer",
+      "price": (tutor.lessonPriceCents / 100).toFixed(2),
+      "priceCurrency": tutor.currency.toUpperCase(),
+      "availability": "https://schema.org/InStock"
+    }
+  };
+
   return (
     <div className="yazz-surface overflow-hidden">
+      {/* Inject Structured Schema JSON-LD for rich snippets on Google Search */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div
         className="h-24 bg-gradient-to-r from-primary/15 via-secondary/40 to-primary/5 sm:h-32"
         style={

@@ -6,7 +6,7 @@ try {
   console.log('Staged successfully.');
 
   console.log('Committing changes...');
-  const commitMsg = 'feat: SEO optimizations, sitemap, robots, and platform-admin diagnostic logging';
+  const commitMsg = 'fix: strip potential quotes from platform-admin allowlist email variables';
   const commitOut = execSync(`git -c user.name="georgehuntuk-droid" -c user.email="georgehuntuk-droid@users.noreply.github.com" commit -m "${commitMsg}"`);
   console.log(commitOut.toString());
 

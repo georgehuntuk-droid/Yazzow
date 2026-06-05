@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function isPlatformAdmin(): Promise<boolean> {
   const allowlist = process.env.PLATFORM_ADMIN_EMAILS?.split(",")
-    .map((email) => email.trim().toLowerCase())
+    .map((email) => email.trim().replace(/^["']|["']$/g, "").toLowerCase())
     .filter(Boolean);
 
   console.log("[Admin Check] Allowlist:", allowlist);

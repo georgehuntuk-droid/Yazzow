@@ -76,6 +76,7 @@ Under **Environment Variables** in the Vercel project configuration, add all you
 | `STRIPE_SECRET_KEY` | Stripe secret | |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable | |
 | `STRIPE_WEBHOOK_SECRET` | after Stripe webhook (below) | |
+| `PLATFORM_ADMIN_EMAILS` | `george.huntuk@gmail.com` | Comma-separated emails that see **Admin Console** (owner is also hardcoded in code) |
 
 *Optional:* `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_INBOX_EMAIL` (defaults to `support@yazzow.com`) for the support form, booking confirmations, cancel links, etc.
 

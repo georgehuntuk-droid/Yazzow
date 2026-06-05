@@ -1,32 +1,49 @@
 import "server-only";
 
+import { PLATFORM_OWNER_EMAILS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
 
+function parseAdminAllowlist(): string[] {
+  const fromEnv =
+    process.env.PLATFORM_ADMIN_EMAILS?.split(",")
+      .map((email) => email.trim().replace(/^["']|["']$/g, "").toLowerCase())
+      .filter(Boolean) ?? [];
+
+  const merged = new Set<string>([
+    ...PLATFORM_OWNER_EMAILS.map((email) => email.toLowerCase()),
+    ...fromEnv,
+  ]);
+
+  return [...merged];
+}
+
 export async function isPlatformAdmin(): Promise<boolean> {
-  const allowlist = process.env.PLATFORM_ADMIN_EMAILS?.split(",")
-    .map((email) => email.trim().replace(/^["']|["']$/g, "").toLowerCase())
-    .filter(Boolean);
-
-  console.log("[Admin Check] Allowlist:", allowlist);
-
-  if (!allowlist?.length) {
-    console.warn("[Admin Check] PLATFORM_ADMIN_EMAILS environment variable is not defined or is empty!");
-    return false;
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log("[Admin Check] Logged-in user email:", user?.email);
-
   if (!user?.email) {
-    console.warn("[Admin Check] No logged-in user email found!");
     return false;
   }
-  
-  const isMatch = allowlist.includes(user.email.toLowerCase());
-  console.log("[Admin Check] Result for", user.email, "is:", isMatch);
-  return isMatch;
+
+  const email = user.email.toLowerCase();
+  const allowlist = parseAdminAllowlist();
+
+  if (allowlist.includes(email)) {
+    return true;
+  }
+
+  // Database-backed admin (survives missing env vars after migration 011)
+  const { data: profile, error } = await supabase
+    .from("tutor_profiles")
+    .select("is_platform_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error?.code === "42703" || error?.message?.includes("does not exist")) {
+    return false;
+  }
+
+  return profile?.is_platform_admin === true;
 }

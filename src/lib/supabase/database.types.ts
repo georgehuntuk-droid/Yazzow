@@ -20,6 +20,7 @@ export type TutorProfileRow = {
   google_calendar_id: string | null;
   block_package_lessons_count: number;
   block_package_discount_percent: number;
+  is_platform_admin: boolean;
   created_at: string;
   updated_at: string;
 };

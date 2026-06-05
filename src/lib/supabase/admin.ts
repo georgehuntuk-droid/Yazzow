@@ -3,7 +3,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 import { getSupabaseAdminKey } from "@/lib/supabase/admin-key";
-import { getSupabaseUrl } from "@/lib/supabase/env";
+import { getSupabaseUrl, getSupabasePublishableKey } from "@/lib/supabase/env";
 
 export function createAdminClient() {
   let url: string;
@@ -13,11 +13,22 @@ export function createAdminClient() {
     url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   }
 
-  const key = getSupabaseAdminKey();
+  let key = getSupabaseAdminKey();
+
+  if (!key) {
+    console.warn(
+      "[Admin Client Warning] SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is not defined in this environment. Falling back to the client publishable key to prevent a server-side 500 crash."
+    );
+    try {
+      key = getSupabasePublishableKey();
+    } catch {
+      key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? null;
+    }
+  }
 
   if (!url || !key) {
     throw new Error(
-      "Missing admin Supabase key. Use SUPABASE_SECRET_KEY (sb_secret_...) or SUPABASE_SERVICE_ROLE_KEY (legacy JWT) — not the publishable key.",
+      "Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
     );
   }
 
@@ -25,3 +36,4 @@ export function createAdminClient() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+

@@ -2,7 +2,13 @@
 export const BRAND_NAME = "Yazzow" as const;
 
 /** Built-in platform owners — always admin even if PLATFORM_ADMIN_EMAILS is unset on Vercel. */
-export const PLATFORM_OWNER_EMAILS = ["george.huntuk@gmail.com"] as const;
+export const PLATFORM_OWNER_EMAILS = [
+  "george.huntuk@gmail.com",
+  "georgehuntuk@gmail.com",
+] as const;
+
+/** Tutor portal usernames that always have platform admin access. */
+export const PLATFORM_OWNER_USERNAMES = ["george-huntuk"] as const;
 
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 export const PUBLIC_SITE_URL =

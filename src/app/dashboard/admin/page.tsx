@@ -16,14 +16,19 @@ export default async function AdminDashboardPage() {
   }
 
   const admin = createAdminClient();
+  const serviceRoleConfigured = Boolean(
+    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
 
   // 2. Fetch all raw data in parallel using service role
   const [profilesRes, usersRes, stats, bookingsRes, purchasesRes] = await Promise.all([
     admin.from("tutor_profiles").select("*").order("created_at", { ascending: false }),
-    admin.auth.admin.listUsers(),
+    serviceRoleConfigured
+      ? admin.auth.admin.listUsers()
+      : Promise.resolve({ data: { users: [] }, error: null }),
     getPlatformRevenueStats(),
     admin.from("bookings").select("tutor_id, amount_cents, status"),
-    admin.from("resource_purchases").select("tutor_id, amount_cents")
+    admin.from("resource_purchases").select("tutor_id, amount_cents"),
   ]);
 
   if (profilesRes.error) {
@@ -115,7 +120,7 @@ export default async function AdminDashboardPage() {
           <AdminConsoleClient 
             tutors={tutors} 
             platformStats={stats} 
-            isServiceRoleConfigured={Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)} 
+            isServiceRoleConfigured={serviceRoleConfigured}
           />
         </div>
       </div>

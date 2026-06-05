@@ -1,6 +1,9 @@
 import "server-only";
 
-import { PLATFORM_OWNER_EMAILS } from "@/lib/constants";
+import {
+  PLATFORM_OWNER_EMAILS,
+  PLATFORM_OWNER_USERNAMES,
+} from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
 
 function parseAdminAllowlist(): string[] {
@@ -23,27 +26,40 @@ export async function isPlatformAdmin(): Promise<boolean> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user?.email) {
+  if (!user) {
     return false;
   }
 
-  const email = user.email.toLowerCase();
-  const allowlist = parseAdminAllowlist();
-
-  if (allowlist.includes(email)) {
+  if (user.email && parseAdminAllowlist().includes(user.email.toLowerCase())) {
     return true;
   }
 
-  // Database-backed admin (survives missing env vars after migration 011)
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
+    .from("tutor_profiles")
+    .select("username")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (
+    profile?.username &&
+    (PLATFORM_OWNER_USERNAMES as readonly string[]).includes(profile.username)
+  ) {
+    return true;
+  }
+
+  // Optional DB flag after migration 011 (column may not exist yet)
+  const { data: adminRow, error: adminError } = await supabase
     .from("tutor_profiles")
     .select("is_platform_admin")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error?.code === "42703" || error?.message?.includes("does not exist")) {
-    return false;
+  if (
+    !adminError &&
+    adminRow?.is_platform_admin === true
+  ) {
+    return true;
   }
 
-  return profile?.is_platform_admin === true;
+  return false;
 }

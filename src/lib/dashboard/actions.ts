@@ -32,8 +32,11 @@ async function revalidateTutor(username: string) {
 
 function parsePriceToCents(raw: string): number | null {
   const normalized = raw.replace(/[£,\s]/g, "").trim().toLowerCase();
-  if (normalized === "free" || normalized === "0" || normalized === "") {
+  if (normalized === "free" || normalized === "0") {
     return 0;
+  }
+  if (normalized === "") {
+    return null;
   }
   const value = Number.parseFloat(normalized);
   if (!Number.isFinite(value) || value < 0) return null;

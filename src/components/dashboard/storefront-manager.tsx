@@ -17,8 +17,11 @@ import { formatMoney } from "@/lib/format";
 
 function parsePricePreview(raw: string): number | null {
   const normalized = raw.replace(/[£,\s]/g, "").trim().toLowerCase();
-  if (normalized === "free" || normalized === "0" || normalized === "") {
+  if (normalized === "free" || normalized === "0") {
     return 0;
+  }
+  if (normalized === "") {
+    return null;
   }
   const value = Number.parseFloat(normalized);
   if (!Number.isFinite(value) || value < 0) return null;
@@ -107,14 +110,28 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
                 <label htmlFor="resource-price" className="text-sm font-medium">
                   Price ({currency.toUpperCase()})
                 </label>
-                <Input
-                  id="resource-price"
-                  name="price"
-                  required
-                  placeholder="4.99 or Free"
-                  value={pricePreview}
-                  onChange={(e) => setPricePreview(e.target.value)}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="resource-price"
+                    name="price"
+                    required
+                    placeholder="4.99"
+                    value={pricePreview}
+                    onChange={(e) => setPricePreview(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant={
+                      ["free", "0"].includes(pricePreview.trim().toLowerCase())
+                        ? "default"
+                        : "outline"
+                    }
+                    onClick={() => setPricePreview("free")}
+                  >
+                    Free
+                  </Button>
+                </div>
                 {(() => {
                   const cents = parsePricePreview(pricePreview);
                   if (cents === null) return null;

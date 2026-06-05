@@ -142,11 +142,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 </Link>
               </nav>
             </>
-          ) : (
-            <p className="hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground sm:block">
-              Private portal · not in any directory
-            </p>
-          )}
+          ) : null}
         </div>
       </header>
 

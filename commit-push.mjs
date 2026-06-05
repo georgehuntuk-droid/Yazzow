@@ -6,7 +6,7 @@ try {
   console.log('Staged successfully.');
 
   console.log('Committing changes...');
-  const commitMsg = 'fix: execute manual bookings via admin client to bypass Supabase table insert limits';
+  const commitMsg = 'feat: remove private directory badge and implement stunning dynamic calendar layout for tutor booking';
   const commitOut = execSync(`git -c user.name="georgehuntuk-droid" -c user.email="georgehuntuk-droid@users.noreply.github.com" commit -m "${commitMsg}"`);
   console.log(commitOut.toString());
 

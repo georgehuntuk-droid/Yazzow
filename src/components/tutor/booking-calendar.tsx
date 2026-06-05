@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { ChevronRight, CalendarDays, Grid3X3, Clock } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -32,85 +32,167 @@ export function BookingCalendar({
   paymentsBlockedMessage,
 }: BookingCalendarProps) {
   const openSlots = slots.filter((slot) => slot.available);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    openSlots[0]?.id ?? null,
+  
+  // Group slots by their calendar date
+  const groupedSlots = useMemo(() => {
+    const groups: Record<string, OpenSlot[]> = {};
+    openSlots.forEach((slot) => {
+      const dateObj = new Date(slot.startsAt);
+      const dateKey = dateObj.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        weekday: "short"
+      });
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(slot);
+    });
+    return groups;
+  }, [openSlots]);
+
+  const dateKeys = Object.keys(groupedSlots);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(
+    dateKeys[0] ?? null
   );
+
+  const activeDateSlots = selectedDateKey ? groupedSlots[selectedDateKey] ?? [] : [];
+  const [selectedId, setSelectedId] = useState<string | null>(
+    activeDateSlots[0]?.id ?? null
+  );
+
+  // If date selection changes, default to its first slot
+  useEffect(() => {
+    if (selectedDateKey && groupedSlots[selectedDateKey]) {
+      const firstSlot = groupedSlots[selectedDateKey][0];
+      if (firstSlot && !groupedSlots[selectedDateKey].some(s => s.id === selectedId)) {
+        setSelectedId(firstSlot.id);
+      }
+    }
+  }, [selectedDateKey, groupedSlots]);
+
   const selected = openSlots.find((slot) => slot.id === selectedId);
 
+  const formatTimeOnly = (startsAt: string, endsAt: string): string => {
+    const start = new Date(startsAt);
+    const end = new Date(endsAt);
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${pad(start.getHours())}:${pad(start.getMinutes())} – ${pad(end.getHours())}:${pad(end.getMinutes())}`;
+  };
+
   return (
-    <Card className="yazz-surface border-border/70">
-      <CardHeader>
-        <CardTitle className="font-heading">Open slots</CardTitle>
-        <CardDescription>
-          Tap a time to open checkout, enter your email, and pay securely with Stripe.
+    <Card className="yazz-surface overflow-hidden border-border/70 p-0 sm:p-2">
+      <CardHeader className="px-6 pt-6 pb-4 sm:pb-6">
+        <CardTitle className="font-heading text-xl sm:text-2xl font-semibold flex items-center gap-2">
+          <CalendarDays className="size-5.5 text-primary animate-pulse" />
+          Book Your Lesson
+        </CardTitle>
+        <CardDescription className="text-sm">
+          Select a date on the calendar timeline, then choose your preferred hour slot to book.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
+      
+      <CardContent className="px-6 pb-6 space-y-6">
         {openSlots.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            No open slots right now.
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            No open slots right now. Check back soon.
           </p>
         ) : (
-          openSlots.map((slot) => {
-            const isSelected = selectedId === slot.id;
-
-            return (
-              <div
-                key={slot.id}
-                className={cn(
-                  "overflow-hidden rounded-xl border transition-colors",
-                  isSelected
-                    ? "border-primary shadow-sm ring-1 ring-primary/20"
-                    : "border-border",
-                )}
-              >
-                <button
-                  type="button"
-                  aria-expanded={isSelected}
-                  onClick={() => setSelectedId(isSelected ? null : slot.id)}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors",
-                    isSelected ? "bg-primary/5" : "hover:bg-muted/50",
-                  )}
-                >
-                  <span className="flex min-w-0 flex-1 items-center gap-2">
-                    <ChevronRight
+          <div className="grid gap-6 md:grid-cols-[220px_1fr] lg:grid-cols-[260px_1fr]">
+            {/* Left Panel: Calendar Date Timeline Selector */}
+            <div className="space-y-3">
+              <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 flex items-center gap-1.5">
+                <CalendarDays className="size-3.5 text-primary" />
+                1. Select Date
+              </span>
+              <div className="flex flex-row overflow-x-auto gap-2 pb-2 md:flex-col md:overflow-visible md:pb-0 scrollbar-none">
+                {dateKeys.map((dateKey) => {
+                  const isDateSelected = selectedDateKey === dateKey;
+                  const [wday, day, mth, yr] = dateKey.split(" ");
+                  return (
+                    <button
+                      key={dateKey}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDateKey(dateKey);
+                        const firstSlot = groupedSlots[dateKey]?.[0];
+                        if (firstSlot) setSelectedId(firstSlot.id);
+                      }}
                       className={cn(
-                        "size-4 shrink-0 text-primary transition-transform",
-                        isSelected && "rotate-90",
+                        "flex flex-col items-start gap-0.5 justify-center w-36 md:w-full p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer",
+                        isDateSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-blue-500/15"
+                          : "border-border bg-card hover:bg-muted/40 hover:border-primary/20 text-foreground"
                       )}
-                    />
-                    <span className="font-medium">
-                      {formatSlotRange(slot.startsAt, slot.endsAt)}
-                    </span>
-                  </span>
-                  <span className="shrink-0 font-medium text-primary">
-                    {formatMoney(tutor.lessonPriceCents, tutor.currency)}
-                  </span>
-                </button>
-
-                {isSelected ? (
-                  <div className="border-t border-border/80 bg-card/50 px-4 py-4">
-                    {!paymentsEnabled ? (
-                      <PaymentsBlockedMessage
-                        reason={paymentsBlockedReason}
-                        message={paymentsBlockedMessage}
-                      />
-                    ) : (
-                      <LessonCheckoutButton tutor={tutor} slot={slot} />
-                    )}
-                  </div>
-                ) : null}
+                    >
+                      <span className={cn("text-[10px] font-black uppercase tracking-wider", isDateSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                        {wday?.replace(",", "")}
+                      </span>
+                      <span className="text-base font-bold tracking-tight mt-0.5">
+                        {day} {mth}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            );
-          })
-        )}
+            </div>
 
-        {openSlots.length > 0 && !selected ? (
-          <p className="pt-2 text-center text-sm text-muted-foreground">
-            Select a time above to book and pay.
-          </p>
-        ) : null}
+            {/* Right Panel: Time Slots & Checkout Panel */}
+            <div className="space-y-4">
+              <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 flex items-center gap-1.5">
+                <Clock className="size-3.5 text-primary" />
+                2. Pick Time
+              </span>
+
+              {/* Time slot grid view */}
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                {activeDateSlots.map((slot) => {
+                  const isSlotSelected = selectedId === slot.id;
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      onClick={() => setSelectedId(slot.id)}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer h-13",
+                        isSlotSelected
+                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                          : "border-border hover:bg-muted/40 hover:border-primary/25 bg-card"
+                      )}
+                    >
+                      <span className="text-xs sm:text-sm font-bold flex items-center gap-2 text-foreground">
+                        <span className={cn("size-2 rounded-full", isSlotSelected ? "bg-primary animate-pulse" : "bg-muted-foreground/30")} />
+                        {formatTimeOnly(slot.startsAt, slot.endsAt)}
+                      </span>
+                      <span className="text-xs font-black text-primary">
+                        {formatMoney(tutor.lessonPriceCents, tutor.currency)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Booking Checkout form inside card */}
+              {selected ? (
+                <div className="mt-4 rounded-2xl border border-primary/10 bg-muted/10 p-5 shadow-sm shadow-blue-500/5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1 mb-4">
+                    <Grid3X3 className="size-3.5" />
+                    3. Secure Booking Details
+                  </span>
+                  {!paymentsEnabled ? (
+                    <PaymentsBlockedMessage
+                      reason={paymentsBlockedReason}
+                      message={paymentsBlockedMessage}
+                    />
+                  ) : (
+                    <LessonCheckoutButton tutor={tutor} slot={selected} />
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

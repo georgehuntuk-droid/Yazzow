@@ -272,6 +272,7 @@ function StudentList({
   feedbackDraft,
   setFeedbackDraft,
   onSaveNotes,
+  onSaveCredits,
   onSaveFeedback,
   onArchive,
   onRestore,

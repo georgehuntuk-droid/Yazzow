@@ -26,11 +26,10 @@ export function isSubscriptionActive(status: string | null | undefined): boolean
 
 export function isTutorSubscriptionLive(state: TutorSubscriptionState): boolean {
   if (state.subscriptionTrackingUnavailable) return false;
-  return (
-    isSubscriptionActive(state.status) &&
-    Boolean(state.stripeCustomerId) &&
-    Boolean(state.stripeSubscriptionId)
-  );
+  
+  // If the subscription is marked as active or trialing, it is considered live.
+  // We no longer strictly require stripeCustomerId / stripeSubscriptionId for manually compped admin trials.
+  return isSubscriptionActive(state.status);
 }
 
 export async function getTutorSubscriptionState(

@@ -6,7 +6,7 @@ try {
   console.log('Staged successfully.');
 
   console.log('Committing changes...');
-  const commitMsg = 'fix: gracefully fall back to anon key in createAdminClient if service-role/secret key is missing on Vercel';
+  const commitMsg = 'feat: allow simple subscription statuses (comped accounts) to activate immediately without Stripe IDs';
   const commitOut = execSync(`git -c user.name="georgehuntuk-droid" -c user.email="georgehuntuk-droid@users.noreply.github.com" commit -m "${commitMsg}"`);
   console.log(commitOut.toString());
 

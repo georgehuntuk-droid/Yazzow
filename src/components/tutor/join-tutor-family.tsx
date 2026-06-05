@@ -71,17 +71,37 @@ export function JoinTutorFamily({ tutor, tutorUsername }: JoinTutorFamilyProps) 
 
   if (joined) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-4">
-        <Users className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div className="text-sm">
-          <p className="font-medium text-foreground">
-            You&apos;re connected with {tutor.displayName}
-          </p>
-          <p className="mt-1 text-muted-foreground">
-            {joined.studentName} · {joined.parentEmail}. Book below or wait for slot alerts
-            when times open up.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm shadow-blue-500/5">
+        <div className="flex items-start gap-3">
+          <Users className="mt-0.5 size-4 shrink-0 text-primary animate-pulse" />
+          <div className="text-sm">
+            <p className="font-bold text-foreground">
+              You&apos;re connected with {tutor.displayName}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground leading-normal">
+              {joined.studentName} · {joined.parentEmail}
+            </p>
+            <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+              Ready to book below or wait for instant slot alerts.
+            </p>
+          </div>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="xs"
+          className="rounded-lg text-xs font-bold shrink-0 self-start sm:self-auto hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20"
+          onClick={() => {
+            if (confirm("Disconnect and change your student details?")) {
+              localStorage.removeItem(storageKey(tutorUsername));
+              setJoined(null);
+              setParentEmail(joined.parentEmail);
+              setStudentName(joined.studentName);
+            }
+          }}
+        >
+          Change Details
+        </Button>
       </div>
     );
   }

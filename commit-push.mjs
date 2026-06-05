@@ -6,7 +6,7 @@ try {
   console.log('Staged successfully.');
 
   console.log('Committing changes...');
-  const commitMsg = 'feat: remove private directory badge and implement stunning dynamic calendar layout for tutor booking';
+  const commitMsg = 'feat: add a Change Details action to the Join Family success state so users can correct typos';
   const commitOut = execSync(`git -c user.name="georgehuntuk-droid" -c user.email="georgehuntuk-droid@users.noreply.github.com" commit -m "${commitMsg}"`);
   console.log(commitOut.toString());
 

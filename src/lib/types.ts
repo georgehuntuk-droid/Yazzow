@@ -10,6 +10,8 @@ export type TutorProfile = {
   portalAccentOklch?: string;
   lessonPriceCents: number;
   currency: string;
+  blockPackageLessonsCount?: number;
+  blockPackageDiscountPercent?: number;
 };
 
 export type OpenSlot = {

@@ -12,6 +12,7 @@ import { JoinTutorFamily } from "@/components/tutor/join-tutor-family";
 import { PortalThemeWrapper } from "@/components/tutor/portal-theme-wrapper";
 import { PublicProfile } from "@/components/tutor/public-profile";
 import { ResourceShelf } from "@/components/tutor/resource-shelf";
+import { LessonPackagesTab } from "@/components/tutor/lesson-packages-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BRAND_NAME } from "@/lib/constants";
 import {
@@ -160,6 +161,9 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
             <TabsTrigger value="book" className="rounded-lg px-4">
               Book a lesson
             </TabsTrigger>
+            <TabsTrigger value="packages" className="rounded-lg px-4">
+              Lesson packages
+            </TabsTrigger>
             <TabsTrigger value="shelf" className="rounded-lg px-4">
               The shelf
             </TabsTrigger>
@@ -185,8 +189,17 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 paymentsEnabled={false}
                 paymentsBlockedReason="demo"
                 paymentsBlockedMessage="This is a sample portal. Create your own account to accept real bookings."
+                isDemo={true}
               />
             )}
+          </TabsContent>
+          <TabsContent value="packages" className="mt-6">
+            <LessonPackagesTab
+              tutor={tutor}
+              paymentsEnabled={paymentsEnabled}
+              paymentsBlockedMessage={paymentsBlockedMessage}
+              isDemo={isSamplePortal}
+            />
           </TabsContent>
           <TabsContent value="shelf" className="mt-6">
             <ResourceShelf resources={resources} />

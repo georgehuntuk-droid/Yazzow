@@ -18,6 +18,8 @@ export type TutorProfileRow = {
   calendar_feed_token: string | null;
   google_refresh_token: string | null;
   google_calendar_id: string | null;
+  block_package_lessons_count: number;
+  block_package_discount_percent: number;
   created_at: string;
   updated_at: string;
 };

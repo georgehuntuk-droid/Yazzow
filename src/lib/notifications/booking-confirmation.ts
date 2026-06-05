@@ -6,17 +6,28 @@ import { formatMoney, formatSlotRange } from "@/lib/format";
 
 export async function sendBookingConfirmationEmail(input: {
   bookingId: string;
-  to: string;
+  parentEmail?: string; // support old parameter names gracefully
+  to?: string;
   tutorName: string;
   tutorUsername: string;
   studentName: string | null;
-  slotStartsAt: string;
-  slotEndsAt: string;
+  slotStartsAt?: string; // support old parameter names gracefully
+  startsAt?: string;
+  slotEndsAt?: string; // support old parameter names gracefully
+  endsAt?: string;
   amountCents: number;
   currency: string;
+  isCreditPayment?: boolean;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return false;
+
+  const targetEmail = input.to || input.parentEmail;
+  if (!targetEmail) return false;
+
+  const startsAt = input.slotStartsAt || input.startsAt;
+  const endsAt = input.slotEndsAt || input.endsAt;
+  if (!startsAt || !endsAt) return false;
 
   const manageUrl = bookingManageUrl(input.bookingId);
   if (!manageUrl) return false;
@@ -24,8 +35,10 @@ export async function sendBookingConfirmationEmail(input: {
   const from =
     process.env.RESEND_FROM_EMAIL ?? `${BRAND_NAME} <bookings@yazzow.com>`;
   const portalUrl = `${PUBLIC_SITE_URL}${TUTOR_PUBLIC_PATH}/${input.tutorUsername}`;
-  const slotLabel = formatSlotRange(input.slotStartsAt, input.slotEndsAt);
-  const amountLabel = formatMoney(input.amountCents, input.currency);
+  const slotLabel = formatSlotRange(startsAt, endsAt);
+  const amountLabel = input.isCreditPayment
+    ? "Prepaid Credit"
+    : formatMoney(input.amountCents, input.currency);
   const studentLine = input.studentName
     ? `<p><strong>Student:</strong> ${escapeHtml(input.studentName)}</p>`
     : "";
@@ -38,7 +51,7 @@ export async function sendBookingConfirmationEmail(input: {
     },
     body: JSON.stringify({
       from,
-      to: input.to,
+      to: targetEmail,
       subject: `Lesson booked · ${input.tutorName} · ${slotLabel}`,
       html: `
         <p>Your lesson with ${escapeHtml(input.tutorName)} is confirmed.</p>

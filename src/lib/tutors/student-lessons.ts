@@ -17,6 +17,7 @@ export type StudentWithLessons = {
   studentName: string;
   parentEmail: string;
   notes: string | null;
+  lessonCredits: number;
   status: "active" | "archived";
   archivedAt: string | null;
   createdAt: string;
@@ -106,6 +107,7 @@ export async function getStudentsWithLessonsForTutor(
       studentName: student.student_name,
       parentEmail: student.parent_email,
       notes: student.notes,
+      lessonCredits: (student as any).lesson_credits ?? 0,
       status: status as "active" | "archived",
       archivedAt: features.studentStatus ? (row.archived_at ?? null) : null,
       createdAt: student.created_at,

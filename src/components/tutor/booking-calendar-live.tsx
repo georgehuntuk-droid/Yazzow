@@ -95,6 +95,7 @@ export function BookingCalendarLive({
         paymentsEnabled={paymentsEnabled}
         paymentsBlockedReason={paymentsBlockedReason}
         paymentsBlockedMessage={paymentsBlockedMessage}
+        isDemo={false}
       />
     </div>
   );

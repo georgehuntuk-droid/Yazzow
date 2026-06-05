@@ -154,21 +154,32 @@ export function SubscriptionBillingPanel({
                 <span className="size-1.5 rounded-full bg-primary animate-ping" />
                 Active Subscription
               </span>
+              {!subscription.stripeCustomerId && (
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                  Complimentary Access
+                </span>
+              )}
             </div>
             {renewsLabel ? (
               <p className="text-sm text-muted-foreground">
                 Next billing date is <span className="text-foreground font-semibold">{renewsLabel}</span>.
               </p>
+            ) : !subscription.stripeCustomerId ? (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your account is currently upgraded with complimentary premium access by the platform admin. You have unlimited access to all features!
+              </p>
             ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <Button
-              variant="outline"
-              onClick={openPortal}
-              disabled={loading}
-              className="w-full sm:w-auto h-10 font-medium"
-            >
-              {loading ? "Opening…" : "Manage billing & invoices"}
-            </Button>
+            {subscription.stripeCustomerId ? (
+              <Button
+                variant="outline"
+                onClick={openPortal}
+                disabled={loading}
+                className="w-full sm:w-auto h-10 font-medium"
+              >
+                {loading ? "Opening…" : "Manage billing & invoices"}
+              </Button>
+            ) : null}
           </div>
         ) : (
           <div className="space-y-4 pt-2">

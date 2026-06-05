@@ -14,6 +14,8 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     portalAccentOklch: row.portal_accent_oklch ?? undefined,
     lessonPriceCents: row.lesson_price_cents,
     currency: row.currency,
+    blockPackageLessonsCount: (row as any).block_package_lessons_count ?? 10,
+    blockPackageDiscountPercent: (row as any).block_package_discount_percent ?? 10,
   };
 }
 

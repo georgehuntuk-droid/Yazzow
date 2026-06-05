@@ -22,6 +22,7 @@ type BookingCalendarProps = {
   paymentsEnabled?: boolean;
   paymentsBlockedReason?: "stripe" | "subscription" | "demo";
   paymentsBlockedMessage?: string;
+  isDemo?: boolean;
 };
 
 export function BookingCalendar({
@@ -30,6 +31,7 @@ export function BookingCalendar({
   paymentsEnabled = true,
   paymentsBlockedReason,
   paymentsBlockedMessage,
+  isDemo = false,
 }: BookingCalendarProps) {
   const openSlots = slots.filter((slot) => slot.available);
   
@@ -186,7 +188,7 @@ export function BookingCalendar({
                       message={paymentsBlockedMessage}
                     />
                   ) : (
-                    <LessonCheckoutButton tutor={tutor} slot={selected} />
+                    <LessonCheckoutButton tutor={tutor} slot={selected} isDemo={isDemo} />
                   )}
                 </div>
               ) : null}

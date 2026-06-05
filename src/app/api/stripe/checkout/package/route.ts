@@ -1,0 +1,93 @@
+import { NextResponse } from "next/server";
+
+import { LESSON_SLOT_DURATION_MINUTES, PUBLIC_SITE_URL } from "@/lib/constants";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { TutorProfileRow } from "@/lib/supabase/database.types";
+import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
+import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
+
+type PackageCheckoutBody = {
+  tutorUsername: string;
+  parentEmail: string;
+  studentName?: string;
+};
+
+export async function POST(request: Request) {
+  if (!isStripeConfigured()) {
+    return NextResponse.json({ error: "Payments not configured yet." }, { status: 503 });
+  }
+
+  const body = (await request.json()) as PackageCheckoutBody;
+  const { tutorUsername, parentEmail, studentName } = body;
+
+  if (!tutorUsername || !parentEmail) {
+    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const { data: tutorData } = await admin
+    .from("tutor_profiles")
+    .select("*")
+    .eq("username", tutorUsername)
+    .maybeSingle();
+
+  const tutor = tutorData as any | null;
+
+  if (!tutor?.stripe_account_id) {
+    return NextResponse.json(
+      { error: "This tutor has not connected payouts yet. Try again later." },
+      { status: 400 },
+    );
+  }
+
+  const subscription = await getTutorSubscriptionState(tutor.id);
+  if (!subscription.active) {
+    return NextResponse.json(
+      { error: "This tutor's booking portal is not active right now." },
+      { status: 403 },
+    );
+  }
+
+  const lessonsCount = tutor.block_package_lessons_count ?? 10;
+  const discountPercent = tutor.block_package_discount_percent ?? 10;
+
+  // Compute package price in cents
+  const discountMultiplier = 1 - discountPercent / 100;
+  const amountCents = Math.round(tutor.lesson_price_cents * lessonsCount * discountMultiplier);
+
+  const stripe = getStripe();
+
+  const session = await stripe.checkout.sessions.create(
+    {
+      mode: "payment",
+      customer_email: parentEmail,
+      line_items: [
+        {
+          price_data: {
+            currency: tutor.currency,
+            unit_amount: amountCents,
+            product_data: {
+              name: `${lessonsCount}x Lesson Credits Package with ${tutor.display_name}`,
+              description: `Bulk block booking package · Includes ${lessonsCount} lesson credits to book on this page anytime. (${discountPercent}% savings!)`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        type: "package",
+        tutor_id: tutor.id,
+        parent_email: parentEmail,
+        student_name: studentName ?? "",
+        lessons_count: String(lessonsCount),
+        discount_percent: String(discountPercent),
+        platform_fee_cents: "0",
+      },
+      success_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?package_booked=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?cancelled=1`,
+    },
+    { stripeAccount: tutor.stripe_account_id },
+  );
+
+  return NextResponse.json({ url: session.url });
+}

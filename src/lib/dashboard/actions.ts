@@ -451,6 +451,31 @@ export async function updateStudentNotes(studentId: string, notes: string) {
   return { ok: true as const };
 }
 
+export async function updateStudentCredits(studentId: string, credits: number) {
+  const { profile } = await requireTutorProfile();
+  
+  if (credits < 0) {
+    return { ok: false as const, error: "Credits cannot be negative." };
+  }
+
+  // Use admin client so tutors can override student table parameters safely
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { error } = await admin
+    .from("students")
+    .update({ lesson_credits: credits })
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
 export async function deleteStudent(studentId: string) {
   const { profile } = await requireTutorProfile();
   const supabase = await createClient();

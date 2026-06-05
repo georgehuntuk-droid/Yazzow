@@ -114,6 +114,37 @@ export async function updatePortalProfile(input: {
   return { ok: true as const };
 }
 
+export async function updateBlockPackagePricing(input: {
+  lessonsCount: number;
+  discountPercent: number;
+}) {
+  const { profile } = await requireTutorProfile();
+
+  if (input.lessonsCount < 2 || input.lessonsCount > 50) {
+    return { ok: false as const, error: "Lessons package size must be between 2 and 50." };
+  }
+
+  if (input.discountPercent < 0 || input.discountPercent > 90) {
+    return { ok: false as const, error: "Discount percent must be between 0% and 90%." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({
+      block_package_lessons_count: input.lessonsCount,
+      block_package_discount_percent: input.discountPercent,
+    })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
 export async function updatePortalStyle(input: {
   portalWelcomeMessage: string;
   portalAccentPresetId: string;

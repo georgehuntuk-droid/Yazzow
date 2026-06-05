@@ -36,6 +36,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+  const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [feedbackDraft, setFeedbackDraft] = useState<
     Record<string, { text: string; rating: number | null }>
   >({});
@@ -59,11 +60,31 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     setLoading(false);
   }
 
+  const [updatingCreditsId, setUpdatingCreditsId] = useState<string | null>(null);
+
   async function handleSaveNotes(studentId: string) {
     const value = editingNotes[studentId];
     if (value === undefined) return;
 
+    setSavingNotesId(studentId);
+    setError(null);
     const result = await updateStudentNotes(studentId, value);
+    setSavingNotesId(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
+  }
+
+  async function handleSaveCredits(studentId: string, credits: number) {
+    setUpdatingCreditsId(studentId);
+    setError(null);
+    const { updateStudentCredits } = await import("@/lib/dashboard/actions");
+    const result = await updateStudentCredits(studentId, credits);
+    setUpdatingCreditsId(null);
+
     if (!result.ok) {
       setError(result.error);
       return;
@@ -205,6 +226,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             feedbackDraft={feedbackDraft}
             setFeedbackDraft={setFeedbackDraft}
             onSaveNotes={handleSaveNotes}
+            onSaveCredits={handleSaveCredits}
             onSaveFeedback={handleSaveFeedback}
             onArchive={handleArchive}
             onRestore={handleRestore}
@@ -227,6 +249,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             feedbackDraft={feedbackDraft}
             setFeedbackDraft={setFeedbackDraft}
             onSaveNotes={handleSaveNotes}
+            onSaveCredits={handleSaveCredits}
             onSaveFeedback={handleSaveFeedback}
             onArchive={handleArchive}
             onRestore={handleRestore}
@@ -266,6 +289,7 @@ function StudentList({
     React.SetStateAction<Record<string, { text: string; rating: number | null }>>
   >;
   onSaveNotes: (id: string) => void;
+  onSaveCredits: (id: string, credits: number) => Promise<void>;
   onSaveFeedback: (bookingId: string) => void;
   onArchive: (id: string, label: string) => void;
   onRestore: (id: string) => void;
@@ -306,6 +330,9 @@ function StudentList({
                   <Badge variant={mode === "active" ? "default" : "secondary"}>
                     {mode === "active" ? "Active" : "Archived"}
                   </Badge>
+                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                    {student.lessonCredits} credit{student.lessonCredits === 1 ? "" : "s"}
+                  </Badge>
                   <Badge variant="outline">
                     {lessons.length} lesson{lessons.length === 1 ? "" : "s"}
                   </Badge>
@@ -321,23 +348,55 @@ function StudentList({
 
             {open ? (
               <CardContent className="space-y-4 border-t border-border/60 pt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">General notes</label>
-                  <Input
-                    value={draftNotes}
-                    onChange={(e) =>
-                      setEditingNotes((prev) => ({
-                        ...prev,
-                        [student.id]: e.target.value,
-                      }))
-                    }
-                    onBlur={() => {
-                      if (draftNotes !== (student.notes ?? "")) {
-                        onSaveNotes(student.id);
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">General notes</label>
+                    <Input
+                      value={draftNotes}
+                      onChange={(e) =>
+                        setEditingNotes((prev) => ({
+                          ...prev,
+                          [student.id]: e.target.value,
+                        }))
                       }
-                    }}
-                    placeholder="Ongoing notes about this student…"
-                  />
+                      onBlur={() => {
+                        if (draftNotes.trim() !== (student.notes ?? "").trim()) {
+                          onSaveNotes(student.id);
+                        }
+                      }}
+                      placeholder="Ongoing notes about this student…"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Lesson credits</label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-9"
+                        onClick={() => onSaveCredits(student.id, Math.max(0, student.lessonCredits - 1))}
+                      >
+                        -
+                      </Button>
+                      <span className="w-12 text-center text-base font-bold">
+                        {student.lessonCredits}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-9"
+                        onClick={() => onSaveCredits(student.id, student.lessonCredits + 1)}
+                      >
+                        +
+                      </Button>
+                      <span className="text-xs text-muted-foreground ml-1">
+                        Manual override
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-3">

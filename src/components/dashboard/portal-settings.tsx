@@ -46,6 +46,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
   const [lessonPrice, setLessonPrice] = useState(centsToInput(profile.lessonPriceCents));
   const [currency, setCurrency] = useState(profile.currency);
   const [username, setUsername] = useState(profile.username);
+  const [blockLessonsCount, setBlockLessonsCount] = useState(profile.blockPackageLessonsCount ?? 10);
+  const [blockDiscountPercent, setBlockDiscountPercent] = useState(profile.blockPackageDiscountPercent ?? 10);
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [coverUrl, setCoverUrl] = useState(profile.coverUrl);
@@ -60,6 +62,7 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
   });
 
   const [profileLoading, setProfileLoading] = useState(false);
+  const [packageLoading, setPackageLoading] = useState(false);
   const [styleLoading, setStyleLoading] = useState(false);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
@@ -82,6 +85,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       portalAccentOklch:
         PORTAL_ACCENT_PRESETS.find((p) => p.id === accentPresetId)?.oklch ??
         profile.portalAccentOklch,
+      blockPackageLessonsCount: blockLessonsCount,
+      blockPackageDiscountPercent: blockDiscountPercent,
     }),
     [
       profile,
@@ -95,6 +100,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       coverUrl,
       portalWelcomeMessage,
       accentPresetId,
+      blockLessonsCount,
+      blockDiscountPercent,
     ],
   );
 
@@ -128,6 +135,28 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
     flashSuccess("Profile updated.");
     router.refresh();
     setProfileLoading(false);
+  }
+
+  async function handleSavePackage(event: React.FormEvent) {
+    event.preventDefault();
+    setPackageLoading(true);
+    setError(null);
+
+    const { updateBlockPackagePricing } = await import("@/lib/dashboard/profile-actions");
+    const result = await updateBlockPackagePricing({
+      lessonsCount: blockLessonsCount,
+      discountPercent: blockDiscountPercent,
+    });
+
+    if (!result.ok) {
+      setError(result.error);
+      setPackageLoading(false);
+      return;
+    }
+
+    flashSuccess("Lesson block package updated.");
+    router.refresh();
+    setPackageLoading(false);
   }
 
   async function handleSaveStyle(event: React.FormEvent) {
@@ -514,6 +543,98 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
 
               <Button type="submit" disabled={profileLoading}>
                 {profileLoading ? "Saving…" : "Save profile"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="yazz-surface">
+          <CardHeader>
+            <CardTitle>Lesson block package</CardTitle>
+            <CardDescription>
+              Allow parents to purchase lesson credits upfront in bulk. Configure the lessons count and a discount using the sliders.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSavePackage} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm font-medium">
+                    <label htmlFor="lessons-count-slider">Package size</label>
+                    <span className="text-primary font-bold text-base">{blockLessonsCount} Lessons</span>
+                  </div>
+                  <input
+                    id="lessons-count-slider"
+                    type="range"
+                    min="2"
+                    max="20"
+                    step="1"
+                    value={blockLessonsCount}
+                    onChange={(e) => setBlockLessonsCount(parseInt(e.target.value, 10))}
+                    className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Define how many lessons are included in a bulk credit package.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm font-medium">
+                    <label htmlFor="discount-slider">Bulk discount</label>
+                    <span className="text-primary font-bold text-base">{blockDiscountPercent}% Off</span>
+                  </div>
+                  <input
+                    id="discount-slider"
+                    type="range"
+                    min="0"
+                    max="50"
+                    step="5"
+                    value={blockDiscountPercent}
+                    onChange={(e) => setBlockDiscountPercent(parseInt(e.target.value, 10))}
+                    className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Deduct a discount percentage to make purchasing credits more appealing.
+                  </p>
+                </div>
+
+                {/* Show pricing summary mathematically */}
+                <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Standard rate:</span>
+                    <span className="font-medium">
+                      {((previewProfile.lessonPriceCents * blockLessonsCount) / 100).toFixed(2)} {previewProfile.currency.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-600 font-medium">
+                    <span>Discount saving:</span>
+                    <span>
+                      -{(
+                        (previewProfile.lessonPriceCents *
+                          blockLessonsCount *
+                          (blockDiscountPercent / 100)) /
+                        100
+                      ).toFixed(2)}{" "}
+                      {previewProfile.currency.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="border-t border-border/60 pt-2 flex justify-between text-base font-bold">
+                    <span>Package price:</span>
+                    <span className="text-primary">
+                      {(
+                        (previewProfile.lessonPriceCents *
+                          blockLessonsCount *
+                          (1 - blockDiscountPercent / 100)) /
+                        100
+                      ).toFixed(2)}{" "}
+                      {previewProfile.currency.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={packageLoading}>
+                {packageLoading ? "Saving…" : "Save package limits"}
               </Button>
             </form>
           </CardContent>

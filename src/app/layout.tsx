@@ -10,8 +10,20 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+function getMetadataBase(): URL {
+  try {
+    const urlStr = PUBLIC_SITE_URL.trim();
+    const withProto = urlStr.startsWith("http://") || urlStr.startsWith("https://") 
+      ? urlStr 
+      : `https://${urlStr}`;
+    return new URL(withProto);
+  } catch {
+    return new URL("https://yazzow.com");
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(PUBLIC_SITE_URL),
+  metadataBase: getMetadataBase(),
   title: {
     default: `${BRAND_NAME} · The business home for independent tutors`,
     template: `%s · ${BRAND_NAME}`,

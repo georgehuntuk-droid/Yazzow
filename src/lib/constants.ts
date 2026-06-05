@@ -1,8 +1,9 @@
 /** Platform branding — always "Yazzow" (capital Y). */
 export const BRAND_NAME = "Yazzow" as const;
 
+const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 export const PUBLIC_SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://yazzow.com";
+  rawSiteUrl && rawSiteUrl !== "" ? rawSiteUrl : "https://yazzow.com";
 
 /** Tutor SaaS plan — billed to the tutor (Stripe Billing on the platform account). */
 export const TUTOR_SUBSCRIPTION = {

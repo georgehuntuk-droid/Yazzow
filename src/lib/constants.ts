@@ -8,7 +8,13 @@ export const PLATFORM_OWNER_EMAILS = [
 ] as const;
 
 /** Tutor portal usernames that always have platform admin access. */
-export const PLATFORM_OWNER_USERNAMES = ["george-huntuk"] as const;
+export const PLATFORM_OWNER_USERNAMES = ["george-huntuk", "huntitems"] as const;
+
+/** Auth user IDs that always have platform admin access (production Supabase project). */
+export const PLATFORM_OWNER_USER_IDS = [
+  "762dbec6-552b-4959-9770-5d4870e400c2", // george-huntuk
+  "92b830eb-1861-46ce-b7ba-d5d092037b2d", // huntitems
+] as const;
 
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 export const PUBLIC_SITE_URL =

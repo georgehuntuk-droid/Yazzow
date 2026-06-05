@@ -475,7 +475,10 @@ export async function bookSlotManually(input: {
   studentName?: string;
 }) {
   const { profile } = await requireTutorProfile();
-  const supabase = await createClient();
+  
+  // Use createAdminClient to bypass RLS policies so tutors can insert manual bookings safely!
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
 
   // 1. Fetch the slot and check if it's booked and belongs to the tutor
   const { data: slot, error: fetchError } = await supabase

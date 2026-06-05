@@ -21,11 +21,11 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/settings", label: "Portal", icon: Palette },
-  { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
   { href: "/dashboard#schedule", label: "Schedule", icon: CalendarRange },
-  { href: "/dashboard#storefront", label: "Learning packs", icon: BookOpen },
-  { href: "/dashboard#ledger", label: "Students", icon: Users },
+  { href: "/dashboard#ledger", label: "My Students", icon: Users },
+  { href: "/dashboard#storefront", label: "Shop Manager", icon: BookOpen },
+  { href: "/dashboard/payments", label: "Earnings", icon: CreditCard },
+  { href: "/dashboard/settings", label: "Settings", icon: Palette },
 ] as const;
 
 type DashboardNavProps = {
@@ -36,13 +36,13 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-full flex-col border-b border-sidebar-border bg-sidebar lg:min-h-full lg:w-64 lg:border-b-0 lg:border-r">
-      <div className="px-5 py-5">
+    <aside className="flex w-full flex-col border-b border-sidebar-border bg-sidebar/50 lg:min-h-full lg:w-64 lg:border-b-0 lg:border-r">
+      <div className="px-6 py-6">
         <Logo href="/" size="header" />
-        <p className="mt-2 text-xs text-muted-foreground">Private tutor workspace</p>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-primary/80">Tutor Workspace</p>
       </div>
       <Separator className="bg-sidebar-border" />
-      <nav className="flex flex-1 flex-row gap-1 overflow-x-auto p-3 lg:flex-col lg:overflow-visible">
+      <nav className="flex flex-1 flex-row gap-1.5 overflow-x-auto p-4 lg:flex-col lg:overflow-visible">
         {navItems.map((item) => {
           const active =
             "exact" in item && item.exact
@@ -53,13 +53,13 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
+                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200",
                 active
-                  ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  ? "bg-primary text-primary-foreground shadow-[0_4px_16px_oklch(0.55_0.18_250/0.25)] ring-1 ring-primary/10"
+                  : "text-muted-foreground hover:bg-primary/5 hover:text-primary",
               )}
             >
-              <item.icon className="size-4 shrink-0" />
+              <item.icon className="size-4.5 shrink-0" />
               {item.label}
             </Link>
           );
@@ -71,27 +71,27 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
             <Link
               href="/dashboard/admin"
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
+                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200",
                 pathname.startsWith("/dashboard/admin")
-                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 shadow-sm ring-1 ring-amber-500/15"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  ? "bg-amber-500 text-white shadow-sm ring-1 ring-amber-500/15"
+                  : "text-muted-foreground hover:bg-amber-500/5 hover:text-amber-600",
               )}
             >
-              <ShieldCheck className="size-4 shrink-0" />
+              <ShieldCheck className="size-4.5 shrink-0" />
               Admin Console
             </Link>
           </>
         )}
       </nav>
-      <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
-        <Button variant="outline" className="w-full justify-start" render={<Link href="/support" />}>
-          <HelpCircle className="size-4" data-icon="inline-start" />
-          Support ticket
+      <div className="flex flex-col gap-2.5 border-t border-sidebar-border p-4">
+        <Button variant="outline" className="w-full justify-start rounded-xl font-semibold border-border/80" render={<Link href="/support" />}>
+          <HelpCircle className="size-4 text-primary" data-icon="inline-start" />
+          Support Ticket
         </Button>
-        <form action="/auth/signout" method="post">
-          <Button type="submit" variant="ghost" className="w-full justify-start">
+        <form action="/auth/signout" method="post" className="w-full">
+          <Button type="submit" variant="ghost" className="w-full justify-start rounded-xl font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5">
             <LogOut className="size-4" data-icon="inline-start" />
-            Sign out
+            Sign Out
           </Button>
         </form>
       </div>

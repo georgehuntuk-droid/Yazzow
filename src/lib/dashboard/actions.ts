@@ -468,3 +468,90 @@ export async function deleteStudent(studentId: string) {
   revalidatePath("/dashboard");
   return { ok: true as const };
 }
+
+export async function bookSlotManually(input: {
+  slotId: string;
+  parentEmail: string;
+  studentName?: string;
+}) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  // 1. Fetch the slot and check if it's booked and belongs to the tutor
+  const { data: slot, error: fetchError } = await supabase
+    .from("availability_slots")
+    .select("id, is_booked")
+    .eq("id", input.slotId)
+    .eq("tutor_id", profile.id)
+    .maybeSingle();
+
+  if (fetchError || !slot) {
+    return { ok: false as const, error: "Slot not found." };
+  }
+
+  if (slot.is_booked) {
+    return { ok: false as const, error: "Slot is already booked." };
+  }
+
+  // 2. Mark slot as booked
+  const { error: updateError } = await supabase
+    .from("availability_slots")
+    .update({ is_booked: true })
+    .eq("id", input.slotId)
+    .eq("tutor_id", profile.id);
+
+  if (updateError) {
+    return { ok: false as const, error: "Failed to update slot status." };
+  }
+
+  // 3. Create the booking record
+  const studentName = input.studentName?.trim() || "Manual Booking";
+  const parentEmail = input.parentEmail.trim().toLowerCase();
+
+  const { data: bookingRow, error: bookingError } = await supabase
+    .from("bookings")
+    .insert({
+      slot_id: input.slotId,
+      tutor_id: profile.id,
+      parent_email: parentEmail,
+      student_name: studentName,
+      amount_cents: 0, // Manual/offline payment
+      platform_fee_cents: 0,
+      status: "confirmed",
+    })
+    .select("id")
+    .single();
+
+  if (bookingError || !bookingRow) {
+    // Revert the slot is_booked update
+    await supabase
+      .from("availability_slots")
+      .update({ is_booked: false })
+      .eq("id", input.slotId)
+      .eq("tutor_id", profile.id);
+
+    return { ok: false as const, error: "Failed to create booking." };
+  }
+
+  // 4. Create student record if it doesn't exist
+  await supabase.from("students").upsert(
+    {
+      tutor_id: profile.id,
+      student_name: studentName,
+      parent_email: parentEmail,
+      status: "active",
+    },
+    { onConflict: "tutor_id,parent_email,student_name" }
+  );
+
+  // 5. Try syncing to Google calendar
+  try {
+    const { syncBookingToGoogleCalendar } = await import("@/lib/calendar/sync-booking");
+    await syncBookingToGoogleCalendar(bookingRow.id);
+  } catch (err) {
+    console.error("Google Calendar manual sync failed:", err);
+  }
+
+  await revalidateTutor(profile.username);
+  return { ok: true as const };
+}

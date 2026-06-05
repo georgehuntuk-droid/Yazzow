@@ -34,6 +34,14 @@ export type TutorSlot = {
   startsAt: string;
   endsAt: string;
   isBooked: boolean;
+  booking?: {
+    id: string;
+    parentEmail: string;
+    studentName: string | null;
+    status: string;
+    runningLateSentAt: string | null;
+    runningLateNote: string | null;
+  } | null;
 };
 
 export type RecentBooking = {

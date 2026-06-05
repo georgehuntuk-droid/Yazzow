@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { ArrowUpRight, Globe, Settings, CreditCard, Sparkles, BookOpen, Users, CalendarRange } from "lucide-react";
 
 import { CalendarSyncPanel } from "@/components/dashboard/calendar-sync-panel";
 import { ScheduleEditor } from "@/components/dashboard/schedule-editor";
@@ -9,11 +10,10 @@ import { StorefrontManager } from "@/components/dashboard/storefront-manager";
 import { RecentBookings } from "@/components/dashboard/recent-bookings";
 import { StudentLedger } from "@/components/dashboard/student-ledger";
 import { CopyLinkButton } from "@/components/dashboard/copy-link-button";
+import { TutorStatsMatrix } from "@/components/dashboard/tutor-stats-matrix";
+import { DashboardActivityTimeline } from "@/components/dashboard/dashboard-activity-timeline";
 import { requireTutorProfile } from "@/lib/auth/session";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { DashboardShell, PageHeader } from "@/components/layout/page-header";
@@ -48,112 +48,167 @@ export default async function DashboardPage() {
       getPortalBookingStatus(profile.id),
     ]);
 
+  // Calculate actual tutor statistics for our stunning matrix component
+  const bookingEarnings = recentBookings.reduce((sum, b) => sum + (b.amountCents || 0), 0);
+  const digitalEarnings = packSales.reduce((sum, s) => sum + (s.amountCents || 0), 0);
+  const totalEarningsCents = bookingEarnings + digitalEarnings;
+  
+  const activeStudentsCount = studentGroups.active.length;
+  const openSlotsCount = slots.filter((s) => !s.isBooked).length;
+
   return (
     <DashboardShell>
-      <PageHeader
-        title={`Welcome, ${profile.displayName}`}
-        description="Share your portal link — parents join your group and book lessons. List worksheet packs on your shelf for parents to enquire. Customize your page under Portal."
-        actions={
-          <>
-            <CopyLinkButton url={publicLink} size="sm" />
-            <Button variant="outline" size="sm" render={<Link href="/dashboard/settings" />}>
-              Customize portal
+      <div className="space-y-8 pb-12">
+        {/* Top Header Row with Profile Quick View */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-heading text-3xl font-black tracking-tight text-foreground selection:bg-blue-100 flex items-center gap-2">
+              Welcome back, {profile.displayName}
+              <Sparkles className="size-5 text-primary animate-pulse" />
+            </h1>
+            <p className="text-sm font-semibold text-muted-foreground mt-1">
+              Here&apos;s what&apos;s happening with your students today.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            <CopyLinkButton url={publicLink} size="sm" className="shadow-sm" />
+            <Button size="sm" render={<Link href={`/tutor/${profile.username}`} target="_blank" className="gap-1.5" />}>
+              <Globe className="size-4" />
+              Preview Portal
             </Button>
-            <Button variant="outline" size="sm" render={<Link href="/dashboard/payments" />}>
-              Payments
+            <Button variant="outline" size="sm" render={<Link href="/dashboard/settings" className="gap-1.5" />}>
+              <Settings className="size-4 text-primary" />
+              Settings
             </Button>
-            <Button size="sm" render={<Link href={`/tutor/${profile.username}`} />}>
-              Preview portal
-            </Button>
-          </>
-        }
-      />
-
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        {[
-          { label: "Portal link", value: profile.username, hint: "Share with parents" },
-          { label: "Lesson rate", value: formatMoney(profile.lessonPriceCents, profile.currency) },
-          { label: "Active students", value: String(studentGroups.active.length) },
-        ].map((stat) => (
-          <Card key={stat.label} className="yazz-panel">
-            <CardContent className="pt-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {stat.label}
-              </p>
-              <p className="mt-1 font-heading text-2xl font-semibold">{stat.value}</p>
-              {stat.hint ? <p className="mt-1 text-xs text-muted-foreground">{stat.hint}</p> : null}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="mb-8 rounded-xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground flex items-center justify-between gap-4 flex-wrap">
-        <span>
-          Public URL:{" "}
-          <code className="font-medium text-foreground">{publicLink}</code>
-        </span>
-        <CopyLinkButton url={publicLink} variant="outline" size="sm" className="bg-background shadow-sm" />
-      </div>
-
-      {!portalBooking.subscriptionActive ? (
-        <div className="mb-8 rounded-xl border border-amber-200/70 bg-amber-50/50 px-4 py-4 dark:bg-amber-950/25">
-          <p className="font-medium text-foreground">Subscribe to turn on paid online booking</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your portal works for worksheets and your schedule, but parents cannot pay for lessons
-            until you complete {TUTOR_SUBSCRIPTION.label} billing.
-          </p>
-          <Button size="sm" className="mt-3" render={<Link href="/dashboard/payments#subscription" />}>
-            Subscribe in Payments
-          </Button>
+          </div>
         </div>
-      ) : null}
 
-      <section id="bookings" className="scroll-mt-8 space-y-4">
-        <h2 className="font-heading text-xl font-semibold">Bookings</h2>
-        <PortalBookingStatusCard status={portalBooking} />
-        <RecentBookings bookings={recentBookings} currency={profile.currency} />
-      </section>
+        {/* 1. Quick Info Link Bar */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/20 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs sm:text-sm font-bold text-foreground">
+              Your Portal is Live: <code className="ml-1 text-primary">{publicLink}</code>
+            </span>
+          </div>
+          <CopyLinkButton url={publicLink} variant="outline" size="sm" className="self-start sm:self-auto bg-background text-[11px] font-bold" />
+        </div>
 
-      <Separator className="my-10" />
-
-      <section id="schedule" className="scroll-mt-8 space-y-4">
-        <h2 className="font-heading text-xl font-semibold">Schedule builder</h2>
-        <ScheduleEditor slots={slots} />
-        <Suspense fallback={null}>
-          <CalendarSyncPanel
-            settings={calendarSettings}
-            googleConfigured={isGoogleCalendarConfigured()}
-          />
-        </Suspense>
-      </section>
-
-      <Separator className="my-10" />
-
-      <section id="storefront" className="scroll-mt-8 space-y-4">
-        <h2 className="font-heading text-xl font-semibold">Learning packs</h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Upload packs to showcase on your portal shelf. Parents message you to buy — you handle
-          payment yourself (bank transfer, your own link, etc.). No extra Stripe setup for packs.
-        </p>
-        <StorefrontManager resources={resources} currency={profile.currency} />
-        {packSales.length > 0 ? (
-          <DigitalSalesLedger sales={packSales} currency={profile.currency} />
+        {/* 2. Billing subscription card if not active */}
+        {!portalBooking.subscriptionActive ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
+            <p className="font-black text-foreground flex items-center gap-1.5 text-sm sm:text-base">
+              Activate Online Booking Checkout
+            </p>
+            <p className="mt-1 text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed">
+              Your schedule is open, but families cannot checkout lessons online until you complete {TUTOR_SUBSCRIPTION.label} billing.
+            </p>
+            <Button size="sm" className="mt-3.5" render={<Link href="/dashboard/payments#subscription" />}>
+              Subscribe in Payments
+            </Button>
+          </div>
         ) : null}
-      </section>
 
-      <Separator className="my-10" />
-
-      <section id="ledger" className="scroll-mt-8 space-y-4">
-        <h2 className="font-heading text-xl font-semibold">Students</h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Track each family, add optional lesson feedback when you want, archive students who
-          have left, or restore them if they return.
-        </p>
-        <StudentLedger
-          students={studentGroups}
+        {/* 3. The Gorgeous Tutor Stats Matrix Section */}
+        <TutorStatsMatrix
+          activeStudents={activeStudentsCount}
+          openSlots={openSlotsCount}
+          totalEarningsCents={totalEarningsCents}
+          completedSessions={recentBookings.length}
           currency={profile.currency}
         />
-      </section>
+
+        {/* 4. Bookings & Activities Two-Column Grid */}
+        <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
+          <section id="bookings" className="scroll-mt-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-xl font-black tracking-tight text-foreground flex items-center gap-2">
+                <CalendarRange className="size-5 text-primary" />
+                Upcoming Bookings
+              </h2>
+              <span className="rounded-full bg-blue-100/60 px-2.5 py-0.5 text-xs font-bold text-primary">
+                {recentBookings.length} bookings
+              </span>
+            </div>
+            <PortalBookingStatusCard status={portalBooking} />
+            <RecentBookings bookings={recentBookings} currency={profile.currency} />
+          </section>
+
+          <section id="activity" className="scroll-mt-8">
+            <DashboardActivityTimeline 
+              currency={profile.currency} 
+              lessonPriceCents={profile.lessonPriceCents} 
+            />
+          </section>
+        </div>
+
+        <Separator className="border-border/50 my-10" />
+
+        {/* 5. Schedule Builder Section */}
+        <section id="schedule" className="scroll-mt-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-primary">
+              <CalendarRange className="size-5" />
+            </div>
+            <div>
+              <h2 className="font-heading text-xl font-black tracking-tight text-foreground">Schedule Builder</h2>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">Define slots when families can book you</p>
+            </div>
+          </div>
+          <ScheduleEditor slots={slots} />
+          <Suspense fallback={null}>
+            <CalendarSyncPanel
+              settings={calendarSettings}
+              googleConfigured={isGoogleCalendarConfigured()}
+            />
+          </Suspense>
+        </section>
+
+        <Separator className="border-border/50 my-10" />
+
+        {/* 6. Learning Packs Section (Shop Manager) */}
+        <section id="storefront" className="scroll-mt-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-primary">
+              <BookOpen className="size-5" />
+            </div>
+            <div>
+              <h2 className="font-heading text-xl font-black tracking-tight text-foreground">Shop Manager</h2>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">Upload learning packs to showcase on your shelf</p>
+            </div>
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground max-w-2xl leading-relaxed">
+            Packs will showcase on your portal shelf. Parents message you to buy — you handle payment yourself (bank transfer, your own link, etc.) with zero commissions.
+          </p>
+          <StorefrontManager resources={resources} currency={profile.currency} />
+          {packSales.length > 0 ? (
+            <DigitalSalesLedger sales={packSales} currency={profile.currency} />
+          ) : null}
+        </section>
+
+        <Separator className="border-border/50 my-10" />
+
+        {/* 7. Student Directory (My Kids / Students Ledger) */}
+        <section id="ledger" className="scroll-mt-8 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-primary">
+              <Users className="size-5" />
+            </div>
+            <div>
+              <h2 className="font-heading text-xl font-black tracking-tight text-foreground">Student Directory</h2>
+              <p className="text-xs font-semibold text-muted-foreground mt-0.5">Track your families and session feedback history</p>
+            </div>
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground max-w-2xl leading-relaxed">
+            Review detailed feedback history, track active schedules, or archive students who have finished their study track.
+          </p>
+          <StudentLedger
+            students={studentGroups}
+            currency={profile.currency}
+          />
+        </section>
+      </div>
     </DashboardShell>
   );
 }

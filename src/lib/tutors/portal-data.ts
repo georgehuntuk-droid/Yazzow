@@ -89,19 +89,45 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
 
   const { data, error } = await supabase
     .from("availability_slots")
-    .select("*")
+    .select(`
+      id,
+      starts_at,
+      ends_at,
+      is_booked,
+      bookings (
+        id,
+        parent_email,
+        student_name,
+        status,
+        running_late_sent_at,
+        running_late_note
+      )
+    `)
     .eq("tutor_id", tutorId)
     .gte("starts_at", now)
     .order("starts_at", { ascending: true });
 
   if (error || !data) return [];
 
-  return (data as AvailabilitySlotRow[]).map((row) => ({
-    id: row.id,
-    startsAt: row.starts_at,
-    endsAt: row.ends_at,
-    isBooked: row.is_booked,
-  }));
+  return data.map((row: any) => {
+    const rawBooking = Array.isArray(row.bookings) ? row.bookings[0] : row.bookings;
+    const booking = rawBooking && rawBooking.status === "confirmed" ? {
+      id: rawBooking.id,
+      parentEmail: rawBooking.parent_email,
+      studentName: rawBooking.student_name,
+      status: rawBooking.status,
+      runningLateSentAt: rawBooking.running_late_sent_at,
+      runningLateNote: rawBooking.running_late_note,
+    } : null;
+
+    return {
+      id: row.id,
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+      isBooked: row.is_booked,
+      booking,
+    };
+  });
 }
 
 export async function getRecentBookingsForTutor(

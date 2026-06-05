@@ -124,6 +124,21 @@
   h6 {
     @apply font-sans font-bold tracking-normal text-foreground;
   }
+
+  /* Force pointer cursor on all clickable elements and interactive roles */
+  button,
+  a,
+  select,
+  input[type="button"],
+  input[type="submit"],
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  .cursor-pointer,
+  .yazz-btn-primary,
+  .yazz-btn-secondary {
+    cursor: pointer !important;
+  }
 }
 
 @layer utilities {

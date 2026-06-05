@@ -19,11 +19,8 @@ export async function notifyFamiliesSlotOpened(
 ): Promise<{ recipientCount: number; emailsSent: number }> {
   const admin = createAdminClient();
 
-  const [studentsRes, subscribersRes] = await Promise.all([
-    admin
-      .from("students")
-      .select("parent_email, student_name")
-      .eq("tutor_id", payload.tutorId),
+  // STstrictly fetch only families who have explicitly opted in for slot alerts
+  const [subscribersRes] = await Promise.all([
     admin
       .from("slot_alert_subscribers")
       .select("parent_email, student_name")
@@ -33,7 +30,7 @@ export async function notifyFamiliesSlotOpened(
   const exclude = payload.excludeParentEmail?.trim().toLowerCase();
   const recipients = new Map<string, string | null>();
 
-  for (const row of [...(studentsRes.data ?? []), ...(subscribersRes.data ?? [])]) {
+  for (const row of (subscribersRes.data ?? [])) {
     const email = row.parent_email.trim().toLowerCase();
     if (!email || email === exclude) continue;
     if (!recipients.has(email)) {

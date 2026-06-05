@@ -10,8 +10,22 @@ import { MarketingTestimonials } from "@/components/marketing/testimonials";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getMarketingAuthCta } from "@/lib/marketing/auth-cta";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export default async function HomePage() {
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      redirect("/dashboard");
+    }
+  }
+
   const authCta = await getMarketingAuthCta();
 
   return (

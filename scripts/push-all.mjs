@@ -2,7 +2,7 @@ import { execSync } from "node:child_process";
 
 const name = "georgehuntuk-droid";
 const email = "georgehuntuk-droid@users.noreply.github.com";
-const message = "feat: implement bulk lesson packages credits and complimentary billing upgrades";
+const message = "feat: redirect authenticated users from landing page directly to dashboard";
 
 try {
   console.log("Configuring git user...");

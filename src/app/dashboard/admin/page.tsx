@@ -112,7 +112,11 @@ export default async function AdminDashboardPage() {
             </p>
           </div>
 
-          <AdminConsoleClient tutors={tutors} platformStats={stats} />
+          <AdminConsoleClient 
+            tutors={tutors} 
+            platformStats={stats} 
+            isServiceRoleConfigured={Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)} 
+          />
         </div>
       </div>
     </main>

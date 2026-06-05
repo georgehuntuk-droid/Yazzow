@@ -6,7 +6,7 @@ try {
   console.log('Staged successfully.');
 
   console.log('Committing changes...');
-  const commitMsg = 'feat: allow simple subscription statuses (comped accounts) to activate immediately without Stripe IDs';
+  const commitMsg = 'fix: unhang client admin buttons and display service role key warnings';
   const commitOut = execSync(`git -c user.name="georgehuntuk-droid" -c user.email="georgehuntuk-droid@users.noreply.github.com" commit -m "${commitMsg}"`);
   console.log(commitOut.toString());
 

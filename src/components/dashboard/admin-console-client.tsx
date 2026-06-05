@@ -47,9 +47,10 @@ export type AdminTutorData = {
 type AdminConsoleClientProps = {
   tutors: AdminTutorData[];
   platformStats: any;
+  isServiceRoleConfigured?: boolean;
 };
 
-export function AdminConsoleClient({ tutors, platformStats }: AdminConsoleClientProps) {
+export function AdminConsoleClient({ tutors, platformStats, isServiceRoleConfigured = true }: AdminConsoleClientProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
   const [isPending, startTransition] = useTransition();
@@ -85,10 +86,15 @@ export function AdminConsoleClient({ tutors, platformStats }: AdminConsoleClient
 
     setActionLoadingId(tutorId);
     startTransition(async () => {
-      const res = await updateTutorSubscriptionStatus(tutorId, nextStatus);
-      setActionLoadingId(null);
-      if (!res.ok) {
-        alert(`Failed to update subscription: ${res.error}`);
+      try {
+        const res = await updateTutorSubscriptionStatus(tutorId, nextStatus);
+        if (!res.ok) {
+          alert(`Failed to update subscription: ${res.error}`);
+        }
+      } catch (err) {
+        alert(`An error occurred: ${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+        setActionLoadingId(null);
       }
     });
   };
@@ -104,10 +110,15 @@ export function AdminConsoleClient({ tutors, platformStats }: AdminConsoleClient
 
     setActionLoadingId(tutorId);
     startTransition(async () => {
-      const res = await deleteTutorProfileAndUser(tutorId);
-      setActionLoadingId(null);
-      if (!res.ok) {
-        alert(`Failed to delete tutor: ${res.error}`);
+      try {
+        const res = await deleteTutorProfileAndUser(tutorId);
+        if (!res.ok) {
+          alert(`Failed to delete tutor: ${res.error}`);
+        }
+      } catch (err) {
+        alert(`An error occurred: ${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+        setActionLoadingId(null);
       }
     });
   };
@@ -122,6 +133,21 @@ export function AdminConsoleClient({ tutors, platformStats }: AdminConsoleClient
 
   return (
     <div className="space-y-8">
+      {!isServiceRoleConfigured && (
+        <Card className="border-amber-200 bg-amber-50/50 p-5 shadow-sm">
+          <p className="font-bold text-amber-900 flex items-center gap-1.5 text-sm sm:text-base">
+            <AlertTriangle className="size-5 text-amber-600 shrink-0" />
+            Service Role Key Missing (Read-Only Mode)
+          </p>
+          <p className="mt-1 text-xs sm:text-sm font-medium text-amber-800 leading-relaxed">
+            The platform is running without the <strong>SUPABASE_SERVICE_ROLE_KEY</strong> or <strong>SUPABASE_SECRET_KEY</strong> environment variable. You can view registered tutors, but all write operations (like Compping subscriptions, Un-compping, or deleting users) will be blocked by Supabase Row Level Security (RLS).
+          </p>
+          <p className="mt-2 text-xs sm:text-sm font-semibold text-amber-800">
+            Fix: Go to Vercel → Project Settings → Environment Variables, add <code>SUPABASE_SERVICE_ROLE_KEY</code> (copy the secret service_role key from your Supabase Dashboard → Project Settings → API), and trigger a fresh deployment.
+          </p>
+        </Card>
+      )}
+
       {/* Search & Tabs bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">

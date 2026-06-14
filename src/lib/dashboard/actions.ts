@@ -589,3 +589,125 @@ export async function bookSlotManually(input: {
   await revalidateTutor(profile.username);
   return { ok: true as const };
 }
+
+export async function assignStudentTask(input: {
+  studentId: string;
+  title: string;
+  description?: string;
+}) {
+  const { profile } = await requireTutorProfile();
+  const title = input.title.trim();
+  const description = input.description?.trim() || null;
+
+  if (!title) {
+    return { ok: false as const, error: "Task title is required." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("student_tasks").insert({
+    student_id: input.studentId,
+    tutor_id: profile.id,
+    title,
+    description,
+    status: "pending",
+  });
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function deleteStudentTask(taskId: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("student_tasks")
+    .delete()
+    .eq("id", taskId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function toggleTaskStatus(taskId: string, status: "pending" | "completed") {
+  const supabase = await createClient();
+  
+  let authorized = false;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false as const, error: "Unauthorized." };
+  }
+
+  const { data: task } = await supabase
+    .from("student_tasks")
+    .select("tutor_id, student_id")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (!task) {
+    return { ok: false as const, error: "Task not found." };
+  }
+
+  if (task.tutor_id === user.id) {
+    authorized = true;
+  } else {
+    const { data: student } = await supabase
+      .from("students")
+      .select("parent_email")
+      .eq("id", task.student_id)
+      .maybeSingle();
+
+    if (student && student.parent_email.toLowerCase() === user.email?.toLowerCase()) {
+      authorized = true;
+    }
+  }
+
+  if (!authorized) {
+    return { ok: false as const, error: "Unauthorized to update this task." };
+  }
+
+  const completedAt = status === "completed" ? new Date().toISOString() : null;
+
+  const { error } = await supabase
+    .from("student_tasks")
+    .update({
+      status,
+      completed_at: completedAt,
+    })
+    .eq("id", taskId);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function saveTaskFeedback(taskId: string, feedback: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("student_tasks")
+    .update({ tutor_feedback: feedback.trim() || null })
+    .eq("id", taskId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}

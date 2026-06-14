@@ -37,6 +37,7 @@ export async function generateMetadata(
   return {
     title,
     description,
+    manifest: `/api/tutor/${tutor.username}/manifest.json`,
     alternates: {
       canonical: siteUrl,
     },

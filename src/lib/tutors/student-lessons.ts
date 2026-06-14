@@ -12,6 +12,16 @@ export type StudentLessonRecord = {
   lessonRating: number | null;
 };
 
+export type StudentTaskRecord = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: "pending" | "completed";
+  tutorFeedback: string | null;
+  createdAt: string;
+  completedAt: string | null;
+};
+
 export type StudentWithLessons = {
   id: string;
   studentName: string;
@@ -22,6 +32,7 @@ export type StudentWithLessons = {
   archivedAt: string | null;
   createdAt: string;
   lessons: StudentLessonRecord[];
+  tasks: StudentTaskRecord[];
 };
 
 type BookingWithSlot = BookingRow & {
@@ -71,6 +82,18 @@ export async function getStudentsWithLessonsForTutor(
         .order("created_at", { ascending: false }),
     ]);
 
+  let tasks: any[] = [];
+  try {
+    const { data: taskData } = await supabase
+      .from("student_tasks")
+      .select("*")
+      .eq("tutor_id", tutorId)
+      .order("created_at", { ascending: false });
+    tasks = taskData ?? [];
+  } catch (err) {
+    console.warn("Could not load tasks (table may not exist yet):", err);
+  }
+
   if (studentsError) throw studentsError;
   if (bookingsError) throw bookingsError;
 
@@ -99,6 +122,18 @@ export async function getStudentsWithLessonsForTutor(
         };
       });
 
+    const studentTasks = tasks
+      .filter((t) => t.student_id === student.id)
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status as "pending" | "completed",
+        tutorFeedback: t.tutor_feedback,
+        createdAt: t.created_at,
+        completedAt: t.completed_at,
+      }));
+
     const status =
       features.studentStatus && row.status === "archived" ? "archived" : "active";
 
@@ -112,6 +147,7 @@ export async function getStudentsWithLessonsForTutor(
       archivedAt: features.studentStatus ? (row.archived_at ?? null) : null,
       createdAt: student.created_at,
       lessons,
+      tasks: studentTasks,
     };
   });
 

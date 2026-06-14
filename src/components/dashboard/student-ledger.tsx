@@ -15,6 +15,10 @@ import {
   saveLessonFeedback,
   updateStudentNotes,
   updateStudentStatus,
+  assignStudentTask,
+  deleteStudentTask,
+  saveTaskFeedback,
+  toggleTaskStatus,
 } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { StudentWithLessons } from "@/lib/tutors/student-lessons";
@@ -297,6 +301,7 @@ function StudentList({
   onDelete: (id: string, label: string) => void;
   mode: "active" | "archived";
 }) {
+  const router = useRouter();
   if (list.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
@@ -410,7 +415,132 @@ function StudentList({
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                {/* Assigned Work & Tasks */}
+                <div className="space-y-3 border-t border-border/60 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Assigned Work & Tasks</p>
+                      <p className="text-xs text-muted-foreground">
+                        Set tasks, assignments or homework. Students can view and mark them as completed in their portal.
+                      </p>
+                    </div>
+                  </div>
+
+                  {student.tasks && student.tasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {student.tasks.map((task) => (
+                        <div key={task.id} className="flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/10 p-3 text-sm">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-0.5">
+                              <span className={cn(
+                                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                task.status === "completed"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-amber-100 text-amber-800"
+                              )}>
+                                {task.status === "completed" ? "Completed" : "Pending"}
+                              </span>
+                              <p className={cn("font-semibold", task.status === "completed" && "line-through text-muted-foreground")}>
+                                {task.title}
+                              </p>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground leading-normal mt-0.5">
+                                  {task.description}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const newStatus = task.status === "completed" ? "pending" : "completed";
+                                  await toggleTaskStatus(task.id, newStatus);
+                                  router.refresh();
+                                }}
+                                className="font-semibold hover:text-primary transition-colors cursor-pointer"
+                              >
+                                Mark {task.status === "completed" ? "Pending" : "Completed"}
+                              </button>
+                              <span className="text-muted-foreground/30">|</span>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm("Delete this task?")) {
+                                    await deleteStudentTask(task.id);
+                                    router.refresh();
+                                  }
+                                }}
+                                className="font-semibold text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-1 space-y-1.5 border-t border-border/40 pt-2">
+                            <label className="text-[11px] font-semibold text-muted-foreground">Tutor Notes / Feedback</label>
+                            <input
+                              type="text"
+                              defaultValue={task.tutorFeedback ?? ""}
+                              placeholder="Add feedback, resources or hints for this task..."
+                              onBlur={async (e) => {
+                                if (e.target.value !== (task.tutorFeedback ?? "")) {
+                                  await saveTaskFeedback(task.id, e.target.value);
+                                  router.refresh();
+                                }
+                              }}
+                              className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No tasks assigned yet.</p>
+                  )}
+
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const form = e.currentTarget;
+                      const formData = new FormData(form);
+                      const title = String(formData.get("taskTitle") ?? "").trim();
+                      const desc = String(formData.get("taskDesc") ?? "").trim();
+                      
+                      if (!title) return;
+                      
+                      const res = await assignStudentTask({ studentId: student.id, title, description: desc });
+                      if (res.ok) {
+                        form.reset();
+                        router.refresh();
+                      } else {
+                        alert(res.error);
+                      }
+                    }}
+                    className="flex flex-col gap-2 rounded-xl border border-dashed border-border p-3 bg-card"
+                  >
+                    <p className="text-xs font-semibold text-foreground">Assign New Task</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Input
+                        name="taskTitle"
+                        required
+                        placeholder="Task title (e.g., Complete Chapter 3 exercises)"
+                        className="h-8 text-xs rounded-lg"
+                      />
+                      <Input
+                        name="taskDesc"
+                        placeholder="Description / instructions (optional)"
+                        className="h-8 text-xs rounded-lg"
+                      />
+                    </div>
+                    <Button type="submit" size="xs" className="self-start text-[11px] h-7 px-3 font-semibold rounded-lg mt-1">
+                      Assign Task
+                    </Button>
+                  </form>
+                </div>
+
+                <div className="space-y-3 border-t border-border/60 pt-4">
                   <p className="text-sm font-medium">Lesson feedback (optional)</p>
                   <p className="text-xs text-muted-foreground">
                     Private to you — how the lesson went, performance, whether you want to

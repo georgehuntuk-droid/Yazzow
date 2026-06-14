@@ -24,7 +24,7 @@ export function CopyLinkButton({
   const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
-    if (typeof navigator !== "undefined" && navigator.share) {
+    if (typeof navigator !== "undefined" && !!(navigator as any).share) {
       setCanShare(true);
     }
   }, []);

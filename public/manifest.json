@@ -1,0 +1,18 @@
+{
+  "name": "Yazzow",
+  "short_name": "Yazzow",
+  "description": "The business home for independent tutors.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fbfbf8",
+  "theme_color": "#446152",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

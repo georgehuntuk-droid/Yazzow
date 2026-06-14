@@ -4,17 +4,13 @@ export const BRAND_NAME = "Yazzow" as const;
 /** Built-in platform owners — always admin even if PLATFORM_ADMIN_EMAILS is unset on Vercel. */
 export const PLATFORM_OWNER_EMAILS = [
   "george.huntuk@gmail.com",
-  "georgehuntuk@gmail.com",
 ] as const;
 
 /** Tutor portal usernames that always have platform admin access. */
-export const PLATFORM_OWNER_USERNAMES = ["george-huntuk", "huntitems"] as const;
+export const PLATFORM_OWNER_USERNAMES = [] as const;
 
 /** Auth user IDs that always have platform admin access (production Supabase project). */
-export const PLATFORM_OWNER_USER_IDS = [
-  "762dbec6-552b-4959-9770-5d4870e400c2", // george-huntuk
-  "92b830eb-1861-46ce-b7ba-d5d092037b2d", // huntitems
-] as const;
+export const PLATFORM_OWNER_USER_IDS = [] as const;
 
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 export const PUBLIC_SITE_URL =

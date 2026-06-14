@@ -24,6 +24,7 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
+  manifest: "/manifest.json",
   title: {
     default: `${BRAND_NAME} · The business home for independent tutors`,
     template: `%s · ${BRAND_NAME}`,
@@ -90,6 +91,20 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col font-sans">
         {children}
         <Analytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(reg) { console.log('SW registered:', reg.scope); },
+                    function(err) { console.log('SW reg failed:', err); }
+                  );
+                });
+              }
+            `
+          }}
+        />
       </body>
     </html>
   );

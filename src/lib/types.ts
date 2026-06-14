@@ -12,6 +12,7 @@ export type TutorProfile = {
   currency: string;
   blockPackageLessonsCount?: number;
   blockPackageDiscountPercent?: number;
+  isPlatformAdmin?: boolean;
 };
 
 export type OpenSlot = {

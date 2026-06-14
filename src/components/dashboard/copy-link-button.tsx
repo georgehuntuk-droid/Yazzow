@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Copy, Check, Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -21,8 +21,28 @@ export function CopyLinkButton({
   showText = true,
 }: CopyLinkButtonProps) {
   const [copied, setCopied] = useState(false);
+  const [canShare, setCanShare] = useState(false);
 
-  async function handleCopy() {
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      setCanShare(true);
+    }
+  }, []);
+
+  async function handleAction() {
+    if (canShare) {
+      try {
+        await navigator.share({
+          title: "My Booking Portal",
+          text: "Book a tutoring session with me on Yazzow:",
+          url: url,
+        });
+        return;
+      } catch {
+        // Fallback to copy if user dismissed the share dialog or it failed
+      }
+    }
+
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -36,13 +56,18 @@ export function CopyLinkButton({
     <Button
       variant={variant}
       size={size}
-      onClick={handleCopy}
+      onClick={handleAction}
       className={`relative inline-flex items-center gap-1.5 font-medium transition-all ${className}`}
     >
       {copied ? (
         <>
           <Check className="size-4 text-emerald-500 shrink-0" />
           {showText && <span className="text-emerald-500 font-semibold">Copied!</span>}
+        </>
+      ) : canShare ? (
+        <>
+          <Share2 className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
+          {showText && <span>Share portal link</span>}
         </>
       ) : (
         <>

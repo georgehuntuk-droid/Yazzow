@@ -15,12 +15,14 @@ import { formatMoney, formatSlotRange } from "@/lib/format";
 
 type WorkspacePageProps = {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ studentId?: string }>;
 };
 
 const DEMO_USERNAMES = new Set(["demo", "maya-chen"]);
 
-export default async function StudentWorkspacePage({ params }: WorkspacePageProps) {
+export default async function StudentWorkspacePage({ params, searchParams }: WorkspacePageProps) {
   const { username } = await params;
+  const { studentId } = await searchParams;
 
   const isDemo = DEMO_USERNAMES.has(username);
   const tutor = isDemo
@@ -39,17 +41,16 @@ export default async function StudentWorkspacePage({ params }: WorkspacePageProp
     redirect(`/auth/login?next=/tutor/${username}/workspace`);
   }
 
-  // 2. Check student record via Admin Client to bypass RLS (since students can't read profiles of other students)
+  // 2. Check student records via Admin Client to bypass RLS (since students can't read profiles of other students)
   const admin = createAdminClient();
-  const { data: studentRecord } = await admin
+  const { data: studentRecords } = await admin
     .from("students")
     .select("*")
     .eq("tutor_id", tutor.id)
     .eq("parent_email", user.email)
-    .eq("status", "active")
-    .maybeSingle();
+    .eq("status", "active");
 
-  if (!studentRecord) {
+  if (!studentRecords || studentRecords.length === 0) {
     // Student not registered or archived/removed
     return (
       <PortalThemeWrapper tutor={tutor}>
@@ -89,6 +90,63 @@ export default async function StudentWorkspacePage({ params }: WorkspacePageProp
         </div>
       </PortalThemeWrapper>
     );
+  }
+
+  // If there are multiple active children and no studentId is selected in the URL (or is invalid), show student selection screen
+  let studentRecord = studentRecords.find((s) => s.id === studentId);
+  
+  if (studentRecords.length > 1 && !studentRecord) {
+    return (
+      <PortalThemeWrapper tutor={tutor}>
+        <div className="min-h-screen flex flex-col bg-background">
+          <header className="border-b border-border/60 bg-background/80 backdrop-blur-md">
+            <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
+              <Logo size="header" href="/" />
+              <Link href={`/tutor/${username}`} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="size-4" /> Back to Portal
+              </Link>
+            </div>
+          </header>
+          <main className="flex-1 flex items-center justify-center p-6">
+            <div className="max-w-md w-full text-center space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
+                <GraduationCap className="size-6 animate-bounce" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">Select Student Workspace</h1>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  We found multiple student profiles registered under your email (<code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px]">{user.email}</code>). Which workspace would you like to open?
+                </p>
+              </div>
+              <div className="space-y-2.5 pt-2">
+                {studentRecords.map((student) => (
+                  <Link
+                    key={student.id}
+                    href={`/tutor/${username}/workspace?studentId=${student.id}`}
+                    className="w-full inline-flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3.5 hover:bg-muted/40 hover:border-primary/40 hover:scale-[1.01] transition-all duration-200 font-semibold text-foreground text-sm shadow-sm"
+                  >
+                    <span>{student.student_name}</span>
+                    <span className="text-xs text-primary font-bold">Open Workspace →</span>
+                  </Link>
+                ))}
+              </div>
+              <div className="pt-2">
+                <form action="/auth/signout" method="post" className="w-full">
+                  <button type="submit" className="w-full text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors py-2">
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            </div>
+          </main>
+        </div>
+      </PortalThemeWrapper>
+    );
+  }
+
+  // If only 1 student exists and no studentId is in query, use the only student
+  if (!studentRecord) {
+    studentRecord = studentRecords[0];
   }
 
   // 3. Fetch lessons and tasks for this student
@@ -141,6 +199,14 @@ export default async function StudentWorkspacePage({ params }: WorkspacePageProp
           <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
             <Logo size="header" href="/" />
             <div className="flex items-center gap-3">
+              {studentRecords.length > 1 && (
+                <Link
+                  href={`/tutor/${username}/workspace`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline transition-colors mr-1"
+                >
+                  ⇄ Switch Student
+                </Link>
+              )}
               <span className="hidden sm:inline-block text-xs font-semibold text-muted-foreground bg-muted/70 px-2.5 py-1 rounded-lg">
                 Student: {studentRecord.student_name}
               </span>

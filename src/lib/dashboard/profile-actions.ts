@@ -63,6 +63,7 @@ export async function updatePortalProfile(input: {
   bio: string;
   lessonPrice: string;
   currency: string;
+  allowPublicJoining: boolean;
 }) {
   const { profile } = await requireTutorProfile();
 
@@ -103,6 +104,7 @@ export async function updatePortalProfile(input: {
       bio: bio || null,
       lesson_price_cents: lessonPriceCents,
       currency,
+      allow_public_joining: input.allowPublicJoining,
     })
     .eq("id", profile.id);
 

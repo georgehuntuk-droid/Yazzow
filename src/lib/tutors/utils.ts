@@ -17,6 +17,7 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     blockPackageLessonsCount: (row as any).block_package_lessons_count ?? 10,
     blockPackageDiscountPercent: (row as any).block_package_discount_percent ?? 10,
     isPlatformAdmin: row.is_platform_admin === true,
+    allowPublicJoining: (row as any).allow_public_joining !== false,
   };
 }
 

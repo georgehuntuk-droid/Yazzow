@@ -48,6 +48,7 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
   const [username, setUsername] = useState(profile.username);
   const [blockLessonsCount, setBlockLessonsCount] = useState(profile.blockPackageLessonsCount ?? 10);
   const [blockDiscountPercent, setBlockDiscountPercent] = useState(profile.blockPackageDiscountPercent ?? 10);
+  const [allowPublicJoining, setAllowPublicJoining] = useState(profile.allowPublicJoining ?? true);
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [coverUrl, setCoverUrl] = useState(profile.coverUrl);
@@ -87,6 +88,7 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
         profile.portalAccentOklch,
       blockPackageLessonsCount: blockLessonsCount,
       blockPackageDiscountPercent: blockDiscountPercent,
+      allowPublicJoining,
     }),
     [
       profile,
@@ -102,6 +104,7 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       accentPresetId,
       blockLessonsCount,
       blockDiscountPercent,
+      allowPublicJoining,
     ],
   );
 
@@ -124,6 +127,7 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       bio,
       lessonPrice,
       currency,
+      allowPublicJoining,
     });
 
     if (!result.ok) {
@@ -538,6 +542,25 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 pt-2 pb-2">
+                <input
+                  id="allow-public-joining"
+                  type="checkbox"
+                  checked={allowPublicJoining}
+                  onChange={(e) => setAllowPublicJoining(e.target.checked)}
+                  className="mt-0.5 h-4.5 w-4.5 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                />
+                <div className="space-y-0.5">
+                  <label htmlFor="allow-public-joining" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Allow families to self-join via public page
+                  </label>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    When enabled, the &ldquo;Join Family&rdquo; form is shown on your public booking page. 
+                    Disable this to make your portal invite-only and prevent unauthorized self-signups.
+                  </p>
                 </div>
               </div>
 

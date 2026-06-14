@@ -154,7 +154,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
           <BookingStatusBanner manageUrl={bookingManageUrl} />
         </Suspense>
 
-        {liveTutor ? <JoinTutorFamily tutor={tutor} tutorUsername={username} /> : null}
+        {liveTutor && tutor.allowPublicJoining !== false ? <JoinTutorFamily tutor={tutor} tutorUsername={username} /> : null}
 
         <Tabs defaultValue="book">
           <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">

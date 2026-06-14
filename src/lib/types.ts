@@ -13,6 +13,7 @@ export type TutorProfile = {
   blockPackageLessonsCount?: number;
   blockPackageDiscountPercent?: number;
   isPlatformAdmin?: boolean;
+  allowPublicJoining?: boolean;
 };
 
 export type OpenSlot = {

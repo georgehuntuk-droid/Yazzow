@@ -342,6 +342,11 @@ export async function addStudent(input: {
     return { ok: false as const, error: "Student name and parent email are required." };
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(parentEmail)) {
+    return { ok: false as const, error: "Please enter a valid email address." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("students").insert({
     tutor_id: profile.id,
@@ -355,6 +360,20 @@ export async function addStudent(input: {
       return { ok: false as const, error: "This student is already in your ledger." };
     }
     return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  try {
+    const { sendStudentInvitationEmail } = await import("@/lib/notifications/auth-email");
+    const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+    const workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
+    await sendStudentInvitationEmail({
+      to: parentEmail,
+      tutorName: profile.displayName,
+      studentName: studentName,
+      workspaceUrl,
+    });
+  } catch (err) {
+    console.error("Failed to send student invitation email:", err);
   }
 
   revalidatePath("/dashboard");
@@ -705,6 +724,78 @@ export async function saveTaskFeedback(taskId: string, feedback: string) {
     .eq("tutor_id", profile.id);
 
   if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function resendStudentInvitation(studentId: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { data: student, error: fetchError } = await supabase
+    .from("students")
+    .select("student_name, parent_email")
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id)
+    .maybeSingle();
+
+  if (fetchError || !student) {
+    return { ok: false as const, error: "Student not found." };
+  }
+
+  try {
+    const { sendStudentInvitationEmail } = await import("@/lib/notifications/auth-email");
+    const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+    const workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
+    
+    await sendStudentInvitationEmail({
+      to: student.parent_email,
+      tutorName: profile.displayName,
+      studentName: student.student_name,
+      workspaceUrl,
+    });
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: "Failed to send invitation email." };
+  }
+}
+
+export async function updateStudentDetails(
+  studentId: string,
+  studentName: string,
+  parentEmail: string,
+) {
+  const { profile } = await requireTutorProfile();
+
+  const name = studentName.trim();
+  const email = parentEmail.trim().toLowerCase();
+
+  if (!name || !email) {
+    return { ok: false as const, error: "Student name and parent email are required." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { ok: false as const, error: "Please enter a valid email address." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("students")
+    .update({
+      student_name: name,
+      parent_email: email,
+    })
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false as const, error: "A student with this email is already registered." };
+    }
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 

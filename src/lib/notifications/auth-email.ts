@@ -57,3 +57,23 @@ export async function sendPasswordResetEmail(input: {
     `,
   });
 }
+
+export async function sendStudentInvitationEmail(input: {
+  to: string;
+  tutorName: string;
+  studentName: string;
+  workspaceUrl: string;
+}): Promise<boolean> {
+  return sendResendEmail({
+    to: input.to,
+    subject: `Join ${input.tutorName}'s private classroom on Yazzow`,
+    html: `
+      <p>Hello,</p>
+      <p>Your tutor, <strong>${input.tutorName}</strong>, has added <strong>${input.studentName}</strong> to their private classroom workspace on Yazzow.</p>
+      <p>To view your remaining lesson credits, view homework tasks, and manage your lesson schedule, click the link below to sign in or create an account:</p>
+      <p style="margin: 20px 0;"><a href="${input.workspaceUrl}" style="background-color:#446152;color:#ffffff;padding:10px 20px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:bold;font-size:14px;">Open Student Workspace</a></p>
+      <p>If you do not have a Yazzow account yet, simply sign up with this email address (${input.to}) to instantly link your children's profiles.</p>
+      <p>Best regards,<br/>The Yazzow Team</p>
+    `,
+  });
+}

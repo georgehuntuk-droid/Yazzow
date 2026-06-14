@@ -19,6 +19,7 @@ import {
   deleteStudentTask,
   saveTaskFeedback,
   toggleTaskStatus,
+  resendStudentInvitation,
 } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { StudentWithLessons } from "@/lib/tutors/student-lessons";
@@ -41,6 +42,10 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+  const [editingNames, setEditingNames] = useState<Record<string, string>>({});
+  const [editingEmails, setEditingEmails] = useState<Record<string, string>>({});
+  const [savingDetailsId, setSavingDetailsId] = useState<string | null>(null);
+  const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [feedbackDraft, setFeedbackDraft] = useState<
     Record<string, { text: string; rating: number | null }>
   >({});
@@ -78,6 +83,31 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     if (!result.ok) {
       setError(result.error);
       return;
+    }
+    router.refresh();
+  }
+
+  async function handleSaveDetails(studentId: string, name: string, email: string) {
+    setSavingDetailsId(studentId);
+    const { updateStudentDetails } = await import("@/lib/dashboard/actions");
+    const result = await updateStudentDetails(studentId, name, email);
+    setSavingDetailsId(null);
+
+    if (!result.ok) {
+      alert(result.error || "Failed to update student details.");
+    }
+    router.refresh();
+  }
+
+  async function handleResendInvite(studentId: string) {
+    setSendingInviteId(studentId);
+    const result = await resendStudentInvitation(studentId);
+    setSendingInviteId(null);
+
+    if (!result.ok) {
+      alert(result.error || "Failed to send invitation email.");
+    } else {
+      alert("Invitation email sent successfully!");
     }
     router.refresh();
   }
@@ -227,6 +257,13 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             setExpandedId={setExpandedId}
             editingNotes={editingNotes}
             setEditingNotes={setEditingNotes}
+            editingNames={editingNames}
+            setEditingNames={setEditingNames}
+            editingEmails={editingEmails}
+            setEditingEmails={setEditingEmails}
+            onSaveDetails={handleSaveDetails}
+            onResendInvite={handleResendInvite}
+            sendingInviteId={sendingInviteId}
             feedbackDraft={feedbackDraft}
             setFeedbackDraft={setFeedbackDraft}
             onSaveNotes={handleSaveNotes}
@@ -250,6 +287,13 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             setExpandedId={setExpandedId}
             editingNotes={editingNotes}
             setEditingNotes={setEditingNotes}
+            editingNames={editingNames}
+            setEditingNames={setEditingNames}
+            editingEmails={editingEmails}
+            setEditingEmails={setEditingEmails}
+            onSaveDetails={handleSaveDetails}
+            onResendInvite={handleResendInvite}
+            sendingInviteId={sendingInviteId}
             feedbackDraft={feedbackDraft}
             setFeedbackDraft={setFeedbackDraft}
             onSaveNotes={handleSaveNotes}
@@ -273,6 +317,13 @@ function StudentList({
   setExpandedId,
   editingNotes,
   setEditingNotes,
+  editingNames,
+  setEditingNames,
+  editingEmails,
+  setEditingEmails,
+  onSaveDetails,
+  onResendInvite,
+  sendingInviteId,
   feedbackDraft,
   setFeedbackDraft,
   onSaveNotes,
@@ -289,6 +340,13 @@ function StudentList({
   setExpandedId: (id: string | null) => void;
   editingNotes: Record<string, string>;
   setEditingNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  editingNames: Record<string, string>;
+  setEditingNames: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  editingEmails: Record<string, string>;
+  setEditingEmails: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onSaveDetails: (id: string, name: string, email: string) => void;
+  onResendInvite: (id: string) => void;
+  sendingInviteId: string | null;
   feedbackDraft: Record<string, { text: string; rating: number | null }>;
   setFeedbackDraft: React.Dispatch<
     React.SetStateAction<Record<string, { text: string; rating: number | null }>>
@@ -320,6 +378,8 @@ function StudentList({
       {list.map((student) => {
         const open = expandedId === student.id;
         const draftNotes = editingNotes[student.id] ?? student.notes ?? "";
+        const draftName = editingNames[student.id] ?? student.studentName;
+        const draftEmail = editingEmails[student.id] ?? student.parentEmail;
         const lessons = confirmedLessons(student);
 
         return (
@@ -341,6 +401,28 @@ function StudentList({
                     <Mail className="size-3 text-primary" />
                     Email Parent
                   </a>
+                  {student.hasAccount ? (
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300">
+                      Linked
+                    </span>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-950/40 border border-amber-200/50 dark:border-amber-800/30 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                        Pending Sign-up
+                      </span>
+                      <button
+                        type="button"
+                        disabled={sendingInviteId === student.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onResendInvite(student.id);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-background px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {sendingInviteId === student.id ? "Sending..." : "Resend Invite"}
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   <Badge variant={mode === "active" ? "default" : "secondary"}>
@@ -364,28 +446,48 @@ function StudentList({
 
             {open ? (
               <CardContent className="space-y-4 border-t border-border/60 pt-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">General notes</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Student Name</label>
                     <Input
-                      value={draftNotes}
+                      value={draftName}
                       onChange={(e) =>
-                        setEditingNotes((prev) => ({
+                        setEditingNames((prev) => ({
                           ...prev,
                           [student.id]: e.target.value,
                         }))
                       }
                       onBlur={() => {
-                        if (draftNotes.trim() !== (student.notes ?? "").trim()) {
-                          onSaveNotes(student.id);
+                        if (draftName.trim() && draftName.trim() !== student.studentName) {
+                          onSaveDetails(student.id, draftName, draftEmail);
                         }
                       }}
-                      placeholder="Ongoing notes about this student…"
+                      placeholder="Student name"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Lesson credits</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parent Email</label>
+                    <Input
+                      value={draftEmail}
+                      type="email"
+                      onChange={(e) =>
+                        setEditingEmails((prev) => ({
+                          ...prev,
+                          [student.id]: e.target.value,
+                        }))
+                      }
+                      onBlur={() => {
+                        if (draftEmail.trim() && draftEmail.trim() !== student.parentEmail) {
+                          onSaveDetails(student.id, draftName, draftEmail);
+                        }
+                      }}
+                      placeholder="parent@example.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lesson credits</label>
                     <div className="flex items-center gap-2">
                       <Button
                         type="button"
@@ -409,10 +511,29 @@ function StudentList({
                         +
                       </Button>
                       <span className="text-xs text-muted-foreground ml-1">
-                        Manual override
+                        Override
                       </span>
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">General notes</label>
+                  <Input
+                    value={draftNotes}
+                    onChange={(e) =>
+                      setEditingNotes((prev) => ({
+                        ...prev,
+                        [student.id]: e.target.value,
+                      }))
+                    }
+                    onBlur={() => {
+                      if (draftNotes.trim() !== (student.notes ?? "").trim()) {
+                        onSaveNotes(student.id);
+                      }
+                    }}
+                    placeholder="Ongoing notes about this student…"
+                  />
                 </div>
 
                 {/* Assigned Work & Tasks */}

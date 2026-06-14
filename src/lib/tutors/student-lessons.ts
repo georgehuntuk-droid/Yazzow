@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getSchemaFeatures } from "@/lib/supabase/schema-features";
 import type { BookingRow, StudentRow } from "@/lib/supabase/database.types";
 
@@ -33,6 +34,7 @@ export type StudentWithLessons = {
   createdAt: string;
   lessons: StudentLessonRecord[];
   tasks: StudentTaskRecord[];
+  hasAccount: boolean;
 };
 
 type BookingWithSlot = BookingRow & {
@@ -94,6 +96,20 @@ export async function getStudentsWithLessonsForTutor(
     console.warn("Could not load tasks (table may not exist yet):", err);
   }
 
+  // Load auth users to check if parents have registered accounts
+  const admin = createAdminClient();
+  const authEmails = new Set<string>();
+  try {
+    const { data: usersData } = await admin.auth.admin.listUsers();
+    if (usersData?.users) {
+      usersData.users.forEach((u) => {
+        if (u.email) authEmails.add(u.email.toLowerCase());
+      });
+    }
+  } catch (err) {
+    console.warn("Could not list auth users for email confirmation check:", err);
+  }
+
   if (studentsError) throw studentsError;
   if (bookingsError) throw bookingsError;
 
@@ -148,6 +164,7 @@ export async function getStudentsWithLessonsForTutor(
       createdAt: student.created_at,
       lessons,
       tasks: studentTasks,
+      hasAccount: authEmails.has(student.parent_email.toLowerCase()),
     };
   });
 

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { BRAND_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
@@ -10,40 +9,33 @@ type LogoProps = {
   size?: "header" | "md" | "lg";
 };
 
-/** Full wordmark image — icon + YAZZOW text from your original asset. */
-const sizeClasses = {
-  header: "h-12 w-auto sm:h-[3.25rem]",
-  md: "h-14 w-auto sm:h-16",
-  lg: "h-20 w-auto sm:h-24",
+const logoHeights = {
+  header: "h-8 sm:h-10",
+  md: "h-12 sm:h-14",
+  lg: "h-20 sm:h-24",
 } as const;
 
 export function Logo({ className, href = "/", size = "header" }: LogoProps) {
-  const isHeader = size === "header";
   return (
     <Link
       href={href}
       className={cn(
-        "group inline-flex shrink-0 items-center gap-3.5 transition-opacity hover:opacity-90",
+        "group inline-flex shrink-0 items-center transition-opacity hover:opacity-90",
         className,
       )}
     >
-      <div className={cn(
-        "flex items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-500 via-blue-600 to-indigo-600 shadow-md ring-2 ring-white/20 transition-all group-hover:scale-105 group-hover:rotate-3",
-        isHeader ? "size-12 sm:size-14" : size === "md" ? "size-16 sm:size-18" : "size-24 sm:size-28"
-      )}>
-        <span className={cn(
-          "font-heading font-black tracking-tight text-white select-none",
-          isHeader ? "text-2xl sm:text-3xl" : size === "md" ? "text-3xl sm:text-4xl" : "text-5xl sm:text-6xl"
-        )}>
-          Y
-        </span>
-      </div>
-      <span className={cn(
-        "font-heading font-black tracking-tight text-foreground selection:bg-blue-100",
-        isHeader ? "text-2xl sm:text-3xl" : size === "md" ? "text-3xl sm:text-4xl" : "text-5xl sm:text-6xl"
-      )}>
-        yazz<span className="text-blue-500">o</span>w
-      </span>
+      <Image
+        src="/yazzow-logo.png"
+        alt="Yazzow Logo"
+        width={350}
+        height={100}
+        priority
+        className={cn(
+          "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+          logoHeights[size]
+        )}
+      />
     </Link>
   );
 }
+

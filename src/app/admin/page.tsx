@@ -1,10 +1,16 @@
 import { isPlatformAdmin } from "@/lib/auth/platform-admin";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { AlertTriangle, ArrowLeft, ExternalLink, Key, Settings } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasSupabaseAdminKey } from "@/lib/supabase/admin-key";
 import { getPlatformRevenueStats } from "@/lib/platform/revenue";
 import { AdminConsoleClient, AdminTutorData } from "@/components/dashboard/admin-console-client";
 import { PlatformRevenuePanel } from "@/components/dashboard/platform-revenue-panel";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const revalidate = 0; // Disable server caching for live admin console data
 
@@ -15,17 +21,103 @@ export default async function AdminDashboardPage() {
     redirect("/admin/login");
   }
 
-  const admin = createAdminClient();
-  const serviceRoleConfigured = Boolean(
-    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
-  );
+  // 2. Check if the Supabase Service Role Key is configured
+  const serviceRoleConfigured = hasSupabaseAdminKey();
 
-  // 2. Fetch all raw data in parallel using service role
+  if (!serviceRoleConfigured) {
+    return (
+      <main className="flex-1 p-6 lg:p-10 flex items-center justify-center min-h-[80vh]">
+        <div className="w-full max-w-2xl space-y-6">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to Dashboard
+          </Link>
+
+          <Card className="yazz-surface border-amber-500/20 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+            
+            <CardHeader className="space-y-2 pb-4 pt-6 text-center">
+              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 shadow-inner animate-bounce">
+                <AlertTriangle className="size-6" />
+              </div>
+              <CardTitle className="font-heading text-2xl font-bold tracking-tight text-foreground">
+                Service Role Key Required
+              </CardTitle>
+              <CardDescription className="text-sm text-muted-foreground max-w-md mx-auto">
+                The Platform Admin Console requires your Supabase secret service_role key to bypass Row Level Security (RLS) and query platform statistics.
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="pb-8 space-y-6">
+              <div className="rounded-xl bg-muted/40 border border-border/60 p-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
+                <p className="font-semibold text-foreground flex items-center gap-2">
+                  <Settings className="size-4 text-primary" />
+                  How to configure your live site:
+                </p>
+                <ol className="list-decimal pl-5 space-y-2 text-xs">
+                  <li>
+                    Log in to your <strong>Supabase Dashboard</strong> at{" "}
+                    <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary underline inline-flex items-center gap-0.5">
+                      supabase.com <ExternalLink className="size-3" />
+                    </a>.
+                  </li>
+                  <li>
+                    Go to <strong>Project Settings</strong> ➔ <strong>API</strong>.
+                  </li>
+                  <li>
+                    Find the <strong>`service_role` secret key</strong> (starts with `eyJ...` or `sb_secret_...`). Copy it.
+                  </li>
+                  <li>
+                    Log in to <strong>Vercel</strong>, select your project, and go to <strong>Settings</strong> ➔ <strong>Environment Variables</strong>.
+                  </li>
+                  <li>
+                    Add a new variable named <code className="font-mono bg-muted-foreground/15 px-1 rounded text-foreground font-bold">SUPABASE_SECRET_KEY</code> and paste the value.
+                  </li>
+                  <li>
+                    Redeploy the project in Vercel for the changes to take effect.
+                  </li>
+                </ol>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <a
+                  href="https://supabase.com/dashboard"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl h-11 px-6 inline-flex items-center gap-1.5"
+                  )}
+                >
+                  Open Supabase Dashboard
+                  <ExternalLink className="size-4" />
+                </a>
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "rounded-xl h-11 px-6 border-border/85 font-semibold"
+                  )}
+                >
+                  Return to Dashboard
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
+  }
+
+  const admin = createAdminClient();
+
+  // 3. Fetch all raw data in parallel using service role
   const [profilesRes, usersRes, stats, bookingsRes, purchasesRes, ticketsRes] = await Promise.all([
     admin.from("tutor_profiles").select("*").order("created_at", { ascending: false }),
-    serviceRoleConfigured
-      ? admin.auth.admin.listUsers()
-      : Promise.resolve({ data: { users: [] }, error: null }),
+    admin.auth.admin.listUsers(),
     getPlatformRevenueStats(),
     admin.from("bookings").select("tutor_id, amount_cents, status"),
     admin.from("resource_purchases").select("tutor_id, amount_cents"),

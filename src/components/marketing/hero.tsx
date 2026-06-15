@@ -140,26 +140,30 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
       />
 
       {/* Floating Tutoring / Educational Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden lg:block select-none" aria-hidden="true">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block select-none" aria-hidden="true">
         {/* Book Icon - Left Floating */}
-        <div className="absolute left-[5%] top-[25%] text-blue-500/15 yazz-float" style={{ animationDelay: "0s", animationDuration: "7s" }}>
-          <BookOpen className="size-10 rotate-12" />
+        <div className="absolute left-[3%] top-[20%] text-blue-500/15" style={{ animation: "yazz-float 8s ease-in-out infinite" }}>
+          <BookOpen className="size-9 rotate-12" />
         </div>
         {/* Graduation Cap - Left Lower Floating */}
-        <div className="absolute left-[8%] top-[65%] text-indigo-500/15 yazz-float" style={{ animationDelay: "1.5s", animationDuration: "8s" }}>
-          <GraduationCap className="size-12 -rotate-12" />
+        <div className="absolute left-[5%] top-[68%] text-indigo-500/15" style={{ animation: "yazz-float 9s ease-in-out 1.5s infinite" }}>
+          <GraduationCap className="size-11 -rotate-12" />
         </div>
-        {/* Pencil - Right Upper Floating */}
-        <div className="absolute right-[45%] top-[15%] text-rose-500/15 yazz-float" style={{ animationDelay: "0.5s", animationDuration: "6s" }}>
-          <Pencil className="size-8 rotate-45" />
+        {/* Pencil - Left Mid Floating */}
+        <div className="absolute left-[22%] top-[8%] text-rose-500/15" style={{ animation: "yazz-float 7s ease-in-out 0.5s infinite" }}>
+          <Pencil className="size-7 rotate-45" />
         </div>
-        {/* Calculator - Right Mid Floating */}
-        <div className="absolute right-[8%] top-[25%] text-emerald-500/15 yazz-float" style={{ animationDelay: "2s", animationDuration: "7.5s" }}>
-          <Calculator className="size-10 -rotate-6" />
+        {/* Calculator - Right Upper Floating */}
+        <div className="absolute right-[40%] top-[12%] text-emerald-500/15" style={{ animation: "yazz-float 8.5s ease-in-out 2s infinite" }}>
+          <Calculator className="size-9 -rotate-6" />
         </div>
         {/* Trophy - Right Lower Floating */}
-        <div className="absolute right-[6%] top-[70%] text-amber-500/15 yazz-float" style={{ animationDelay: "1s", animationDuration: "9s" }}>
-          <Trophy className="size-11 rotate-12" />
+        <div className="absolute right-[5%] top-[68%] text-amber-500/15" style={{ animation: "yazz-float 10s ease-in-out 1s infinite" }}>
+          <Trophy className="size-10 rotate-12" />
+        </div>
+        {/* Sparkles - Right Mid Floating */}
+        <div className="absolute right-[4%] top-[24%] text-blue-500/15" style={{ animation: "yazz-float 7.5s ease-in-out 0.8s infinite" }}>
+          <Sparkles className="size-8 animate-pulse" />
         </div>
       </div>
 

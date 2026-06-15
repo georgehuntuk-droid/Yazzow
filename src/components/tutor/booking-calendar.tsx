@@ -185,14 +185,12 @@ export function BookingCalendar({
                     <Grid3X3 className="size-3.5" />
                     3. Secure Booking Details
                   </span>
-                  {!paymentsEnabled ? (
-                    <PaymentsBlockedMessage
-                      reason={paymentsBlockedReason}
-                      message={paymentsBlockedMessage}
-                    />
-                  ) : (
-                    <LessonCheckoutButton tutor={tutor} slot={selected} isDemo={isDemo} />
-                  )}
+                  <LessonCheckoutButton
+                    tutor={tutor}
+                    slot={selected}
+                    isDemo={isDemo}
+                    paymentsEnabled={paymentsEnabled}
+                  />
                 </div>
               ) : null}
             </div>

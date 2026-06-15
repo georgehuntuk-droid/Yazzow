@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
+  getSupportInboxEmail,
   isSupportEmailConfigured,
   sendSupportTicketEmail,
 } from "@/lib/notifications/support-email";

@@ -44,3 +44,6 @@ public/yazzow-logo-source.png
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+.env*

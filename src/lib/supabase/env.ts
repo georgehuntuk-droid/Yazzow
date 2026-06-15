@@ -5,12 +5,34 @@ function trimEnv(value: string | undefined): string | undefined {
 
 /** First non-empty env var from the list (server runtime vars checked before NEXT_PUBLIC). */
 function readEnv(...keys: string[]): string | undefined {
+  // First, check static keys directly to support Next.js compiler inlining on the client side
+  for (const key of keys) {
+    if (key === "NEXT_PUBLIC_SUPABASE_URL") {
+      const val = trimEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
+      if (val !== undefined) return val;
+    } else if (key === "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") {
+      const val = trimEnv(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+      if (val !== undefined) return val;
+    } else if (key === "NEXT_PUBLIC_SUPABASE_ANON_KEY") {
+      const val = trimEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      if (val !== undefined) return val;
+    } else if (key === "NEXT_PUBLIC_SITE_URL") {
+      const val = trimEnv(process.env.NEXT_PUBLIC_SITE_URL);
+      if (val !== undefined) return val;
+    } else if (key === "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY") {
+      const val = trimEnv(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+      if (val !== undefined) return val;
+    }
+  }
+
+  // Fallback for server-side dynamic lookup
   for (const key of keys) {
     const value = trimEnv(process.env[key]);
     if (value) return value;
   }
   return undefined;
 }
+
 
 function required(name: string, value: string | undefined): string {
   if (!value) {

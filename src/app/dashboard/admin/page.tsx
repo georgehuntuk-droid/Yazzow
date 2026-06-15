@@ -12,7 +12,7 @@ export default async function AdminDashboardPage() {
   // 1. Guard against non-admin access
   const isAdmin = await isPlatformAdmin();
   if (!isAdmin) {
-    redirect("/dashboard");
+    redirect("/dashboard/admin/login");
   }
 
   const admin = createAdminClient();

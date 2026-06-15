@@ -27,6 +27,7 @@ import {
   updateSupportTicketStatus,
   updateSupportTicketNotes,
   deleteSupportTicket,
+  logoutAsAdmin,
 } from "@/lib/dashboard/admin-actions";
 
 export type AdminTutorData = {
@@ -213,14 +214,30 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
 
   return (
     <Tabs defaultValue="tutors" className="w-full">
-      <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto mb-6">
-        <TabsTrigger value="tutors" className="rounded-lg px-4 font-semibold">
-          Tutor Directory ({tutors.length})
-        </TabsTrigger>
-        <TabsTrigger value="tickets" className="rounded-lg px-4 font-semibold">
-          Support Tickets ({supportTickets.filter(t => t.status === "open").length} Open)
-        </TabsTrigger>
-      </TabsList>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">
+          <TabsTrigger value="tutors" className="rounded-lg px-4 font-semibold">
+            Tutor Directory ({tutors.length})
+          </TabsTrigger>
+          <TabsTrigger value="tickets" className="rounded-lg px-4 font-semibold">
+            Support Tickets ({supportTickets.filter(t => t.status === "open").length} Open)
+          </TabsTrigger>
+        </TabsList>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            const res = await logoutAsAdmin();
+            if (res.ok) {
+              window.location.href = "/dashboard";
+            }
+          }}
+          className="h-10 text-xs font-bold border-red-200 text-red-600 hover:bg-red-50 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20"
+        >
+          Exit Admin Mode
+        </Button>
+      </div>
 
       <TabsContent value="tutors" className="space-y-6 outline-none">
         <div className="space-y-8">

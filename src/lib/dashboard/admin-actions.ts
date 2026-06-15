@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { isPlatformAdmin } from "@/lib/auth/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -116,5 +117,29 @@ export async function deleteSupportTicket(ticketId: string) {
   }
 
   revalidatePath("/dashboard/admin");
+  return { ok: true as const };
+}
+
+/** Authenticates the user as an admin using a custom password/passphrase. */
+export async function loginAsAdmin(password: string) {
+  const adminPassword = process.env.ADMIN_PASSWORD || "yazzow-admin-2026";
+  if (password === adminPassword) {
+    const cookieStore = await cookies();
+    cookieStore.set("yazzow_admin_session", adminPassword, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: "/",
+    });
+    return { ok: true as const };
+  }
+  return { ok: false as const, error: "Incorrect admin password" };
+}
+
+/** Deletes the admin session cookie, logging the user out. */
+export async function logoutAsAdmin() {
+  const cookieStore = await cookies();
+  cookieStore.delete("yazzow_admin_session");
   return { ok: true as const };
 }

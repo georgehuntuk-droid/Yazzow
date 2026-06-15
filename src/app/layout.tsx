@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
+    icon: "/icon.png?v=3",
+    apple: "/icon.png?v=3",
   },
   title: {
     default: `${BRAND_NAME} · The business home for independent tutors`,

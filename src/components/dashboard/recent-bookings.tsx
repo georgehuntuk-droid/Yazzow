@@ -7,7 +7,7 @@ import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { cancelBooking, notifyRunningLate } from "@/lib/dashboard/actions";
+import { cancelBooking, confirmBooking, notifyRunningLate } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { RecentBooking } from "@/lib/types";
 
@@ -23,6 +23,25 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [lateNote, setLateNote] = useState<Record<string, string>>({});
   const [showLateForm, setShowLateForm] = useState<string | null>(null);
+
+  async function handleConfirm(booking: RecentBooking) {
+    setLoadingAction(`confirm-${booking.id}`);
+    setError(null);
+    try {
+      const result = await confirmBooking(booking.id);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setSuccess("Booking approved successfully! Parent notified.");
+      setTimeout(() => setSuccess(null), 4000);
+      router.refresh();
+    } catch {
+      setError("Failed to approve booking.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
 
   async function handleCancel(booking: RecentBooking) {
     if (new Date(booking.startsAt) <= new Date()) {
@@ -113,9 +132,17 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                           ? `${booking.studentName} · ${booking.parentEmail}`
                           : booking.parentEmail}
                       </p>
-                      <p className="mt-1 text-sm font-medium text-primary">
-                        {formatMoney(booking.amountCents, currency)} · paid
-                      </p>
+                      <div className="mt-1 text-sm font-medium text-primary flex items-center gap-2">
+                        <span>{formatMoney(booking.amountCents, currency)}</span>
+                        <span>·</span>
+                        {booking.status === "pending" ? (
+                          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                            Pending approval
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground font-semibold">paid</span>
+                        )}
+                      </div>
                       {booking.runningLateSentAt ? (
                         <p className="mt-1 text-xs text-muted-foreground">
                           Running late notice sent
@@ -125,12 +152,24 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {booking.status === "pending" && (
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          disabled={isLateLoading || isCancelLoading || loadingAction === `confirm-${booking.id}`}
+                          onClick={() => handleConfirm(booking)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        >
+                          {loadingAction === `confirm-${booking.id}` ? "Approving…" : "Approve booking"}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={isLateLoading || isCancelLoading}
+                        disabled={isLateLoading || isCancelLoading || loadingAction === `confirm-${booking.id}`}
                         onClick={() =>
                           setShowLateForm(lateOpen ? null : booking.id)
                         }
@@ -142,10 +181,10 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                         type="button"
                         variant="outline"
                         size="sm"
-                        disabled={isCancelLoading || isLateLoading}
+                        disabled={isCancelLoading || isLateLoading || loadingAction === `confirm-${booking.id}`}
                         onClick={() => handleCancel(booking)}
                       >
-                        {isCancelLoading ? "Cancelling…" : "Cancel & reopen"}
+                        {isCancelLoading ? "Cancelling…" : booking.status === "pending" ? "Reject & reopen" : "Cancel & reopen"}
                       </Button>
                     </div>
                   </div>

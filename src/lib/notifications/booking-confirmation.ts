@@ -18,6 +18,9 @@ export async function sendBookingConfirmationEmail(input: {
   amountCents: number;
   currency: string;
   isCreditPayment?: boolean;
+  paymentInstructions?: string | null;
+  status?: string;
+  isApprovedNotice?: boolean;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return false;
@@ -43,6 +46,27 @@ export async function sendBookingConfirmationEmail(input: {
     ? `<p><strong>Student:</strong> ${escapeHtml(input.studentName)}</p>`
     : "";
 
+  let subject = `Lesson booked · ${input.tutorName} · ${slotLabel}`;
+  let introMessage = `<p>Your lesson with ${escapeHtml(input.tutorName)} is confirmed.</p>`;
+  let instructionsHtml = "";
+
+  if (input.status === "pending") {
+    subject = `Lesson Booking Pending · ${input.tutorName} · ${slotLabel}`;
+    introMessage = `<p>Your booking request with ${escapeHtml(input.tutorName)} has been received and is <strong>pending payment or tutor approval</strong>.</p>`;
+    
+    if (input.paymentInstructions) {
+      instructionsHtml = `
+        <div style="margin: 16px 0; padding: 16px; background-color: #fef8ec; border: 1px solid #f9ebcc; border-radius: 12px; font-family: sans-serif;">
+          <p style="margin: 0 0 8px 0; font-weight: bold; color: #b25e00; font-size: 14px;">📣 Tutor Payment & Booking Instructions:</p>
+          <p style="margin: 0; font-size: 13px; color: #5c3f0e; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(input.paymentInstructions)}</p>
+        </div>
+      `;
+    }
+  } else if (input.isApprovedNotice) {
+    subject = `Booking Approved & Confirmed · ${input.tutorName} · ${slotLabel}`;
+    introMessage = `<p>Great news! Your lesson booking with ${escapeHtml(input.tutorName)} has been <strong>approved and confirmed</strong>.</p>`;
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -52,12 +76,13 @@ export async function sendBookingConfirmationEmail(input: {
     body: JSON.stringify({
       from,
       to: targetEmail,
-      subject: `Lesson booked · ${input.tutorName} · ${slotLabel}`,
+      subject,
       html: `
-        <p>Your lesson with ${escapeHtml(input.tutorName)} is confirmed.</p>
+        ${introMessage}
         ${studentLine}
         <p><strong>When:</strong> ${escapeHtml(slotLabel)}</p>
-        <p><strong>Paid:</strong> ${escapeHtml(amountLabel)}</p>
+        <p><strong>Payment Method/Price:</strong> ${escapeHtml(amountLabel)}</p>
+        ${instructionsHtml}
         <p><a href="${portalUrl}">View tutor portal</a></p>
         <p style="margin-top:24px;"><a href="${manageUrl}">Manage or cancel this booking</a></p>
         <p style="color:#666;font-size:12px;">Need to free the slot? Cancel from the link above — other families on the alert list will be notified when the hour reopens. Refunds are arranged with your tutor if applicable.</p>

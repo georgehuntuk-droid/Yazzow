@@ -49,6 +49,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
   const [blockLessonsCount, setBlockLessonsCount] = useState(profile.blockPackageLessonsCount ?? 10);
   const [blockDiscountPercent, setBlockDiscountPercent] = useState(profile.blockPackageDiscountPercent ?? 10);
   const [allowPublicJoining, setAllowPublicJoining] = useState(profile.allowPublicJoining ?? true);
+  const [allowCashPayments, setAllowCashPayments] = useState(profile.allowCashPayments ?? true);
+  const [paymentInstructions, setPaymentInstructions] = useState(profile.paymentInstructions ?? "");
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [coverUrl, setCoverUrl] = useState(profile.coverUrl);
@@ -89,6 +91,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       blockPackageLessonsCount: blockLessonsCount,
       blockPackageDiscountPercent: blockDiscountPercent,
       allowPublicJoining,
+      allowCashPayments,
+      paymentInstructions,
     }),
     [
       profile,
@@ -105,6 +109,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       blockLessonsCount,
       blockDiscountPercent,
       allowPublicJoining,
+      allowCashPayments,
+      paymentInstructions,
     ],
   );
 
@@ -128,6 +134,8 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
       lessonPrice,
       currency,
       allowPublicJoining,
+      allowCashPayments,
+      paymentInstructions,
     });
 
     if (!result.ok) {
@@ -563,6 +571,43 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
                   </p>
                 </div>
               </div>
+
+              <div className="flex items-start gap-3.5 pt-2 pb-2 border-t border-border/50">
+                <input
+                  id="allow-cash-payments"
+                  type="checkbox"
+                  checked={allowCashPayments}
+                  onChange={(e) => setAllowCashPayments(e.target.checked)}
+                  className="mt-0.5 h-4.5 w-4.5 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                />
+                <div className="space-y-0.5">
+                  <label htmlFor="allow-cash-payments" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Allow Cash / Direct Bookings
+                  </label>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    When enabled, parents have the option to book a lesson slot and pay you directly via cash or bank transfer. If disabled, parents MUST pay upfront by card via Stripe to secure any booking on your calendar.
+                  </p>
+                </div>
+              </div>
+
+              {allowCashPayments && (
+                <div className="space-y-2 border-t border-border/50 pt-3">
+                  <label htmlFor="payment-instructions" className="text-sm font-semibold text-foreground">
+                    Cash / Direct Transfer Instructions
+                  </label>
+                  <textarea
+                    id="payment-instructions"
+                    rows={3}
+                    value={paymentInstructions}
+                    onChange={(e) => setPaymentInstructions(e.target.value)}
+                    placeholder="e.g. Please transfer the payment to Account: 12345678, Sort: 11-22-33 within 24 hours of booking to secure your slot."
+                    className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Shown to parents when booking via Cash/Direct payment, and included in their confirmation email.
+                  </p>
+                </div>
+              )}
 
               <Button type="submit" disabled={profileLoading}>
                 {profileLoading ? "Saving…" : "Save profile"}

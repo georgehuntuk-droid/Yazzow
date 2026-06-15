@@ -14,6 +14,8 @@ export type TutorProfile = {
   blockPackageDiscountPercent?: number;
   isPlatformAdmin?: boolean;
   allowPublicJoining?: boolean;
+  allowCashPayments?: boolean;
+  paymentInstructions?: string;
 };
 
 export type OpenSlot = {

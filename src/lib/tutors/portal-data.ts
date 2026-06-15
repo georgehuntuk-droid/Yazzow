@@ -111,7 +111,7 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
 
   return data.map((row: any) => {
     const rawBooking = Array.isArray(row.bookings) ? row.bookings[0] : row.bookings;
-    const booking = rawBooking && rawBooking.status === "confirmed" ? {
+    const booking = rawBooking && (rawBooking.status === "confirmed" || rawBooking.status === "pending") ? {
       id: rawBooking.id,
       parentEmail: rawBooking.parent_email,
       studentName: rawBooking.student_name,
@@ -152,7 +152,7 @@ export async function getRecentBookingsForTutor(
     `,
     )
     .eq("tutor_id", tutorId)
-    .eq("status", "confirmed")
+    .in("status", ["confirmed", "pending"])
     .order("created_at", { ascending: false })
     .limit(limit);
 

@@ -802,3 +802,58 @@ export async function updateStudentDetails(
   revalidatePath("/dashboard");
   return { ok: true as const };
 }
+
+export async function confirmBooking(bookingId: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "confirmed" })
+    .eq("id", bookingId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  try {
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("id, parent_email, student_name, amount_cents, currency, availability_slots (starts_at, ends_at)")
+      .eq("id", bookingId)
+      .single();
+
+    if (booking) {
+      const slot = Array.isArray(booking.availability_slots)
+        ? booking.availability_slots[0]
+        : booking.availability_slots;
+      
+      const startsAt = (slot as any)?.starts_at;
+      const endsAt = (slot as any)?.ends_at;
+
+      const { sendBookingConfirmationEmail } = await import(
+        "@/lib/notifications/booking-confirmation"
+      );
+      await sendBookingConfirmationEmail({
+        bookingId: booking.id,
+        to: booking.parent_email,
+        tutorName: profile.displayName,
+        tutorUsername: profile.username,
+        studentName: booking.student_name,
+        startsAt,
+        endsAt,
+        amountCents: booking.amount_cents,
+        currency: booking.currency,
+        isApprovedNotice: true,
+      });
+    }
+  } catch (err) {
+    console.error("Failed to send booking approval email:", err);
+  }
+
+  // Revalidate paths so UI updates instantly
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}

@@ -29,12 +29,16 @@ export async function POST(request: Request) {
     // 2. Fetch tutor details & price
     const { data: tutor } = await admin
       .from("tutor_profiles")
-      .select("display_name, username, currency, lesson_price_cents")
+      .select("display_name, username, currency, lesson_price_cents, allow_cash_payments, payment_instructions")
       .eq("id", tutorId)
       .maybeSingle();
 
     if (!tutor) {
       return NextResponse.json({ error: "Tutor not found." }, { status: 404 });
+    }
+
+    if (tutor.allow_cash_payments === false) {
+      return NextResponse.json({ error: "Cash bookings are not allowed for this tutor." }, { status: 400 });
     }
 
     // 3. Mark slot as booked
@@ -43,7 +47,7 @@ export async function POST(request: Request) {
       .update({ is_booked: true })
       .eq("id", slotId);
 
-    // 4. Create confirmed booking record with amount_cents and payment intent set to "cash"
+    // 4. Create pending booking record with amount_cents and payment intent set to "cash"
     const { data: bookingRow, error: bookingError } = await admin
       .from("bookings")
       .insert({
@@ -54,7 +58,7 @@ export async function POST(request: Request) {
         amount_cents: tutor.lesson_price_cents,
         platform_fee_cents: 0,
         stripe_payment_intent_id: "cash",
-        status: "confirmed",
+        status: "pending",
       })
       .select("id")
       .single();
@@ -108,6 +112,8 @@ export async function POST(request: Request) {
         endsAt: slot.ends_at,
         amountCents: tutor.lesson_price_cents,
         currency: tutor.currency,
+        status: "pending",
+        paymentInstructions: tutor.payment_instructions,
       });
     } catch (emailErr) {
       console.error("Fulfillment emails failed:", emailErr);

@@ -32,13 +32,18 @@ export function LessonCheckoutButton({
   const [creditSuccess, setBookingCreditSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
 
+  const tutorAllowsCash = tutor.allowCashPayments !== false;
+  const bookingUnavailable = !paymentsEnabled && !tutorAllowsCash;
+
   useEffect(() => {
     if (!paymentsEnabled) {
       setPaymentMethod("cash");
+    } else if (!tutorAllowsCash) {
+      setPaymentMethod("card");
     } else {
       setPaymentMethod("card");
     }
-  }, [paymentsEnabled]);
+  }, [paymentsEnabled, tutorAllowsCash]);
 
   // Check credits on blur or debounce of parent email
   async function handleCheckCredits(emailVal: string) {
@@ -189,49 +194,68 @@ export function LessonCheckoutButton({
 
       {/* Payment Method Selector (only if not booking with credits) */}
       {availableCredits === null || availableCredits === 0 ? (
-        <div className="space-y-1.5">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Payment Method
-          </span>
-          {paymentsEnabled ? (
-            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-xl border border-border/60">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("card")}
-                className={cn(
-                  "py-2 text-xs font-bold rounded-lg transition-all",
-                  paymentMethod === "card"
-                    ? "bg-background text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <span className="flex items-center justify-center gap-1.5">
-                  <CreditCard className="size-3.5" />
-                  Pay by Card
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("cash")}
-                className={cn(
-                  "py-2 text-xs font-bold rounded-lg transition-all",
-                  paymentMethod === "cash"
-                    ? "bg-background text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <span className="flex items-center justify-center gap-1.5">
-                  💵
-                  Pay Directly (Cash)
-                </span>
-              </button>
+        <div className="space-y-2.5">
+          {bookingUnavailable ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs text-destructive leading-normal font-medium">
+              ⚠️ Online booking is currently unavailable for this tutor. Direct bookings are disabled and card checkout is not set up. Please contact the tutor directly.
+            </div>
+          ) : paymentsEnabled && !tutorAllowsCash ? (
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-xl border border-border/40 text-xs font-semibold text-muted-foreground">
+              <span>Payment Method</span>
+              <span className="text-primary flex items-center gap-1"><CreditCard className="size-3.5" /> Pay by Card</span>
+            </div>
+          ) : paymentsEnabled && tutorAllowsCash ? (
+            <div className="space-y-1.5">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Payment Method
+              </span>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-xl border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("card")}
+                  className={cn(
+                    "py-2 text-xs font-bold rounded-lg transition-all",
+                    paymentMethod === "card"
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <CreditCard className="size-3.5" />
+                    Pay by Card
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("cash")}
+                  className={cn(
+                    "py-2 text-xs font-bold rounded-lg transition-all",
+                    paymentMethod === "cash"
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    💵
+                    Pay Directly
+                  </span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="rounded-xl border border-amber-100 bg-amber-50/40 p-3 text-xs text-amber-800 leading-normal font-medium">
-              ⚠️ Online card checkout is currently unavailable for this tutor.
-              <strong> You will pay the tutor directly (Cash/Direct) for this lesson.</strong>
+              ⚠️ Online card checkout is currently unavailable.
+              <strong> You will pay the tutor directly for this lesson.</strong>
             </div>
           )}
+
+          {/* Tutor Payment Instructions Box */}
+          {paymentMethod === "cash" && tutor.paymentInstructions && !bookingUnavailable ? (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-foreground space-y-1">
+              <p className="font-bold text-primary flex items-center gap-1">📣 Tutor Payment Instructions:</p>
+              <p className="whitespace-pre-line text-muted-foreground leading-normal font-medium">{tutor.paymentInstructions}</p>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -285,7 +309,7 @@ export function LessonCheckoutButton({
       ) : (
         <Button
           className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-          disabled={loading || !email || creditChecking}
+          disabled={loading || !email || creditChecking || bookingUnavailable}
           onClick={handleCheckout}
         >
           {loading ? (

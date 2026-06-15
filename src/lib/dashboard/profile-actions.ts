@@ -64,6 +64,8 @@ export async function updatePortalProfile(input: {
   lessonPrice: string;
   currency: string;
   allowPublicJoining: boolean;
+  allowCashPayments?: boolean;
+  paymentInstructions?: string;
 }) {
   const { profile } = await requireTutorProfile();
 
@@ -72,6 +74,7 @@ export async function updatePortalProfile(input: {
   const bio = input.bio.trim();
   const lessonPriceCents = parsePriceToCents(input.lessonPrice);
   const currency = input.currency.toLowerCase() as SupportedCurrency;
+  const paymentInstructions = input.paymentInstructions?.trim() || null;
 
   if (!displayName) {
     return { ok: false as const, error: "Display name is required." };
@@ -105,6 +108,8 @@ export async function updatePortalProfile(input: {
       lesson_price_cents: lessonPriceCents,
       currency,
       allow_public_joining: input.allowPublicJoining,
+      allow_cash_payments: input.allowCashPayments ?? true,
+      payment_instructions: paymentInstructions,
     })
     .eq("id", profile.id);
 

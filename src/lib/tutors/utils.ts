@@ -18,6 +18,8 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     blockPackageDiscountPercent: (row as any).block_package_discount_percent ?? 10,
     isPlatformAdmin: row.is_platform_admin === true,
     allowPublicJoining: (row as any).allow_public_joining !== false,
+    allowCashPayments: (row as any).allow_cash_payments !== false,
+    paymentInstructions: (row as any).payment_instructions ?? "",
   };
 }
 

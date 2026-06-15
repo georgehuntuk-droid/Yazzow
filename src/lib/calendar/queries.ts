@@ -78,7 +78,7 @@ export async function getCalendarEventsForFeed(
     `,
     )
     .eq("tutor_id", tutorId)
-    .eq("status", "confirmed");
+    .in("status", ["confirmed", "pending"]);
 
   const now = Date.now();
   const events: CalendarBookingEvent[] = [];

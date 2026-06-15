@@ -1,0 +1,373 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Send, Loader2, MessageSquare, AlertCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+type Thread = {
+  parentEmail: string;
+  studentName: string | null;
+  latestMessageContent: string;
+  latestMessageTime: string;
+  unreadCount: number;
+};
+
+type Message = {
+  id: string;
+  sender: "tutor" | "parent";
+  content: string;
+  created_at: string;
+};
+
+type TutorMessagesClientProps = {
+  tutorId: string;
+};
+
+export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [activeThreadEmail, setActiveThreadEmail] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [content, setContent] = useState("");
+  const [loadingThreads, setLoadingThreads] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get("email");
+
+  useEffect(() => {
+    if (emailParam) {
+      const email = emailParam.trim().toLowerCase();
+      setActiveThreadEmail(email);
+
+      setThreads((prev) => {
+        const exists = prev.some((t) => t.parentEmail.toLowerCase() === email);
+        if (!exists) {
+          return [
+            {
+              parentEmail: emailParam,
+              studentName: null,
+              latestMessageContent: "Click send to start chatting…",
+              latestMessageTime: new Date().toISOString(),
+              unreadCount: 0,
+            },
+            ...prev,
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [emailParam]);
+
+  // Load threads
+  async function loadThreads(isSilent = false) {
+    try {
+      const response = await fetch("/api/messages");
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.ok) {
+        setThreads(data.threads);
+      }
+    } catch (err) {
+      console.error("Failed to load threads:", err);
+    } finally {
+      if (!isSilent) setLoadingThreads(false);
+    }
+  }
+
+  // Load messages for the active thread
+  async function loadMessages(parentEmail: string, isSilent = false) {
+    if (!isSilent) setLoadingMessages(true);
+    try {
+      const response = await fetch(
+        `/api/messages?parentEmail=${encodeURIComponent(parentEmail)}`
+      );
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.ok) {
+        setMessages(data.messages);
+      }
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+    } finally {
+      if (!isSilent) setLoadingMessages(false);
+    }
+  }
+
+  // Poll for threads and active thread messages
+  useEffect(() => {
+    loadThreads();
+
+    const interval = setInterval(() => {
+      void loadThreads(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Poll active thread messages when active thread changes
+  useEffect(() => {
+    if (!activeThreadEmail) {
+      setMessages([]);
+      return;
+    }
+
+    loadMessages(activeThreadEmail);
+
+    const interval = setInterval(() => {
+      if (activeThreadEmail) {
+        void loadMessages(activeThreadEmail, true);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeThreadEmail]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Send message
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!content.trim() || sending || !activeThreadEmail) return;
+
+    setSending(true);
+    setError(null);
+
+    const messageText = content.trim();
+    setContent("");
+
+    // Optimistic message add
+    const tempId = Math.random().toString();
+    const optimisticMessage: Message = {
+      id: tempId,
+      sender: "tutor",
+      content: messageText,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentEmail: activeThreadEmail, content: messageText }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message.");
+      }
+
+      const data = await response.json();
+      if (!data.ok) {
+        throw new Error(data.error ?? "Failed to send message.");
+      }
+
+      // Update messages with actual database record
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === tempId ? data.message : msg))
+      );
+
+      // Refresh threads to update latest message and sorting
+      void loadThreads(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message.");
+      // Remove optimistic message
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+      setContent(messageText); // restore
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const activeThread = threads.find((t) => t.parentEmail.toLowerCase() === activeThreadEmail?.toLowerCase());
+
+  return (
+    <div className="flex h-[calc(100vh-140px)] min-h-0 divide-x divide-border/40">
+      {/* Left Column: Threads List */}
+      <div className="w-80 flex flex-col min-h-0 bg-card/40 shrink-0">
+        {loadingThreads && threads.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2">
+            <Loader2 className="size-5 animate-spin text-primary" />
+            Loading chats…
+          </div>
+        ) : threads.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+            <MessageSquare className="size-8 text-muted-foreground/50 mb-3" />
+            <p className="text-sm font-semibold">Your inbox is empty</p>
+            <p className="text-xs max-w-[200px] mt-1 leading-relaxed">
+              When parents send you a message from their booking page, they will show up here.
+            </p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto divide-y divide-border/30">
+            {threads.map((thread) => {
+              const isActive = thread.parentEmail.toLowerCase() === activeThreadEmail?.toLowerCase();
+              return (
+                <button
+                  key={thread.parentEmail}
+                  type="button"
+                  onClick={() => {
+                    setActiveThreadEmail(thread.parentEmail);
+                    // Reset unread count locally for speed
+                    setThreads((prev) =>
+                      prev.map((t) =>
+                        t.parentEmail.toLowerCase() === thread.parentEmail.toLowerCase() ? { ...t, unreadCount: 0 } : t
+                      )
+                    );
+                  }}
+                  className={cn(
+                    "w-full text-left p-4 flex flex-col gap-1 transition-all duration-150 border-l-2",
+                    isActive
+                      ? "bg-primary/5 border-primary shadow-sm"
+                      : "border-transparent hover:bg-muted/40"
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-sm text-foreground truncate max-w-[170px]">
+                      {thread.studentName || thread.parentEmail}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-semibold shrink-0">
+                      {new Date(thread.latestMessageTime).toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  {thread.studentName && (
+                    <span className="text-[11px] text-muted-foreground font-semibold truncate -mt-0.5">
+                      {thread.parentEmail}
+                    </span>
+                  )}
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground truncate flex-1 leading-normal">
+                      {thread.latestMessageContent}
+                    </p>
+                    {thread.unreadCount > 0 && (
+                      <span className="bg-primary text-primary-foreground font-black text-[10px] px-1.5 py-0.5 rounded-full shrink-0 min-w-4 text-center">
+                        {thread.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Right Column: Chat Box */}
+      <div className="flex-1 flex flex-col min-h-0 bg-background">
+        {activeThreadEmail ? (
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Thread Header */}
+            <div className="px-6 py-4 border-b border-border/40 shrink-0 bg-muted/20">
+              <h2 className="font-bold text-base text-foreground leading-normal">
+                {activeThread?.studentName || activeThreadEmail}
+              </h2>
+              {activeThread?.studentName && (
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Parent Email: {activeThreadEmail}
+                </p>
+              )}
+            </div>
+
+            {/* Chat Body */}
+            <div className="flex-1 flex flex-col min-h-0 p-6">
+              {loadingMessages ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2">
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                  Loading message history…
+                </div>
+              ) : (
+                <div
+                  ref={scrollRef}
+                  className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin scrollbar-thumb-muted"
+                >
+                  {messages.map((msg) => {
+                    const isTutor = msg.sender === "tutor";
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${isTutor ? "items-end" : "items-start"}`}
+                      >
+                        <div
+                          className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm font-medium shadow-sm leading-normal whitespace-pre-wrap ${
+                            isTutor
+                              ? "bg-primary text-primary-foreground rounded-tr-none"
+                              : "bg-muted/70 text-foreground rounded-tl-none border border-border/40"
+                          }`}
+                        >
+                          {msg.content}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-semibold mt-1 px-1">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {error && (
+                <p className="text-xs text-destructive mt-3 font-semibold bg-destructive/5 border border-destructive/10 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                  <AlertCircle className="size-4 text-destructive" />
+                  {error}
+                </p>
+              )}
+
+              {/* Chat Composer */}
+              <form
+                onSubmit={handleSend}
+                className="flex gap-2.5 mt-4 pt-4 border-t border-border/40 shrink-0"
+              >
+                <Input
+                  required
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder={`Reply to ${activeThread?.studentName || activeThreadEmail}…`}
+                  className="h-11 bg-background flex-1 text-sm rounded-xl"
+                  disabled={sending}
+                />
+                <Button type="submit" className="h-11 px-5 rounded-xl font-bold" disabled={sending}>
+                  {sending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <>
+                      Send
+                      <Send className="size-3.5 ml-1.5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
+            <div className="bg-primary/5 rounded-full p-4 mb-4">
+              <MessageSquare className="size-10 text-primary animate-pulse" />
+            </div>
+            <p className="text-base font-bold text-foreground">Select a conversation</p>
+            <p className="text-xs max-w-[280px] mt-1.5 leading-relaxed">
+              Choose a student/parent thread from the left pane to view message history and send replies.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -72,6 +72,14 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
   const [portalWelcomeMessage, setPortalWelcomeMessage] = useState(
     profile.portalWelcomeMessage ?? "",
   );
+  const [portalAnnouncement, setPortalAnnouncement] = useState(
+    profile.portalAnnouncement ?? "",
+  );
+  const [portalAnnouncementActive, setPortalAnnouncementActive] = useState(
+    profile.portalAnnouncementActive ?? false,
+  );
+  const [emailAllStudents, setEmailAllStudents] = useState(false);
+  const [announcementLoading, setAnnouncementLoading] = useState(false);
   const [accentPresetId, setAccentPresetId] = useState<string>(() => {
     const match = PORTAL_ACCENT_PRESETS.find(
       (p) => p.oklch === profile.portalAccentOklch,
@@ -273,6 +281,30 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
     flashSuccess("Portal style updated.");
     router.refresh();
     setStyleLoading(false);
+  }
+
+  async function handleSaveAnnouncement(event: React.FormEvent) {
+    event.preventDefault();
+    setAnnouncementLoading(true);
+    setError(null);
+
+    const { updatePortalAnnouncement } = await import("@/lib/dashboard/profile-actions");
+    const result = await updatePortalAnnouncement({
+      portalAnnouncement,
+      portalAnnouncementActive,
+      emailAllStudents,
+    });
+
+    if (!result.ok) {
+      setError(result.error);
+      setAnnouncementLoading(false);
+      return;
+    }
+
+    flashSuccess(emailAllStudents ? "Announcement updated and emailed to students." : "Announcement settings updated.");
+    setEmailAllStudents(false);
+    router.refresh();
+    setAnnouncementLoading(false);
   }
 
   async function handleSaveUsername(event: React.FormEvent) {
@@ -513,6 +545,69 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
               </div>
               <Button type="submit" variant="outline" disabled={styleLoading}>
                 {styleLoading ? "Saving…" : "Save style"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="yazz-surface">
+          <CardHeader>
+            <CardTitle>📢 Portal Announcement Banner</CardTitle>
+            <CardDescription>
+              Show a prominent notification banner at the very top of your public booking page.
+              Perfect for holidays, schedule updates, or special offers.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="portal-announcement" className="text-sm font-medium">
+                  Announcement message
+                </label>
+                <textarea
+                  id="portal-announcement"
+                  rows={3}
+                  value={portalAnnouncement}
+                  onChange={(e) => setPortalAnnouncement(e.target.value)}
+                  placeholder="Notice: I will be away on holiday from July 1st to July 10th. Open slots for mid-July are now bookable!"
+                  className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3.5 pt-1.5">
+                <label className="flex items-start gap-2.5 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={portalAnnouncementActive}
+                    onChange={(e) => setPortalAnnouncementActive(e.target.checked)}
+                    className="mt-1 rounded border-input text-primary focus-visible:ring-ring"
+                  />
+                  <div>
+                    <span className="font-semibold text-foreground">Show announcement banner on public portal</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Displays a bright highlight banner at the very top of your public yazzow.com/tutor page.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-2.5 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={emailAllStudents}
+                    onChange={(e) => setEmailAllStudents(e.target.checked)}
+                    className="mt-1 rounded border-input text-primary focus-visible:ring-ring"
+                  />
+                  <div>
+                    <span className="font-semibold text-foreground">Email this announcement to all my students</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Sends a copy of this message directly to all active parent/student emails in your student ledger.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <Button type="submit" variant="outline" disabled={announcementLoading}>
+                {announcementLoading ? "Saving & sending…" : "Save announcement"}
               </Button>
             </form>
           </CardContent>

@@ -20,6 +20,8 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     allowPublicJoining: (row as any).allow_public_joining !== false,
     allowCashPayments: (row as any).allow_cash_payments !== false,
     paymentInstructions: (row as any).payment_instructions ?? "",
+    portalAnnouncement: (row as any).portal_announcement ?? "",
+    portalAnnouncementActive: (row as any).portal_announcement_active === true,
   };
 }
 

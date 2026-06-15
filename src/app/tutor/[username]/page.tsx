@@ -124,6 +124,13 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
   return (
     <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
+      {tutor.portalAnnouncementActive && tutor.portalAnnouncement ? (
+        <div className="bg-primary px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-primary-foreground select-none relative animate-in slide-in-from-top-full duration-300">
+          <span className="inline-flex items-center gap-1.5">
+            📢 {tutor.portalAnnouncement}
+          </span>
+        </div>
+      ) : null}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
           <Logo size="header" href="/" />

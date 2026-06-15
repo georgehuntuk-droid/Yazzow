@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Users,
   AppWindow,
+  MessageSquare,
 } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/schedule", label: "Schedule", icon: CalendarRange },
   { href: "/dashboard/students", label: "My Students", icon: Users },
+  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/storefront", label: "Shop Manager", icon: BookOpen },
   { href: "/dashboard/payments", label: "Earnings", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Palette },

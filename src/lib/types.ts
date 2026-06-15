@@ -16,6 +16,8 @@ export type TutorProfile = {
   allowPublicJoining?: boolean;
   allowCashPayments?: boolean;
   paymentInstructions?: string;
+  portalAnnouncement?: string;
+  portalAnnouncementActive?: boolean;
 };
 
 export type OpenSlot = {

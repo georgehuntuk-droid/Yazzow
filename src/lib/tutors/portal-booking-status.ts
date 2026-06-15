@@ -100,13 +100,27 @@ export async function getPortalBookingStatus(
   const supabase = await createClient();
   const { data: paymentRow } = await supabase
     .from("tutor_profiles")
-    .select("stripe_account_id")
+    .select("stripe_account_id, allow_cash_payments")
     .eq("id", tutorId)
     .maybeSingle();
 
   const connect = await getConnectStatus(paymentRow?.stripe_account_id);
 
   if (!connect.ready) {
+    const allowCash = paymentRow?.allow_cash_payments !== false;
+    if (allowCash) {
+      return {
+        canAcceptBookings: true,
+        blockedReason: null,
+        subscriptionActive: true,
+        subscriptionStatus: subscription.status,
+        stripeConnectReady: false,
+        stripeConfigured: true,
+        parentMessage: "",
+        tutorFixSteps: [],
+      };
+    }
+
     return {
       canAcceptBookings: false,
       blockedReason: "stripe_connect_incomplete",

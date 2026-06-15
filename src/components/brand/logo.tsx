@@ -6,47 +6,35 @@ type LogoProps = {
   className?: string;
   href?: string;
   size?: "header" | "md" | "lg";
+  iconOnly?: boolean;
 };
 
 const logoHeights = {
-  header: "h-10 sm:h-12",
-  md: "h-14 sm:h-16",
-  lg: "h-24 sm:h-28",
+  header: "h-12 sm:h-14",
+  md: "h-18 sm:h-22",
+  lg: "h-32 sm:h-40",
 } as const;
 
-const textSizes = {
-  header: "text-2xl font-bold tracking-tight ml-2.5",
-  md: "text-3xl sm:text-4xl font-bold tracking-tight ml-3",
-  lg: "text-6xl sm:text-7xl font-extrabold tracking-tight ml-5",
-} as const;
-
-export function Logo({ className, href = "/", size = "header" }: LogoProps) {
+export function Logo({ className, href = "/", size = "header", iconOnly = false }: LogoProps) {
   return (
     <Link
       href={href}
       className={cn(
-        "group inline-flex shrink-0 items-center transition-opacity hover:opacity-90",
+        "group inline-flex shrink-0 items-center transition-opacity hover:opacity-95",
         className,
       )}
     >
       <img
-        src="/yazzow-brand-icon.png"
+        src={iconOnly ? "/yazzow-brand-icon.png" : "/yazzow-logo-transparent.png"}
         alt="Yazzow Logo"
         className={cn(
-          "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
+          "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02] dark:brightness-110",
           logoHeights[size]
         )}
       />
-      <span
-        className={cn(
-          "font-sans text-foreground transition-colors",
-          textSizes[size]
-        )}
-      >
-        Yazzow
-      </span>
     </Link>
   );
 }
+
 
 

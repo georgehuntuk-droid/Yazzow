@@ -76,10 +76,27 @@ export function PortalBookingStatusCard({ status }: PortalBookingStatusCardProps
         ) : null}
 
         {status.canAcceptBookings ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle2 className="size-4 text-primary" />
-            Parents can book and pay on your portal link.
-          </p>
+          <div className="space-y-2">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="size-4 text-primary" />
+              {status.stripeConnectReady
+                ? "Parents can book and pay on your portal link."
+                : "Parents can book lessons on your portal using direct/cash payments."}
+            </p>
+            {!status.stripeConnectReady && (
+              <div className="rounded-xl border border-blue-100 bg-blue-50/20 p-3.5 text-xs text-foreground font-medium space-y-1.5 mt-2">
+                <p className="font-bold text-primary flex items-center gap-1">
+                  💵 Direct/Cash Bookings Active
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Your bookings are Live via direct/cash payments. Complete your Stripe setup to enable online card checkout.
+                </p>
+                <Button size="sm" className="mt-1" render={<Link href="/dashboard/payments" />}>
+                  Connect Stripe payouts
+                </Button>
+              </div>
+            )}
+          </div>
         ) : null}
       </CardContent>
     </Card>

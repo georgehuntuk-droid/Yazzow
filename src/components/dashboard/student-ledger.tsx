@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Archive, ArchiveRestore, ChevronDown, Star, Trash2, Mail } from "lucide-react";
+import { Archive, ArchiveRestore, ChevronDown, Star, Trash2, Mail, MessageSquare } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -393,6 +394,14 @@ function StudentList({
                 <p className="font-medium">{student.studentName}</p>
                 <div className="flex items-center gap-2 flex-wrap mt-0.5">
                   <p className="text-xs text-muted-foreground">{student.parentEmail}</p>
+                  <Link
+                    href={`/dashboard/messages?email=${encodeURIComponent(student.parentEmail)}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-background px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <MessageSquare className="size-3 text-primary" />
+                    Chat on Website
+                  </Link>
                   <a
                     href={`mailto:${student.parentEmail}?subject=Lesson Update - Yazzow`}
                     onClick={(e) => e.stopPropagation()}

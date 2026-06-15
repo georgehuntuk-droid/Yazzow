@@ -464,3 +464,69 @@ export async function deleteTutorPackage(id: string) {
   await revalidatePortal(profile.username);
   return { ok: true as const };
 }
+
+export async function updatePortalAnnouncement(input: {
+  portalAnnouncement: string;
+  portalAnnouncementActive: boolean;
+  emailAllStudents: boolean;
+}) {
+  const { profile } = await requireTutorProfile();
+
+  const portalAnnouncement = input.portalAnnouncement.trim();
+  const active = input.portalAnnouncementActive;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({
+      portal_announcement: portalAnnouncement || null,
+      portal_announcement_active: active,
+    })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  // If emailAllStudents is checked and we have text, send email broadcast
+  if (input.emailAllStudents && portalAnnouncement) {
+    try {
+      const { data: students } = await supabase
+        .from("students")
+        .select("parent_email")
+        .eq("tutor_id", profile.id);
+
+      if (students && students.length > 0) {
+        const uniqueEmails = Array.from(
+          new Set(
+            students
+              .map((s) => s.parent_email?.trim().toLowerCase())
+              .filter(Boolean) as string[]
+          )
+        );
+
+        const { sendAnnouncementNotificationEmail } = await import(
+          "@/lib/notifications/booking-update"
+        );
+
+        await Promise.all(
+          uniqueEmails.map((email) =>
+            sendAnnouncementNotificationEmail({
+              to: email,
+              tutorName: profile.displayName,
+              tutorUsername: profile.username,
+              announcementText: portalAnnouncement,
+            }).catch((err) => {
+              console.error(`Failed to send announcement email to ${email}:`, err);
+            })
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Announcement notification broadcast error:", err);
+    }
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}

@@ -25,6 +25,10 @@ function getMetadataBase(): URL {
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
   title: {
     default: `${BRAND_NAME} · The business home for independent tutors`,
     template: `%s · ${BRAND_NAME}`,
@@ -81,6 +85,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { PwaInstallBanner } from "@/components/dashboard/pwa-install-banner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -90,6 +96,7 @@ export default function RootLayout({
     <html lang="en" className={`${plusJakarta.variable} min-h-screen antialiased`}>
       <body className="min-h-screen flex flex-col font-sans">
         {children}
+        <PwaInstallBanner />
         <Analytics />
         <script
           dangerouslySetInnerHTML={{
@@ -102,6 +109,16 @@ export default function RootLayout({
                   );
                 });
               }
+              window.deferredPrompt = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.deferredPrompt = e;
+                window.dispatchEvent(new CustomEvent('pwa-can-install'));
+              });
+              window.addEventListener('appinstalled', function() {
+                window.deferredPrompt = null;
+                window.dispatchEvent(new CustomEvent('pwa-installed'));
+              });
             `
           }}
         />

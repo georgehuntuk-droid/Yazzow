@@ -10,23 +10,31 @@ export const DEMO_TUTOR: TutorProfile = {
   currency: "gbp",
 };
 
+// Helper to get future dates relative to today in UTC/ISO format
+const getFutureDate = (daysAhead: number, hour: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  date.setUTCHours(hour, 0, 0, 0);
+  return date.toISOString();
+};
+
 export const DEMO_OPEN_SLOTS: OpenSlot[] = [
   {
     id: "slot-1",
-    startsAt: "2026-06-04T16:00:00.000Z",
-    endsAt: "2026-06-04T17:00:00.000Z",
+    startsAt: getFutureDate(1, 16), // Tomorrow at 4:00 PM UTC
+    endsAt: getFutureDate(1, 17),
     available: true,
   },
   {
     id: "slot-2",
-    startsAt: "2026-06-05T10:00:00.000Z",
-    endsAt: "2026-06-05T11:00:00.000Z",
+    startsAt: getFutureDate(2, 10), // Day after tomorrow at 10:00 AM UTC
+    endsAt: getFutureDate(2, 11),
     available: true,
   },
   {
     id: "slot-3",
-    startsAt: "2026-06-06T14:00:00.000Z",
-    endsAt: "2026-06-06T15:00:00.000Z",
+    startsAt: getFutureDate(3, 14), // In 3 days at 2:00 PM UTC
+    endsAt: getFutureDate(3, 15),
     available: true,
   },
 ];

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
+import { safeGetAuthUser } from "@/lib/supabase/server";
 import { getTutorProfileForUser } from "@/lib/tutors/queries";
 
 type RequireUserOptions = {
@@ -9,10 +9,7 @@ type RequireUserOptions = {
 };
 
 export async function requireUser(options?: RequireUserOptions) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await safeGetAuthUser();
 
   if (!user) {
     const next = options?.redirectTo ?? "/dashboard";

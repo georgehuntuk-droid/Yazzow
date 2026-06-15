@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +13,7 @@ import {
   Palette,
   ShieldCheck,
   Users,
+  AppWindow,
 } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
@@ -34,6 +36,38 @@ type DashboardNavProps = {
 
 export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
   const pathname = usePathname();
+  const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const win = window as any;
+    if (win.deferredPrompt) {
+      setCanInstall(true);
+    }
+    const handleCanInstall = () => setCanInstall(true);
+    const handleInstalled = () => setCanInstall(false);
+
+    window.addEventListener("pwa-can-install", handleCanInstall);
+    window.addEventListener("pwa-installed", handleInstalled);
+    return () => {
+      window.removeEventListener("pwa-can-install", handleCanInstall);
+      window.removeEventListener("pwa-installed", handleInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    const win = window as any;
+    const promptEvent = win.deferredPrompt;
+    if (!promptEvent) return;
+    try {
+      await promptEvent.prompt();
+      await promptEvent.userChoice;
+    } catch (err) {
+      console.error("Install prompt failed:", err);
+    } finally {
+      win.deferredPrompt = null;
+      setCanInstall(false);
+    }
+  };
 
   return (
     <aside className="flex w-full flex-col border-b border-sidebar-border bg-sidebar/50 lg:min-h-full lg:w-64 lg:border-b-0 lg:border-r">
@@ -84,6 +118,17 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
         )}
       </nav>
       <div className="flex flex-col gap-2.5 border-t border-sidebar-border p-4">
+        {canInstall && (
+          <Button 
+            type="button"
+            variant="outline" 
+            className="w-full justify-start rounded-xl font-semibold border-primary/30 bg-primary/8 text-primary hover:bg-primary/15"
+            onClick={handleInstallClick}
+          >
+            <AppWindow className="size-4" data-icon="inline-start" />
+            Download App
+          </Button>
+        )}
         <Button variant="outline" className="w-full justify-start rounded-xl font-semibold border-border/80" render={<Link href="/support" />}>
           <HelpCircle className="size-4 text-primary" data-icon="inline-start" />
           Support Ticket

@@ -9,19 +9,24 @@ export async function getTutorByUsername(
 ): Promise<TutorProfile | null> {
   if (!isSupabaseConfigured()) return null;
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tutor_profiles")
-    .select("*")
-    .eq("username", username)
-    .maybeSingle();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("username", username)
+      .maybeSingle();
 
-  if (error) {
-    // Table missing or not migrated yet
+    if (error) {
+      // Table missing or not migrated yet
+      return null;
+    }
+    if (!data) return null;
+    return rowToTutorProfile(data as TutorProfileRow);
+  } catch (err) {
+    console.warn(`[getTutorByUsername] Offline or paused database fallback for username: ${username}`, err instanceof Error ? err.message : err);
     return null;
   }
-  if (!data) return null;
-  return rowToTutorProfile(data as TutorProfileRow);
 }
 
 export async function getTutorProfileForUser(
@@ -29,29 +34,39 @@ export async function getTutorProfileForUser(
 ): Promise<TutorProfile | null> {
   if (!isSupabaseConfigured()) return null;
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tutor_profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
 
-  if (error || !data) return null;
-  return rowToTutorProfile(data as TutorProfileRow);
+    if (error || !data) return null;
+    return rowToTutorProfile(data as TutorProfileRow);
+  } catch (err) {
+    console.warn(`[getTutorProfileForUser] Offline database fallback for userId: ${userId}`);
+    return null;
+  }
 }
 
 export async function isUsernameAvailable(username: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return true;
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tutor_profiles")
-    .select("username")
-    .eq("username", username)
-    .maybeSingle();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tutor_profiles")
+      .select("username")
+      .eq("username", username)
+      .maybeSingle();
 
-  if (error) return false;
-  return !data;
+    if (error) return false;
+    return !data;
+  } catch (err) {
+    console.warn("[isUsernameAvailable] Offline check, assuming username is available");
+    return true;
+  }
 }
 
 export type CreateTutorProfileInput = {
@@ -66,23 +81,27 @@ export type CreateTutorProfileInput = {
 export async function createTutorProfile(
   input: CreateTutorProfileInput,
 ): Promise<{ ok: true; profile: TutorProfile } | { ok: false; error: string }> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tutor_profiles")
-    .insert({
-      id: input.id,
-      username: input.username,
-      display_name: input.displayName,
-      headline: input.headline ?? null,
-      bio: input.bio ?? null,
-      lesson_price_cents: input.lessonPriceCents ?? 4500,
-    })
-    .select("*")
-    .single();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tutor_profiles")
+      .insert({
+        id: input.id,
+        username: input.username,
+        display_name: input.displayName,
+        headline: input.headline ?? null,
+        bio: input.bio ?? null,
+        lesson_price_cents: input.lessonPriceCents ?? 4500,
+      })
+      .select("*")
+      .single();
 
-  if (error || !data) {
-    return { ok: false, error: error?.message ?? "Could not create profile." };
+    if (error || !data) {
+      return { ok: false, error: error?.message ?? "Could not create profile." };
+    }
+
+    return { ok: true, profile: rowToTutorProfile(data as TutorProfileRow) };
+  } catch (err) {
+    return { ok: false, error: "Database offline. Could not create profile." };
   }
-
-  return { ok: true, profile: rowToTutorProfile(data as TutorProfileRow) };
 }

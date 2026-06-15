@@ -40,12 +40,11 @@ export function BookingCalendar({
     const groups: Record<string, OpenSlot[]> = {};
     openSlots.forEach((slot) => {
       const dateObj = new Date(slot.startsAt);
-      const dateKey = dateObj.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        weekday: "short"
-      });
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const dateKey = `${year}-${month}-${day}`;
+      
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -111,7 +110,10 @@ export function BookingCalendar({
               <div className="flex flex-row overflow-x-auto gap-2 pb-2 md:flex-col md:overflow-visible md:pb-0 scrollbar-none">
                 {dateKeys.map((dateKey) => {
                   const isDateSelected = selectedDateKey === dateKey;
-                  const [wday, day, mth, yr] = dateKey.split(" ");
+                  const dateObj = new Date(dateKey + "T00:00:00");
+                  const wday = dateObj.toLocaleDateString("en-GB", { weekday: "short" });
+                  const day = dateObj.getDate().toString();
+                  const mth = dateObj.toLocaleDateString("en-GB", { month: "short" });
                   return (
                     <button
                       key={dateKey}
@@ -129,7 +131,7 @@ export function BookingCalendar({
                       )}
                     >
                       <span className={cn("text-[10px] font-black uppercase tracking-wider", isDateSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                        {wday?.replace(",", "")}
+                        {wday}
                       </span>
                       <span className="text-base font-bold tracking-tight mt-0.5">
                         {day} {mth}
@@ -177,8 +179,9 @@ export function BookingCalendar({
 
               {/* Booking Checkout form inside card */}
               {selected ? (
-                <div className="mt-4 rounded-2xl border border-primary/10 bg-muted/10 p-5 shadow-sm shadow-blue-500/5">
+                <div className="mt-4 rounded-2xl border border-primary/10 bg-muted/10 p-5 shadow-sm shadow-blue-500/5 transition-all duration-300 animate-in fade-in slide-in-from-top-2">
                   <span className="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1 mb-4">
+
                     <Grid3X3 className="size-3.5" />
                     3. Secure Booking Details
                   </span>

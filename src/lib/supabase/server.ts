@@ -35,3 +35,22 @@ export async function createClient() {
     },
   });
 }
+
+export async function safeGetAuthUser() {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return user ?? null;
+  } catch (error) {
+    if (error instanceof Error && (
+      error.message.includes("Dynamic server usage") ||
+      error.message.includes("dynamic-server-error") ||
+      error.message.includes("Route /")
+    )) {
+      throw error;
+    }
+    console.warn("[safeGetAuthUser] Database/Auth connection offline or unreachable:", error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+

@@ -35,7 +35,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch (err) {
+    console.warn("[middleware] Supabase connection is offline, skipping user refresh.", err instanceof Error ? err.message : err);
+  }
 
   return supabaseResponse;
 }

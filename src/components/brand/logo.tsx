@@ -9,15 +9,15 @@ type LogoProps = {
 };
 
 const logoHeights = {
-  header: "h-8 sm:h-9",
-  md: "h-11 sm:h-12",
-  lg: "h-18 sm:h-20",
+  header: "h-9 sm:h-11",
+  md: "h-13 sm:h-15",
+  lg: "h-20 sm:h-24",
 } as const;
 
 const textSizes = {
-  header: "text-xl font-bold tracking-tight ml-2",
-  md: "text-2xl sm:text-3xl font-bold tracking-tight ml-2.5",
-  lg: "text-5xl sm:text-6xl font-extrabold tracking-tight ml-4",
+  header: "text-2xl font-bold tracking-tight ml-2.5",
+  md: "text-3xl sm:text-4xl font-bold tracking-tight ml-3",
+  lg: "text-6xl sm:text-7xl font-extrabold tracking-tight ml-5",
 } as const;
 
 export function Logo({ className, href = "/", size = "header" }: LogoProps) {
@@ -30,7 +30,7 @@ export function Logo({ className, href = "/", size = "header" }: LogoProps) {
       )}
     >
       <img
-        src="/yazzow-logo-transparent.png"
+        src="/yazzow-brand-icon.png"
         alt="Yazzow Logo"
         className={cn(
           "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",

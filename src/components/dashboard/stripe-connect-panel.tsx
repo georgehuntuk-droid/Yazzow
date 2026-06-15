@@ -33,14 +33,26 @@ export function StripeConnectPanel({
     setError(null);
     try {
       const response = await fetch("/api/stripe/connect", { method: "POST" });
-      const data = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !data.url) {
-        setError(data.error ?? "Could not start Stripe setup.");
+      
+      let data: { url?: string; error?: string } = {};
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
+      
+      if (!response.ok) {
+        setError(data.error ?? `Error ${response.status}: Could not start Stripe setup.`);
         return;
       }
+      
+      if (!data.url) {
+        setError("Invalid response from server: missing redirect URL.");
+        return;
+      }
+      
       window.location.href = data.url;
-    } catch {
-      setError("Network error. Try again.");
+    } catch (err) {
+      setError(`Connection error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }

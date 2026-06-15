@@ -1,26 +1,51 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import { Download, X, Sparkles, AppWindow } from "lucide-react";
+import { Download, X, Sparkles, AppWindow, Share, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+function isIOSDevice() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+function isStandaloneMode() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as any).standalone === true
+  );
+}
 
 export function PwaInstallBanner() {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
     // Check if dismissed already
     const isDismissed = localStorage.getItem("pwa-banner-dismissed") === "true";
+    if (isDismissed) return;
     
-    // Catch the prompt event if it already fired and was stored on window
     const win = window as any;
-    if (win.deferredPrompt && !isDismissed) {
+    const isIOSUser = isIOSDevice();
+    const isInstalled = isStandaloneMode();
+
+    if (isIOSUser && !isInstalled) {
+      setIsIOS(true);
+      setShowBanner(true);
+      return;
+    }
+
+    if (win.deferredPrompt && !isInstalled) {
       setInstallPrompt(win.deferredPrompt);
       setShowBanner(true);
     }
 
     const handleCanInstall = () => {
-      if (!localStorage.getItem("pwa-banner-dismissed")) {
+      if (!localStorage.getItem("pwa-banner-dismissed") && !isStandaloneMode()) {
         setInstallPrompt(win.deferredPrompt);
         setShowBanner(true);
       }
@@ -43,7 +68,6 @@ export function PwaInstallBanner() {
   const handleInstallClick = async () => {
     if (!installPrompt) return;
 
-    // Show prompt
     try {
       await installPrompt.prompt();
       const choiceResult = await installPrompt.userChoice;
@@ -55,7 +79,6 @@ export function PwaInstallBanner() {
     } catch (err) {
       console.error("Failed to prompt installation:", err);
     } finally {
-      // Clear prompt
       const win = window as any;
       win.deferredPrompt = null;
       setInstallPrompt(null);
@@ -77,8 +100,9 @@ export function PwaInstallBanner() {
         <div className="absolute -top-10 -right-10 size-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
         
         <button
+          type="button"
           onClick={handleDismiss}
-          className="absolute top-3 right-3 text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted/50 transition-colors"
+          className="absolute top-3 right-3 text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
           aria-label="Dismiss banner"
         >
           <X className="size-4" />
@@ -89,32 +113,60 @@ export function PwaInstallBanner() {
             <AppWindow className="size-6 animate-pulse" />
           </div>
           
-          <div className="space-y-1 pr-6">
+          <div className="space-y-1 pr-6 flex-1">
             <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-              Download Desktop App
+              {isIOS ? "Install App on iPhone" : "Download App"}
               <Sparkles className="size-3.5 text-primary" />
             </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Install Yazzow on your home screen for instant schedule building, payments, and student messaging.
-            </p>
+            
+            {isIOS ? (
+              <div className="text-xs text-muted-foreground space-y-1.5 mt-1 leading-normal">
+                <p>Add Yazzow to your Home Screen in 2 simple steps:</p>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] bg-muted/40 p-2 rounded-xl border border-border/40">
+                  <li>
+                    Tap the <strong>Share</strong> button <Share className="inline-block size-3.5 mx-0.5 text-primary" /> at the bottom of Safari.
+                  </li>
+                  <li>
+                    Scroll down and select <strong>Add to Home Screen</strong> <Plus className="inline-block size-3.5 mx-0.5 text-primary" />.
+                  </li>
+                </ol>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                Install Yazzow on your home screen for instant schedule building, payments, and student messaging.
+              </p>
+            )}
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-end gap-2.5">
           <button
+            type="button"
             onClick={handleDismiss}
             className="text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 transition-colors cursor-pointer"
           >
-            Later
+            {isIOS ? "Dismiss" : "Later"}
           </button>
-          <Button
-            size="sm"
-            onClick={handleInstallClick}
-            className="rounded-xl bg-primary text-white text-xs font-bold shadow-sm shadow-blue-500/15"
-          >
-            <Download className="size-3.5 mr-1" />
-            Install App
-          </Button>
+          {!isIOS ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleInstallClick}
+              className="rounded-xl bg-primary text-white text-xs font-bold shadow-sm shadow-blue-500/15"
+            >
+              <Download className="size-3.5 mr-1" />
+              Install App
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleDismiss}
+              className="rounded-xl bg-primary text-white text-xs font-bold shadow-sm shadow-blue-500/15"
+            >
+              Got it
+            </Button>
+          )}
         </div>
       </div>
     </div>

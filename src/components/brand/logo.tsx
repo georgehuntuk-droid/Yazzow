@@ -9,9 +9,9 @@ type LogoProps = {
 };
 
 const logoHeights = {
-  header: "h-9 sm:h-11",
-  md: "h-13 sm:h-15",
-  lg: "h-20 sm:h-24",
+  header: "h-11 sm:h-14",
+  md: "h-16 sm:h-20",
+  lg: "h-28 sm:h-36",
 } as const;
 
 export function Logo({ className, href = "/", size = "header" }: LogoProps) {

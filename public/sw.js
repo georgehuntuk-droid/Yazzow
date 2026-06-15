@@ -1,4 +1,4 @@
-const CACHE_NAME = "yazzow-cache-v1";
+const CACHE_NAME = "yazzow-cache-v2";
 const OFFLINE_URL = "/offline.html";
 
 const ASSETS_TO_CACHE = [
@@ -37,6 +37,27 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests
   if (event.request.method !== "GET") return;
 
+  // Network-First for HTML/page requests to ensure updates load immediately when online
+  if (event.request.mode === "navigate" || event.request.headers.get("accept")?.includes("text/html")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseCopy);
+          });
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || caches.match(OFFLINE_URL);
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first for static assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -44,15 +65,12 @@ self.addEventListener("fetch", (event) => {
       }
 
       return fetch(event.request).catch(() => {
-        // If it's a page navigation request, return offline fallback page
-        if (event.request.mode === "navigate") {
-          return caches.match(OFFLINE_URL);
-        }
         return null;
       });
     })
   );
 });
+
 
 // Push: Handle background push notifications
 self.addEventListener("push", (event) => {

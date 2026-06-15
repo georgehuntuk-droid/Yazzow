@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -24,12 +23,9 @@ export function Logo({ className, href = "/", size = "header" }: LogoProps) {
         className,
       )}
     >
-      <Image
+      <img
         src="/yazzow-logo.png"
         alt="Yazzow Logo"
-        width={350}
-        height={100}
-        priority
         className={cn(
           "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",
           logoHeights[size]
@@ -38,4 +34,5 @@ export function Logo({ className, href = "/", size = "header" }: LogoProps) {
     </Link>
   );
 }
+
 

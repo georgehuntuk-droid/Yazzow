@@ -1,5 +1,6 @@
 import { MarketingComparison } from "@/components/marketing/comparison";
 import { MarketingSlotAlerts } from "@/components/marketing/slot-alerts";
+import { MarketingAudience } from "@/components/marketing/audience";
 import { MarketingCta } from "@/components/marketing/cta";
 import { MarketingFeatures } from "@/components/marketing/features";
 import { MarketingHero } from "@/components/marketing/hero";
@@ -30,6 +31,7 @@ export default async function HomePage() {
       <SiteHeader />
       <main className="flex-1">
         <MarketingHero authCta={authCta} />
+        <MarketingAudience />
         <MarketingSlotAlerts authCta={authCta} />
         <MarketingSocialProof authCta={authCta} />
         <MarketingFeatures authCta={authCta} />
@@ -43,3 +45,4 @@ export default async function HomePage() {
     </>
   );
 }
+

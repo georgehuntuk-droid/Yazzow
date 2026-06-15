@@ -53,21 +53,25 @@ const rows = [
 function CellValue({ value }: { value: boolean | string }) {
   if (value === true) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-        <Check className="size-4 shrink-0" aria-hidden />
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+        <Check className="size-3.5 shrink-0" aria-hidden />
         Yes
       </span>
     );
   }
   if (value === false) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-        <X className="size-4 shrink-0 opacity-60" aria-hidden />
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-500/10 border border-slate-500/15 px-2.5 py-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <X className="size-3.5 shrink-0 opacity-60" aria-hidden />
         No
       </span>
     );
   }
-  return <span className="text-sm text-muted-foreground">{value}</span>;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+      {value}
+    </span>
+  );
 }
 
 export function MarketingComparison() {

@@ -59,40 +59,48 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
           </p>
         </div>
 
-        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3 items-stretch pt-4">
           {plans.map((plan) => {
             const featured = "featured" in plan && plan.featured;
             return (
               <SpotlightCard
                 key={plan.name}
-                className={`flex flex-col p-8 ${featured ? "md:-translate-y-2 ring-2 ring-primary/25" : ""}`}
+                className={`flex flex-col p-8 relative transition-all duration-300 ${
+                  featured
+                    ? "md:-translate-y-4 ring-4 ring-primary/30 shadow-[0_32px_64px_oklch(0.55_0.18_250/0.25)] border-primary/20 z-10"
+                    : "border-border/60 hover:border-primary/20"
+                }`}
               >
                 {featured ? (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground shadow-[0_4px_12px_oklch(0.42_0.15_286/0.3)]">
-                    For tutors
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1 text-xs font-black text-white shadow-md uppercase tracking-wider select-none animate-pulse">
+                    Recommended
                   </span>
                 ) : null}
-                <div className="mb-5 flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/15">
+                <div className={`mb-5 flex size-12 items-center justify-center rounded-xl bg-gradient-to-br ring-1 transition duration-300 ${
+                  featured
+                    ? "from-primary/25 to-primary/5 text-primary ring-primary/30"
+                    : "from-primary/15 to-primary/5 text-primary ring-primary/10"
+                }`}>
                   <plan.icon className="size-6" />
                 </div>
-                <h3 className="font-heading text-xl font-bold">{plan.name}</h3>
-                <p className="mt-2 font-heading text-4xl font-bold yazz-gradient-text">
+                <h3 className="font-heading text-xl font-black tracking-tight text-foreground">{plan.name}</h3>
+                <p className="mt-2 font-heading text-4xl font-black yazz-gradient-text">
                   {plan.fee}
-                  <span className="ml-1 text-base font-normal text-muted-foreground">
+                  <span className="ml-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {plan.feeSuffix}
                   </span>
                 </p>
                 <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                   {plan.description}
                 </p>
-                <ul className="mt-6 flex-1 space-y-2">
+                <ul className="mt-6 flex-1 space-y-3">
                   {plan.highlights.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <li key={item} className="flex items-start gap-2.5 text-xs text-muted-foreground">
                       <span
-                        className="size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_6px_oklch(0.42_0.15_286/0.6)]"
+                        className="size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_6px_oklch(0.42_0.15_286/0.6)] mt-1.5"
                         aria-hidden
                       />
-                      {item}
+                      <span>{item}</span>
                     </li>
                   ))}
                 </ul>

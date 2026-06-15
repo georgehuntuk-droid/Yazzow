@@ -37,24 +37,35 @@ export function MarketingTestimonials() {
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {testimonials.map((item) => (
-            <SpotlightCard key={item.name} className="flex flex-col p-6">
-              <Quote className="mb-4 size-8 text-primary/30" aria-hidden />
-              <blockquote className="flex-1 text-sm leading-relaxed text-foreground">
-                &ldquo;{item.quote}&rdquo;
-              </blockquote>
-              <figcaption className="mt-6 flex items-center gap-3 border-t border-border/50 pt-5">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-xs font-bold text-primary ring-1 ring-primary/15">
-                  {item.initials}
+        <div className="grid gap-8 md:grid-cols-3">
+          {testimonials.map((item, index) => {
+            const avatarGradients = [
+              "from-violet-500/20 to-indigo-500/5 text-violet-600 dark:text-violet-400 ring-violet-500/15",
+              "from-amber-500/20 to-yellow-500/5 text-amber-600 dark:text-amber-400 ring-amber-500/15",
+              "from-teal-500/20 to-emerald-500/5 text-teal-600 dark:text-teal-400 ring-teal-500/15",
+            ];
+            return (
+              <SpotlightCard key={item.name} className="flex flex-col p-6 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:border-primary/20">
+                <div className="mb-4 flex items-center gap-0.5 text-amber-500">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-base">★</span>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">{item.role}</p>
-                </div>
-              </figcaption>
-            </SpotlightCard>
-          ))}
+                <blockquote className="flex-1 text-sm leading-relaxed text-foreground italic">
+                  &ldquo;{item.quote}&rdquo;
+                </blockquote>
+                <figcaption className="mt-6 flex items-center gap-3 border-t border-border/50 pt-5">
+                  <div className={`flex size-10 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-bold ring-1 ${avatarGradients[index % avatarGradients.length]}`}>
+                    {item.initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.role}</p>
+                  </div>
+                </figcaption>
+              </SpotlightCard>
+            );
+          })}
         </div>
       </div>
     </section>

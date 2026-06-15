@@ -51,20 +51,20 @@ export function MarketingHowItWorks() {
         <ol className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           <div
             aria-hidden
-            className="absolute left-[12.5%] right-[12.5%] top-12 hidden h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent lg:block"
+            className="absolute left-[12.5%] right-[12.5%] top-12 hidden h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent lg:block"
           />
           {steps.map((item) => (
-            <li key={item.step} className="relative">
-              <SpotlightCard className="flex h-full flex-col p-6">
+            <li key={item.step} className="relative group">
+              <SpotlightCard className="flex h-full flex-col p-6 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
                 <div className="mb-5 flex items-center justify-between">
-                  <span className="font-heading text-4xl font-bold text-primary/25">
-                    {item.step}
+                  <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold tracking-wider text-primary ring-1 ring-primary/15 uppercase select-none">
+                    Step {item.step}
                   </span>
-                  <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/15 transition group-hover:scale-110">
+                  <div className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/15 transition-transform duration-300 group-hover:scale-110">
                     <item.icon className="size-5" />
                   </div>
                 </div>
-                <h3 className="font-heading text-xl font-bold">{item.title}</h3>
+                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-200">{item.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   {item.description}
                 </p>

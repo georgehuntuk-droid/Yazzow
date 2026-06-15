@@ -26,7 +26,7 @@ import { isStripeConfigured } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TutorProfileRow } from "@/lib/supabase/database.types";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
-import { getTutorByUsername } from "@/lib/tutors/queries";
+import { getTutorByUsername, getPackagesForTutor } from "@/lib/tutors/queries";
 import {
   getOpenSlotsForTutor,
   getPublishedResourcesForTutor,
@@ -101,6 +101,10 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
   const resources = liveTutor
     ? await getPublishedResourcesForTutor(liveTutor.id)
     : DEMO_RESOURCES;
+
+  const packages = liveTutor
+    ? await getPackagesForTutor(liveTutor.id)
+    : [];
 
   const portalBooking = liveTutor
     ? await getPortalBookingStatus(liveTutor.id)
@@ -196,6 +200,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
           <TabsContent value="packages" className="mt-6">
             <LessonPackagesTab
               tutor={tutor}
+              packages={packages}
               paymentsEnabled={paymentsEnabled}
               paymentsBlockedMessage={paymentsBlockedMessage}
               isDemo={isSamplePortal}

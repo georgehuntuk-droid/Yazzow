@@ -17,6 +17,7 @@ import {
   TUTOR_PUBLIC_PATH,
   tutorPublicUrl,
 } from "@/lib/constants";
+import { formatMoney } from "@/lib/format";
 import {
   changePortalUsername,
   removePortalAvatar,
@@ -25,19 +26,23 @@ import {
   updatePortalStyle,
   uploadPortalAvatar,
   uploadPortalCover,
+  createTutorPackage,
+  updateTutorPackage,
+  deleteTutorPackage,
 } from "@/lib/dashboard/profile-actions";
 import { slugifyUsername } from "@/lib/tutors/utils";
-import type { TutorProfile } from "@/lib/types";
+import type { TutorProfile, TutorPackage } from "@/lib/types";
 
 type PortalSettingsProps = {
   profile: TutorProfile;
+  initialPackages?: TutorPackage[];
 };
 
 function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-export function PortalSettings({ profile }: PortalSettingsProps) {
+export function PortalSettings({ profile, initialPackages = [] }: PortalSettingsProps) {
   const router = useRouter();
 
   const [displayName, setDisplayName] = useState(profile.displayName);
@@ -49,6 +54,16 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
   const [blockLessonsCount, setBlockLessonsCount] = useState(profile.blockPackageLessonsCount ?? 10);
   const [blockDiscountPercent, setBlockDiscountPercent] = useState(profile.blockPackageDiscountPercent ?? 10);
   const [allowPublicJoining, setAllowPublicJoining] = useState(profile.allowPublicJoining ?? true);
+
+  // States for new / editing package forms
+  const [newPkgName, setNewPkgName] = useState("");
+  const [newPkgLessons, setNewPkgLessons] = useState(10);
+  const [newPkgPrice, setNewPkgPrice] = useState("350.00");
+  const [editingPkgId, setEditingPkgId] = useState<string | null>(null);
+  const [editPkgName, setEditPkgName] = useState("");
+  const [editPkgLessons, setEditPkgLessons] = useState(10);
+  const [editPkgPrice, setEditPkgPrice] = useState("");
+  const [editPkgActive, setEditPkgActive] = useState(true);
   const [allowCashPayments, setAllowCashPayments] = useState(profile.allowCashPayments ?? true);
   const [paymentInstructions, setPaymentInstructions] = useState(profile.paymentInstructions ?? "");
 
@@ -120,6 +135,74 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
     setSuccess(message);
     setError(null);
     setTimeout(() => setSuccess(null), 4000);
+  }
+
+  async function handleAddPackage(event: React.FormEvent) {
+    event.preventDefault();
+    setPackageLoading(true);
+    setError(null);
+    const result = await createTutorPackage({
+      name: newPkgName,
+      lessonsCount: newPkgLessons,
+      price: newPkgPrice,
+    });
+    if (!result.ok) {
+      setError(result.error);
+      setPackageLoading(false);
+      return;
+    }
+    flashSuccess("Lesson bundle added successfully.");
+    setNewPkgName("");
+    setNewPkgLessons(10);
+    setNewPkgPrice("350.00");
+    router.refresh();
+    setPackageLoading(false);
+  }
+
+  async function handleUpdatePackage(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editingPkgId) return;
+    setPackageLoading(true);
+    setError(null);
+    const result = await updateTutorPackage({
+      id: editingPkgId,
+      name: editPkgName,
+      lessonsCount: editPkgLessons,
+      price: editPkgPrice,
+      isActive: editPkgActive,
+    });
+    if (!result.ok) {
+      setError(result.error);
+      setPackageLoading(false);
+      return;
+    }
+    flashSuccess("Lesson bundle updated successfully.");
+    setEditingPkgId(null);
+    router.refresh();
+    setPackageLoading(false);
+  }
+
+  async function handleDeletePackage(id: string) {
+    if (!confirm("Are you sure you want to delete this lesson bundle?")) return;
+    setPackageLoading(true);
+    setError(null);
+    const result = await deleteTutorPackage(id);
+    if (!result.ok) {
+      setError(result.error);
+      setPackageLoading(false);
+      return;
+    }
+    flashSuccess("Lesson bundle deleted.");
+    router.refresh();
+    setPackageLoading(false);
+  }
+
+  function startEditing(pkg: TutorPackage) {
+    setEditingPkgId(pkg.id);
+    setEditPkgName(pkg.name);
+    setEditPkgLessons(pkg.lessonsCount);
+    setEditPkgPrice((pkg.priceCents / 100).toFixed(2));
+    setEditPkgActive(pkg.isActive);
   }
 
   async function handleSaveProfile(event: React.FormEvent) {
@@ -618,93 +701,180 @@ export function PortalSettings({ profile }: PortalSettingsProps) {
 
         <Card className="yazz-surface">
           <CardHeader>
-            <CardTitle>Lesson block package</CardTitle>
+            <CardTitle>Lesson bundles & packages</CardTitle>
             <CardDescription>
-              Allow parents to purchase lesson credits upfront in bulk. Configure the lessons count and a discount using the sliders.
+              Create custom packages that parents can buy in bulk upfront. This secures upfront payment and rewards parents with discounts.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSavePackage} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm font-medium">
-                    <label htmlFor="lessons-count-slider">Package size</label>
-                    <span className="text-primary font-bold text-base">{blockLessonsCount} Lessons</span>
-                  </div>
-                  <input
-                    id="lessons-count-slider"
-                    type="range"
-                    min="2"
-                    max="20"
-                    step="1"
-                    value={blockLessonsCount}
-                    onChange={(e) => setBlockLessonsCount(parseInt(e.target.value, 10))}
-                    className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Define how many lessons are included in a bulk credit package.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm font-medium">
-                    <label htmlFor="discount-slider">Bulk discount</label>
-                    <span className="text-primary font-bold text-base">{blockDiscountPercent}% Off</span>
-                  </div>
-                  <input
-                    id="discount-slider"
-                    type="range"
-                    min="0"
-                    max="50"
-                    step="5"
-                    value={blockDiscountPercent}
-                    onChange={(e) => setBlockDiscountPercent(parseInt(e.target.value, 10))}
-                    className="w-full h-2 rounded-lg bg-muted appearance-none cursor-pointer accent-primary"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Deduct a discount percentage to make purchasing credits more appealing.
-                  </p>
-                </div>
-
-                {/* Show pricing summary mathematically */}
-                <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Standard rate:</span>
-                    <span className="font-medium">
-                      {((previewProfile.lessonPriceCents * blockLessonsCount) / 100).toFixed(2)} {previewProfile.currency.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm text-green-600 font-medium">
-                    <span>Discount saving:</span>
-                    <span>
-                      -{(
-                        (previewProfile.lessonPriceCents *
-                          blockLessonsCount *
-                          (blockDiscountPercent / 100)) /
-                        100
-                      ).toFixed(2)}{" "}
-                      {previewProfile.currency.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="border-t border-border/60 pt-2 flex justify-between text-base font-bold">
-                    <span>Package price:</span>
-                    <span className="text-primary">
-                      {(
-                        (previewProfile.lessonPriceCents *
-                          blockLessonsCount *
-                          (1 - blockDiscountPercent / 100)) /
-                        100
-                      ).toFixed(2)}{" "}
-                      {previewProfile.currency.toUpperCase()}
-                    </span>
-                  </div>
+          <CardContent className="space-y-6">
+            
+            {/* List of current packages */}
+            {initialPackages.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Your Packages</p>
+                <div className="divide-y divide-border/60 border border-border/60 rounded-xl bg-muted/10 overflow-hidden">
+                  {initialPackages.map((pkg) => (
+                    <div key={pkg.id} className="flex items-center justify-between p-4 bg-background">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-foreground">{pkg.name}</p>
+                          {!pkg.isActive && (
+                            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-inset ring-muted-foreground/10">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {pkg.lessonsCount} lessons · <span className="font-bold text-primary">{formatMoney(pkg.priceCents, pkg.currency)}</span>
+                          <span className="ml-1 text-[10px]">
+                            ({formatMoney(Math.round(pkg.priceCents / pkg.lessonsCount), pkg.currency)}/lesson)
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditing(pkg)}
+                          disabled={packageLoading}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => handleDeletePackage(pkg.id)}
+                          disabled={packageLoading}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            ) : (
+              <p className="text-xs text-muted-foreground bg-muted/20 border border-border/40 p-4 rounded-xl text-center">
+                You haven&apos;t created any custom packages yet. Create one below to let parents purchase bundles!
+              </p>
+            )}
 
-              <Button type="submit" disabled={packageLoading}>
-                {packageLoading ? "Saving…" : "Save package limits"}
-              </Button>
-            </form>
+            {/* Edit / Add Forms */}
+            {editingPkgId ? (
+              <form onSubmit={handleUpdatePackage} className="border-t border-border/60 pt-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-wider">✏️ Edit Lesson Bundle</h3>
+                  <button
+                    type="button"
+                    onClick={() => setEditingPkgId(null)}
+                    className="text-xs text-muted-foreground hover:text-foreground font-semibold"
+                  >
+                    Cancel Edit
+                  </button>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2 sm:col-span-2">
+                    <label htmlFor="edit-pkg-name" className="text-sm font-medium">Package Name</label>
+                    <Input
+                      id="edit-pkg-name"
+                      required
+                      value={editPkgName}
+                      onChange={(e) => setEditPkgName(e.target.value)}
+                      placeholder="e.g. 10x GCSE Exam Prep Bundle"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="edit-pkg-lessons" className="text-sm font-medium">Lessons Count</label>
+                    <Input
+                      id="edit-pkg-lessons"
+                      type="number"
+                      required
+                      min={2}
+                      max={100}
+                      value={editPkgLessons}
+                      onChange={(e) => setEditPkgLessons(parseInt(e.target.value, 10))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="edit-pkg-price" className="text-sm font-medium">Bundle Price ({currency.toUpperCase()})</label>
+                    <Input
+                      id="edit-pkg-price"
+                      required
+                      placeholder="350.00"
+                      value={editPkgPrice}
+                      onChange={(e) => setEditPkgPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pb-2">
+                  <input
+                    id="edit-pkg-active"
+                    type="checkbox"
+                    checked={editPkgActive}
+                    onChange={(e) => setEditPkgActive(e.target.checked)}
+                    className="h-4.5 w-4.5 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                  />
+                  <label htmlFor="edit-pkg-active" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Active (visible to parents on your booking page)
+                  </label>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={packageLoading}>
+                    {packageLoading ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setEditingPkgId(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleAddPackage} className="border-t border-border/60 pt-5 space-y-4">
+                <h3 className="text-sm font-bold text-primary uppercase tracking-wider">➕ Add Lesson Bundle</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2 sm:col-span-2">
+                    <label htmlFor="new-pkg-name" className="text-sm font-medium">Package Name</label>
+                    <Input
+                      id="new-pkg-name"
+                      required
+                      value={newPkgName}
+                      onChange={(e) => setNewPkgName(e.target.value)}
+                      placeholder="e.g. 10x GCSE Exam Prep Bundle"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="new-pkg-lessons" className="text-sm font-medium">Lessons Count</label>
+                    <Input
+                      id="new-pkg-lessons"
+                      type="number"
+                      required
+                      min={2}
+                      max={100}
+                      value={newPkgLessons}
+                      onChange={(e) => setNewPkgLessons(parseInt(e.target.value, 10))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="new-pkg-price" className="text-sm font-medium">Bundle Price ({currency.toUpperCase()})</label>
+                    <Input
+                      id="new-pkg-price"
+                      required
+                      placeholder="350.00"
+                      value={newPkgPrice}
+                      onChange={(e) => setNewPkgPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={packageLoading}>
+                  {packageLoading ? "Creating..." : "Add Package"}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

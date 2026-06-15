@@ -71,3 +71,13 @@ export type StudentLedgerEntry = {
   lessonsCompleted: number;
   totalRevenueCents: number;
 };
+
+export type TutorPackage = {
+  id: string;
+  tutorId: string;
+  name: string;
+  lessonsCount: number;
+  priceCents: number;
+  currency: string;
+  isActive: boolean;
+};

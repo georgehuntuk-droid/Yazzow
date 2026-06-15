@@ -5,6 +5,7 @@ import { DashboardShell, PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { requireTutorProfile } from "@/lib/auth/session";
 import { BRAND_NAME } from "@/lib/constants";
+import { getPackagesForTutor } from "@/lib/tutors/queries";
 
 export const metadata = {
   title: `Portal settings · ${BRAND_NAME}`,
@@ -12,6 +13,7 @@ export const metadata = {
 
 export default async function DashboardSettingsPage() {
   const { profile } = await requireTutorProfile();
+  const packages = await getPackagesForTutor(profile.id);
 
   return (
     <DashboardShell>
@@ -24,7 +26,7 @@ export default async function DashboardSettingsPage() {
           </Button>
         }
       />
-      <PortalSettings profile={profile} />
+      <PortalSettings profile={profile} initialPackages={packages} />
     </DashboardShell>
   );
 }

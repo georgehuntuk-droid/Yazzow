@@ -2,7 +2,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import type { TutorProfileRow } from "@/lib/supabase/database.types";
 import { rowToTutorProfile } from "@/lib/tutors/utils";
-import type { TutorProfile } from "@/lib/types";
+import type { TutorProfile, TutorPackage } from "@/lib/types";
 
 export async function getTutorByUsername(
   username: string,
@@ -103,5 +103,33 @@ export async function createTutorProfile(
     return { ok: true, profile: rowToTutorProfile(data as TutorProfileRow) };
   } catch (err) {
     return { ok: false, error: "Database offline. Could not create profile." };
+  }
+}
+
+export async function getPackagesForTutor(tutorId: string): Promise<TutorPackage[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tutor_packages")
+      .select("*")
+      .eq("tutor_id", tutorId)
+      .order("lessons_count", { ascending: true });
+
+    if (error || !data) return [];
+    
+    return data.map((row: any) => ({
+      id: row.id,
+      tutorId: row.tutor_id,
+      name: row.name,
+      lessonsCount: row.lessons_count,
+      priceCents: row.price_cents,
+      currency: row.currency,
+      isActive: row.is_active,
+    }));
+  } catch (err) {
+    console.warn(`[getPackagesForTutor] Failed to fetch packages for tutorId: ${tutorId}`, err);
+    return [];
   }
 }

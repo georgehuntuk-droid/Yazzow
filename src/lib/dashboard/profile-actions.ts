@@ -364,3 +364,103 @@ export async function removePortalCover() {
   await revalidatePortal(profile.username);
   return { ok: true as const };
 }
+
+export async function createTutorPackage(input: {
+  name: string;
+  lessonsCount: number;
+  price: string;
+}) {
+  const { profile } = await requireTutorProfile();
+  
+  const name = input.name.trim();
+  const priceCents = parsePriceToCents(input.price);
+
+  if (!name) {
+    return { ok: false as const, error: "Package name is required." };
+  }
+  if (input.lessonsCount < 2 || input.lessonsCount > 100) {
+    return { ok: false as const, error: "Lessons count must be between 2 and 100." };
+  }
+  if (priceCents === null || priceCents <= 0) {
+    return { ok: false as const, error: "Enter a valid package price." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_packages")
+    .insert({
+      tutor_id: profile.id,
+      name,
+      lessons_count: input.lessonsCount,
+      price_cents: priceCents,
+      currency: profile.currency,
+      is_active: true,
+    });
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function updateTutorPackage(input: {
+  id: string;
+  name: string;
+  lessonsCount: number;
+  price: string;
+  isActive?: boolean;
+}) {
+  const { profile } = await requireTutorProfile();
+  
+  const name = input.name.trim();
+  const priceCents = parsePriceToCents(input.price);
+
+  if (!name) {
+    return { ok: false as const, error: "Package name is required." };
+  }
+  if (input.lessonsCount < 2 || input.lessonsCount > 100) {
+    return { ok: false as const, error: "Lessons count must be between 2 and 100." };
+  }
+  if (priceCents === null || priceCents <= 0) {
+    return { ok: false as const, error: "Enter a valid package price." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_packages")
+    .update({
+      name,
+      lessons_count: input.lessonsCount,
+      price_cents: priceCents,
+      is_active: input.isActive ?? true,
+    })
+    .eq("id", input.id)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function deleteTutorPackage(id: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tutor_packages")
+    .delete()
+    .eq("id", id)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}

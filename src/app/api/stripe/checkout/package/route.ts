@@ -10,6 +10,7 @@ type PackageCheckoutBody = {
   tutorUsername: string;
   parentEmail: string;
   studentName?: string;
+  packageId?: string;
 };
 
 export async function POST(request: Request) {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as PackageCheckoutBody;
-  const { tutorUsername, parentEmail, studentName } = body;
+  const { tutorUsername, parentEmail, studentName, packageId } = body;
 
   if (!tutorUsername || !parentEmail) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -48,12 +49,34 @@ export async function POST(request: Request) {
     );
   }
 
-  const lessonsCount = tutor.block_package_lessons_count ?? 10;
-  const discountPercent = tutor.block_package_discount_percent ?? 10;
+  let lessonsCount = tutor.block_package_lessons_count ?? 10;
+  let amountCents = 0;
+  let packageName = `${lessonsCount}x Lesson Credits Package`;
+  let description = `Bulk block booking package · Includes ${lessonsCount} lesson credits to book on this page anytime.`;
 
-  // Compute package price in cents
-  const discountMultiplier = 1 - discountPercent / 100;
-  const amountCents = Math.round(tutor.lesson_price_cents * lessonsCount * discountMultiplier);
+  if (packageId) {
+    const { data: pkg } = await admin
+      .from("tutor_packages")
+      .select("*")
+      .eq("id", packageId)
+      .eq("tutor_id", tutor.id)
+      .maybeSingle();
+
+    if (!pkg) {
+      return NextResponse.json({ error: "Package not found." }, { status: 404 });
+    }
+
+    lessonsCount = pkg.lessons_count;
+    amountCents = pkg.price_cents;
+    packageName = pkg.name;
+    description = `Lesson Bundle: ${pkg.name} · Includes ${pkg.lessons_count} lesson credits to book on this page anytime.`;
+  } else {
+    const discountPercent = tutor.block_package_discount_percent ?? 10;
+    const discountMultiplier = 1 - discountPercent / 100;
+    amountCents = Math.round(tutor.lesson_price_cents * lessonsCount * discountMultiplier);
+    packageName = `${lessonsCount}x Lesson Credits Package with ${tutor.display_name}`;
+    description = `Bulk block booking package · Includes ${lessonsCount} lesson credits to book on this page anytime. (${discountPercent}% savings!)`;
+  }
 
   const stripe = getStripe();
 
@@ -67,8 +90,8 @@ export async function POST(request: Request) {
             currency: tutor.currency,
             unit_amount: amountCents,
             product_data: {
-              name: `${lessonsCount}x Lesson Credits Package with ${tutor.display_name}`,
-              description: `Bulk block booking package · Includes ${lessonsCount} lesson credits to book on this page anytime. (${discountPercent}% savings!)`,
+              name: packageName,
+              description,
             },
           },
           quantity: 1,
@@ -80,7 +103,7 @@ export async function POST(request: Request) {
         parent_email: parentEmail,
         student_name: studentName ?? "",
         lessons_count: String(lessonsCount),
-        discount_percent: String(discountPercent),
+        discount_percent: "0",
         platform_fee_cents: "0",
       },
       success_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?package_booked=1&session_id={CHECKOUT_SESSION_ID}`,

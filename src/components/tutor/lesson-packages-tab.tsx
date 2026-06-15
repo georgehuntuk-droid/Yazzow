@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
-import type { TutorProfile } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import type { TutorProfile, TutorPackage } from "@/lib/types";
 
 type LessonPackagesTabProps = {
   tutor: TutorProfile;
+  packages?: TutorPackage[];
   paymentsEnabled?: boolean;
   paymentsBlockedMessage?: string;
   isDemo?: boolean;
@@ -17,6 +19,7 @@ type LessonPackagesTabProps = {
 
 export function LessonPackagesTab({
   tutor,
+  packages = [],
   paymentsEnabled = true,
   paymentsBlockedMessage,
   isDemo = false,
@@ -25,14 +28,25 @@ export function LessonPackagesTab({
   const [studentName, setStudentName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [purchased, setPurchased] = useState(false);
 
-  const lessonsCount = tutor.blockPackageLessonsCount ?? 10;
-  const discountPercent = tutor.blockPackageDiscountPercent ?? 10;
+  const hasCustomPackages = packages && packages.length > 0;
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(() => {
+    return hasCustomPackages ? packages[0].id : null;
+  });
+
+  const selectedPackage = hasCustomPackages
+    ? packages.find((p) => p.id === selectedPackageId)
+    : null;
 
   // Compute package pricing
+  const lessonsCount = selectedPackage ? selectedPackage.lessonsCount : (tutor.blockPackageLessonsCount ?? 10);
+  const discountPercent = tutor.blockPackageDiscountPercent ?? 10;
   const discountMultiplier = 1 - discountPercent / 100;
-  const packagePriceCents = Math.round(tutor.lessonPriceCents * lessonsCount * discountMultiplier);
+
+  const packagePriceCents = selectedPackage
+    ? selectedPackage.priceCents
+    : Math.round(tutor.lessonPriceCents * lessonsCount * discountMultiplier);
+
   const totalStandardCents = tutor.lessonPriceCents * lessonsCount;
   const totalSavingsCents = totalStandardCents - packagePriceCents;
 
@@ -52,6 +66,7 @@ export function LessonPackagesTab({
           tutorUsername: tutor.username,
           parentEmail: email,
           studentName: studentName || undefined,
+          packageId: selectedPackageId || undefined,
         }),
       });
 
@@ -74,13 +89,13 @@ export function LessonPackagesTab({
         <div className="bg-primary/5 px-6 py-3 border-b border-primary/10 flex items-center gap-2">
           <Sparkles className="size-4.5 text-primary animate-pulse" />
           <span className="text-xs font-bold text-primary uppercase tracking-wider">
-            Upfront Value block package
+            {hasCustomPackages ? "Tutor Lesson Bundles" : "Upfront Value block package"}
           </span>
         </div>
 
         <CardHeader className="space-y-2">
           <CardTitle className="font-heading text-2xl font-bold text-foreground">
-            {lessonsCount}x Lesson Credits Package
+            {selectedPackage ? selectedPackage.name : `${lessonsCount}x Lesson Credits Package`}
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground leading-relaxed">
             Secure your child&apos;s ongoing tutoring by purchasing lesson credits in bulk upfront. 
@@ -89,27 +104,79 @@ export function LessonPackagesTab({
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Custom Packages Grid Selector */}
+          {hasCustomPackages && (
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                1. Select a Lesson Bundle
+              </span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {packages.map((pkg) => {
+                  const isSelected = selectedPackageId === pkg.id;
+                  const perLessonRateCents = Math.round(pkg.priceCents / pkg.lessonsCount);
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => setSelectedPackageId(pkg.id)}
+                      className={cn(
+                        "text-left p-4.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative cursor-pointer",
+                        isSelected
+                          ? "bg-primary/5 border-primary shadow-sm ring-2 ring-primary/60"
+                          : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10"
+                      )}
+                    >
+                      {isSelected && (
+                        <span className="absolute top-3 right-3 text-emerald-600 font-bold text-xs flex items-center gap-0.5">
+                          <CheckCircle2 className="size-4 fill-emerald-50 text-emerald-600" />
+                          Selected
+                        </span>
+                      )}
+                      <div>
+                        <p className="font-heading font-black text-foreground text-sm tracking-tight pr-16">{pkg.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{pkg.lessonsCount} lessons bundle</p>
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="text-xl font-black text-foreground">{formatMoney(pkg.priceCents, pkg.currency)}</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground">({formatMoney(perLessonRateCents, pkg.currency)}/lesson)</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Package Pricing Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-muted/20 border border-border/60 rounded-2xl p-5">
-            <div className="space-y-0.5 text-center sm:text-left">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Standard Rate</span>
-              <p className="text-base font-medium line-through text-muted-foreground/80">
-                {formatMoney(totalStandardCents, tutor.currency)}
-              </p>
+          {(!hasCustomPackages || selectedPackage) && (
+            <div className="space-y-2.5">
+              {hasCustomPackages && (
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                  2. Pricing Summary
+                </span>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-muted/20 border border-border/60 rounded-2xl p-5">
+                <div className="space-y-0.5 text-center sm:text-left">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Standard Rate</span>
+                  <p className="text-base font-medium line-through text-muted-foreground/80">
+                    {formatMoney(totalStandardCents, tutor.currency)}
+                  </p>
+                </div>
+                <div className="space-y-0.5 text-center border-y sm:border-y-0 sm:border-x border-border/60 py-2 sm:py-0 sm:px-4">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-green-600 font-bold">You Save</span>
+                  <p className="text-lg font-bold text-green-600">
+                    {discountPercent}% ({formatMoney(totalSavingsCents, tutor.currency)})
+                  </p>
+                </div>
+                <div className="space-y-0.5 text-center sm:text-right">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-primary font-bold">Package Price</span>
+                  <p className="text-2xl font-black text-primary">
+                    {formatMoney(packagePriceCents, tutor.currency)}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-0.5 text-center border-y sm:border-y-0 sm:border-x border-border/60 py-2 sm:py-0 sm:px-4">
-              <span className="text-[10px] font-black uppercase tracking-wider text-green-600 font-bold">You Save</span>
-              <p className="text-lg font-bold text-green-600">
-                {discountPercent}% ({formatMoney(totalSavingsCents, tutor.currency)})
-              </p>
-            </div>
-            <div className="space-y-0.5 text-center sm:text-right">
-              <span className="text-[10px] font-black uppercase tracking-wider text-primary font-bold">Package Price</span>
-              <p className="text-2xl font-black text-primary">
-                {formatMoney(packagePriceCents, tutor.currency)}
-              </p>
-            </div>
-          </div>
+          )}
 
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -186,7 +253,7 @@ export function LessonPackagesTab({
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5">
-                    Purchase Package for {formatMoney(packagePriceCents, tutor.currency)}
+                    Purchase Bundle for {formatMoney(packagePriceCents, tutor.currency)}
                     <ArrowRight className="size-4" />
                   </span>
                 )}

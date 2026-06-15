@@ -51,7 +51,8 @@ export default async function DashboardPage() {
   
   const activeStudentsCount = studentGroups.active.length;
   const openSlotsCount = slots.filter((s) => !s.isBooked).length;
-  const firstName = profile.displayName.trim().split(/\s+/)[0] || "there";
+  const rawFirst = profile.displayName.trim().split(/[\s\._]+/)[0] || "there";
+  const firstName = rawFirst.charAt(0).toUpperCase() + rawFirst.slice(1);
 
   return (
     <DashboardShell>

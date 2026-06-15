@@ -9,9 +9,15 @@ type LogoProps = {
 };
 
 const logoHeights = {
-  header: "h-11 sm:h-14",
-  md: "h-16 sm:h-20",
-  lg: "h-28 sm:h-36",
+  header: "h-10 sm:h-12",
+  md: "h-14 sm:h-16",
+  lg: "h-24 sm:h-28",
+} as const;
+
+const textSizes = {
+  header: "text-2xl font-bold tracking-tight ml-2.5",
+  md: "text-3xl sm:text-4xl font-bold tracking-tight ml-3",
+  lg: "text-6xl sm:text-7xl font-extrabold tracking-tight ml-5",
 } as const;
 
 export function Logo({ className, href = "/", size = "header" }: LogoProps) {
@@ -31,6 +37,14 @@ export function Logo({ className, href = "/", size = "header" }: LogoProps) {
           logoHeights[size]
         )}
       />
+      <span
+        className={cn(
+          "font-sans text-foreground transition-colors",
+          textSizes[size]
+        )}
+      >
+        Yazzow
+      </span>
     </Link>
   );
 }

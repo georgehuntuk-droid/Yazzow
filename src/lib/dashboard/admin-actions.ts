@@ -64,3 +64,57 @@ export async function deleteTutorProfileAndUser(tutorId: string) {
   revalidatePath("/dashboard/admin");
   return { ok: true as const };
 }
+
+/** Updates an in-house support ticket status ('open', 'resolved', 'closed'). */
+export async function updateSupportTicketStatus(ticketId: string, status: "open" | "resolved" | "closed") {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("support_tickets")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", ticketId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { ok: true as const };
+}
+
+/** Updates internal admin notes on a support ticket. */
+export async function updateSupportTicketNotes(ticketId: string, notes: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("support_tickets")
+    .update({ admin_notes: notes.trim() || null, updated_at: new Date().toISOString() })
+    .eq("id", ticketId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { ok: true as const };
+}
+
+/** Deletes a support ticket record completely. */
+export async function deleteSupportTicket(ticketId: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("support_tickets")
+    .delete()
+    .eq("id", ticketId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/dashboard/admin");
+  return { ok: true as const };
+}

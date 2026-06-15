@@ -1,20 +1,13 @@
 import { MarketingShell } from "@/components/layout/marketing-shell";
-import {
-  getSupportInboxEmail,
-  isSupportEmailConfigured,
-} from "@/lib/notifications/support-email";
 import { SupportTicketForm } from "@/components/support/ticket-form";
 import { BRAND_NAME } from "@/lib/constants";
 
 export const metadata = {
   title: `Support · ${BRAND_NAME}`,
-  description: `Get in touch with the ${BRAND_NAME} support team. Submit a ticket or contact us via email for billing, account setup, or general assistance.`,
+  description: `Get in touch with the ${BRAND_NAME} support team. Submit a support ticket for billing, account setup, or general assistance.`,
 };
 
 export default function SupportPage() {
-  const supportEmail = getSupportInboxEmail();
-  const configured = isSupportEmailConfigured();
-
   return (
     <MarketingShell>
       <div className="yazz-container flex-1 py-16 sm:py-20">
@@ -23,16 +16,12 @@ export default function SupportPage() {
             <p className="text-sm font-medium text-primary">Help centre</p>
             <h1 className="mt-2 font-heading text-4xl font-semibold">Support</h1>
             <p className="mt-4 max-w-xl yazz-muted">
-              Something not working? Billing question? Send a message below or email{" "}
-              <a href={`mailto:${supportEmail}`} className="font-medium text-primary hover:underline">
-                {supportEmail}
-              </a>
-              . We typically reply within one business day.
+              Something not working? Billing question? Send a message using the contact form, and our team will review and address it directly.
             </p>
             <ul className="mt-8 space-y-3 text-sm text-muted-foreground">
               <li className="flex gap-2">
                 <span className="text-primary">1.</span>
-                Use the form — it goes to our support inbox (not a personal Gmail).
+                Use the form — it goes straight to our in-house support dashboard.
               </li>
               <li className="flex gap-2">
                 <span className="text-primary">2.</span>
@@ -40,7 +29,7 @@ export default function SupportPage() {
               </li>
               <li className="flex gap-2">
                 <span className="text-primary">3.</span>
-                Tutors can also reach us from the dashboard sidebar.
+                Tutors can also reach us directly from the dashboard sidebar.
               </li>
             </ul>
             <p className="mt-8 text-sm text-muted-foreground">
@@ -50,7 +39,7 @@ export default function SupportPage() {
               </a>
             </p>
           </div>
-          <SupportTicketForm configured={configured} supportEmail={supportEmail} />
+          <SupportTicketForm />
         </div>
       </div>
     </MarketingShell>

@@ -24,15 +24,11 @@ const categories = [
 type SupportTicketFormProps = {
   source?: string;
   className?: string;
-  configured?: boolean;
-  supportEmail: string;
 };
 
 export function SupportTicketForm({
   source = "support page",
   className,
-  configured = false,
-  supportEmail,
 }: SupportTicketFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,15 +37,6 @@ export function SupportTicketForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-
-  const categoryLabel =
-    categories.find((item) => item.value === category)?.label ?? "Support";
-
-  const mailtoHref = `mailto:${encodeURIComponent(supportEmail)}?subject=${encodeURIComponent(
-    `[Yazzow] ${categoryLabel}`,
-  )}&body=${encodeURIComponent(
-    `Name: ${name || ""}\nEmail: ${email || ""}\n\n${message || ""}`,
-  )}`;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -69,7 +56,7 @@ export function SupportTicketForm({
       }
       setSent(true);
     } catch {
-      setError("Network error. Try again or email us directly.");
+      setError("Network error. Try again.");
     } finally {
       setLoading(false);
     }
@@ -81,7 +68,7 @@ export function SupportTicketForm({
         <CardHeader>
           <CardTitle className="font-heading text-xl">Message sent</CardTitle>
           <CardDescription>
-            Thanks — we&apos;ve received your message and will reply to {email} as soon as we can.
+            Thanks — we&apos;ve received your message. Our team will review and address it directly.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -93,28 +80,11 @@ export function SupportTicketForm({
       <CardHeader>
         <CardTitle className="font-heading text-xl">Contact support</CardTitle>
         <CardDescription>
-          Send a message below, or email{" "}
-          <a href={`mailto:${supportEmail}`} className="font-medium text-primary hover:underline">
-            {supportEmail}
-          </a>{" "}
-          directly.
+          Send a message below. We will review and respond to you as soon as possible.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!configured ? (
-          <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-            <p>
-              The form sends to <strong className="text-foreground">{supportEmail}</strong> once
-              Resend is connected. Until then, use{" "}
-              <a href={mailtoHref} className="font-medium text-primary hover:underline">
-                email us
-              </a>{" "}
-              (opens your mail app).
-            </p>
-          </div>
-        ) : null}
-
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <label htmlFor="ticket-name" className="text-sm font-medium">
@@ -177,17 +147,9 @@ export function SupportTicketForm({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={loading || !configured}>
+            <Button type="submit" disabled={loading}>
               {loading ? "Sending…" : "Send message"}
             </Button>
-            {!configured ? (
-              <a
-                href={mailtoHref}
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted"
-              >
-                Email {supportEmail}
-              </a>
-            ) : null}
           </div>
         </form>
       </CardContent>

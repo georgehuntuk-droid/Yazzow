@@ -24,7 +24,7 @@ export function Logo({ className, href = "/", size = "header" }: LogoProps) {
       )}
     >
       <img
-        src="/yazzow-logo.png"
+        src="/yazzow-logo-transparent.png"
         alt="Yazzow Logo"
         className={cn(
           "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]",

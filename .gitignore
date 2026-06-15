@@ -38,7 +38,6 @@ yarn-error.log*
 .netlify
 
 # local assets (optional generated)
-public/yazzow-logo-transparent.png
 public/yazzow-logo-source.png
 
 # typescript

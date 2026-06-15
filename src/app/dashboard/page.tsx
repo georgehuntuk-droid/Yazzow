@@ -51,6 +51,7 @@ export default async function DashboardPage() {
   
   const activeStudentsCount = studentGroups.active.length;
   const openSlotsCount = slots.filter((s) => !s.isBooked).length;
+  const firstName = profile.displayName.trim().split(/\s+/)[0] || "there";
 
   return (
     <DashboardShell>
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-heading text-3xl font-black tracking-tight text-foreground selection:bg-blue-100 flex items-center gap-2">
-              Welcome back, {profile.displayName}
+              Welcome back, {firstName}
               <Sparkles className="size-5 text-primary animate-pulse" />
             </h1>
             <p className="text-sm font-semibold text-muted-foreground mt-1">

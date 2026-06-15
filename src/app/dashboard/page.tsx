@@ -1,31 +1,22 @@
-import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Globe, Settings, CreditCard, Sparkles, BookOpen, Users, CalendarRange } from "lucide-react";
+import { Globe, Settings, Sparkles, CalendarRange } from "lucide-react";
 
-import { ScheduleEditor } from "@/components/dashboard/schedule-editor";
-import { DigitalSalesLedger } from "@/components/dashboard/digital-sales-ledger";
 import { PortalBookingStatusCard } from "@/components/dashboard/portal-booking-status-card";
-import { StorefrontManager } from "@/components/dashboard/storefront-manager";
 import { RecentBookings } from "@/components/dashboard/recent-bookings";
-import { StudentLedger } from "@/components/dashboard/student-ledger";
 import { CopyLinkButton } from "@/components/dashboard/copy-link-button";
 import { TutorStatsMatrix } from "@/components/dashboard/tutor-stats-matrix";
 import { DashboardActivityTimeline } from "@/components/dashboard/dashboard-activity-timeline";
 import { requireTutorProfile } from "@/lib/auth/session";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { DashboardShell, PageHeader } from "@/components/layout/page-header";
+import { DashboardShell } from "@/components/layout/page-header";
 import { BRAND_NAME, TUTOR_SUBSCRIPTION, tutorPublicUrl } from "@/lib/constants";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import {
   getDigitalSalesForTutor,
   getRecentBookingsForTutor,
-  getResourcesForTutorOwner,
   getSlotsForTutorOwner,
 } from "@/lib/tutors/portal-data";
 import { getStudentsWithLessonsForTutor } from "@/lib/tutors/student-lessons";
-import { formatMoney } from "@/lib/format";
 
 export const metadata = {
   title: `Dashboard · ${BRAND_NAME}`,
@@ -34,10 +25,9 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile } = await requireTutorProfile();
   const publicLink = tutorPublicUrl(profile.username);
-  const [slots, resources, studentGroups, recentBookings, packSales, portalBooking] =
+  const [slots, studentGroups, recentBookings, packSales, portalBooking] =
     await Promise.all([
       getSlotsForTutorOwner(profile.id),
-      getResourcesForTutorOwner(profile.id),
       getStudentsWithLessonsForTutor(profile.id),
       getRecentBookingsForTutor(profile.id),
       getDigitalSalesForTutor(profile.id),
@@ -61,7 +51,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-heading text-3xl font-black tracking-tight text-foreground selection:bg-blue-100 flex items-center gap-2">
-              Welcome back, {firstName}
+              Hello {firstName}
               <Sparkles className="size-5 text-primary animate-pulse" />
             </h1>
             <p className="text-sm font-semibold text-muted-foreground mt-1">
@@ -140,66 +130,6 @@ export default async function DashboardPage() {
             />
           </section>
         </div>
-
-        <Separator className="border-border/50 my-10" />
-
-        {/* 5. Schedule Builder Section */}
-        <section id="schedule" className="scroll-mt-8 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-primary">
-              <CalendarRange className="size-5" />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-black tracking-tight text-foreground">Schedule Builder</h2>
-              <p className="text-xs font-semibold text-muted-foreground mt-0.5">Define slots when families can book you</p>
-            </div>
-          </div>
-          <ScheduleEditor slots={slots} />
-        </section>
-
-        <Separator className="border-border/50 my-10" />
-
-        {/* 6. Learning Packs Section (Shop Manager) */}
-        <section id="storefront" className="scroll-mt-8 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-primary">
-              <BookOpen className="size-5" />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-black tracking-tight text-foreground">Shop Manager</h2>
-              <p className="text-xs font-semibold text-muted-foreground mt-0.5">Upload learning packs to showcase on your shelf</p>
-            </div>
-          </div>
-          <p className="text-xs sm:text-sm font-medium text-muted-foreground max-w-2xl leading-relaxed">
-            Packs will showcase on your portal shelf. Parents message you to buy — you handle payment yourself (bank transfer, your own link, etc.) with zero commissions.
-          </p>
-          <StorefrontManager resources={resources} currency={profile.currency} />
-          {packSales.length > 0 ? (
-            <DigitalSalesLedger sales={packSales} currency={profile.currency} />
-          ) : null}
-        </section>
-
-        <Separator className="border-border/50 my-10" />
-
-        {/* 7. Student Directory (My Kids / Students Ledger) */}
-        <section id="ledger" className="scroll-mt-8 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-primary">
-              <Users className="size-5" />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-black tracking-tight text-foreground">Student Directory</h2>
-              <p className="text-xs font-semibold text-muted-foreground mt-0.5">Track your families and session feedback history</p>
-            </div>
-          </div>
-          <p className="text-xs sm:text-sm font-medium text-muted-foreground max-w-2xl leading-relaxed">
-            Review detailed feedback history, track active schedules, or archive students who have finished their study track.
-          </p>
-          <StudentLedger
-            students={studentGroups}
-            currency={profile.currency}
-          />
-        </section>
       </div>
     </DashboardShell>
   );

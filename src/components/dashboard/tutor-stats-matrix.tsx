@@ -1,14 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
 import { 
   TrendingUp, 
   Users, 
   Calendar, 
   Star, 
-  DollarSign, 
-  CheckCircle,
-  Clock,
   ArrowUpRight,
   Sparkles
 } from "lucide-react";
@@ -47,7 +43,7 @@ export function TutorStatsMatrix({
   return (
     <div className="grid gap-6 lg:grid-cols-[1.5fr_0.8fr]">
       {/* Revenue Overview Card */}
-      <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card p-6 shadow-sm shadow-blue-500/5">
+      <div className="relative overflow-hidden yazz-surface p-6">
         <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -75,7 +71,7 @@ export function TutorStatsMatrix({
             const pct = Math.max(15, (val / maxVal) * 100);
             const isLast = idx === barHeights.length - 1;
             return (
-              <div key={idx} className="relative z-10 flex flex-col items-center group flex-1">
+              <div key={idx} className="relative z-10 flex flex-col items-center justify-end group flex-1 h-full">
                 {/* Tooltip on hover */}
                 <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-foreground text-background text-[10px] font-bold px-2 py-1 rounded-lg pointer-events-none shadow-md z-20">
                   {formatMoney(val * 100, currency)}
@@ -119,8 +115,8 @@ export function TutorStatsMatrix({
       {/* Right Column Stacked Cards */}
       <div className="flex flex-col gap-4">
         {/* Active Students Card */}
-        <div className="flex items-center gap-4 rounded-2xl border border-border/80 bg-card p-5 shadow-sm shadow-blue-500/5 hover:border-primary/20 transition duration-300">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary">
+        <div className="flex items-center gap-4 yazz-surface p-5 hover:scale-[1.02] hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-300">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400">
             <Users className="size-5" />
           </div>
           <div className="flex-1">
@@ -136,8 +132,8 @@ export function TutorStatsMatrix({
         </div>
 
         {/* Hours Taught/Open Slots Card */}
-        <div className="flex items-center gap-4 rounded-2xl border border-border/80 bg-card p-5 shadow-sm shadow-blue-500/5 hover:border-primary/20 transition duration-300">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-primary">
+        <div className="flex items-center gap-4 yazz-surface p-5 hover:scale-[1.02] hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-300">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400">
             <Calendar className="size-5" />
           </div>
           <div className="flex-1">
@@ -153,9 +149,9 @@ export function TutorStatsMatrix({
         </div>
 
         {/* Average Rating Card */}
-        <div className="flex items-center gap-4 rounded-2xl border border-border/80 bg-card p-5 shadow-sm shadow-blue-500/5 hover:border-primary/20 transition duration-300">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-500">
-            <Star className="size-5 fill-amber-500" />
+        <div className="flex items-center gap-4 yazz-surface p-5 hover:scale-[1.02] hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-300">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-950/20">
+            <Star className="size-5 fill-amber-500 text-amber-500" />
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Average Rating</p>

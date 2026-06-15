@@ -23,9 +23,9 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard#schedule", label: "Schedule", icon: CalendarRange },
-  { href: "/dashboard#ledger", label: "My Students", icon: Users },
-  { href: "/dashboard#storefront", label: "Shop Manager", icon: BookOpen },
+  { href: "/dashboard/schedule", label: "Schedule", icon: CalendarRange },
+  { href: "/dashboard/students", label: "My Students", icon: Users },
+  { href: "/dashboard/storefront", label: "Shop Manager", icon: BookOpen },
   { href: "/dashboard/payments", label: "Earnings", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Palette },
 ] as const;
@@ -39,9 +39,10 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
   const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (win.deferredPrompt) {
-      setCanInstall(true);
+      setTimeout(() => setCanInstall(true), 0);
     }
     const handleCanInstall = () => setCanInstall(true);
     const handleInstalled = () => setCanInstall(false);
@@ -55,6 +56,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
   }, []);
 
   const handleInstallClick = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     const promptEvent = win.deferredPrompt;
     if (!promptEvent) return;

@@ -8,6 +8,11 @@ import {
 const CATEGORIES = new Set(["bug", "billing", "account", "feature", "other"]);
 
 export async function POST(request: Request) {
+  console.log("[Support API] Incoming support ticket request.");
+  console.log("[Support API] Raw process.env.SUPPORT_INBOX_EMAIL:", process.env.SUPPORT_INBOX_EMAIL);
+  console.log("[Support API] Resolved Support Inbox Email:", getSupportInboxEmail());
+  console.log("[Support API] isSupportEmailConfigured:", isSupportEmailConfigured());
+
   if (!isSupportEmailConfigured()) {
     return NextResponse.json(
       {

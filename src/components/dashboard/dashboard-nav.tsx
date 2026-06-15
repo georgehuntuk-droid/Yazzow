@@ -103,10 +103,10 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
           <>
             <Separator className="my-2 hidden bg-sidebar-border lg:block" />
             <Link
-              href="/dashboard/admin"
+              href="/admin"
               className={cn(
                 "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200",
-                pathname.startsWith("/dashboard/admin")
+                pathname.startsWith("/admin")
                   ? "bg-amber-500 text-white shadow-sm ring-1 ring-amber-500/15"
                   : "text-muted-foreground hover:bg-amber-500/5 hover:text-amber-600",
               )}

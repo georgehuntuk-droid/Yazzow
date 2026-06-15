@@ -27,7 +27,7 @@ export async function updateTutorSubscriptionStatus(tutorId: string, status: str
     return { ok: false as const, error: error.message };
   }
 
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   return { ok: true as const };
 }
 
@@ -45,7 +45,7 @@ export async function updateTutorSubscriptionEndDate(tutorId: string, isoDate: s
     return { ok: false as const, error: error.message };
   }
 
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   return { ok: true as const };
 }
 
@@ -62,7 +62,7 @@ export async function deleteTutorProfileAndUser(tutorId: string) {
     return { ok: false as const, error: error.message };
   }
 
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   return { ok: true as const };
 }
 
@@ -80,7 +80,7 @@ export async function updateSupportTicketStatus(ticketId: string, status: "open"
     return { ok: false as const, error: error.message };
   }
 
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   return { ok: true as const };
 }
 
@@ -98,7 +98,7 @@ export async function updateSupportTicketNotes(ticketId: string, notes: string) 
     return { ok: false as const, error: error.message };
   }
 
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   return { ok: true as const };
 }
 
@@ -116,7 +116,7 @@ export async function deleteSupportTicket(ticketId: string) {
     return { ok: false as const, error: error.message };
   }
 
-  revalidatePath("/dashboard/admin");
+  revalidatePath("/admin");
   return { ok: true as const };
 }
 

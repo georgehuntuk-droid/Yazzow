@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
       try {
         const res = await loginAsAdmin(password);
         if (res.ok) {
-          window.location.href = "/dashboard/admin";
+          window.location.href = "/admin";
         } else {
           setError(res.error ?? "Incorrect admin password.");
         }

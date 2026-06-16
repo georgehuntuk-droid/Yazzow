@@ -52,7 +52,7 @@ export default function TermsPage() {
                 <span className="text-primary">3.</span> Payment Processing &amp; Merchant of Record
               </h2>
               <p>
-                To handle Platform subscription fees, lesson bookings, package checkouts, and worksheet purchases, we integrate with secure third-party payment processors, including **Paddle** and **Stripe**.
+                To handle Platform subscription fees, lesson bookings, package checkouts, and worksheet purchases, we integrate with secure third-party payment processors, primarily **Paddle**.
               </p>
               <p>
                 For payments processed through Paddle, Paddle acts as the **Merchant of Record** (MOR). Paddle is the legal merchant of all such transactions, handles payment inquiries, billing issues, tax calculations, and compliance on our behalf. By purchasing services or digital products through a Paddle-enabled checkout, you agree to Paddle&apos;s checkout terms and conditions.

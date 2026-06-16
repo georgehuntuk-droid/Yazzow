@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -24,6 +25,12 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(booking.status === "cancelled");
+
+  const [showStudentLateForm, setShowStudentLateForm] = useState(false);
+  const [studentLateNote, setStudentLateNote] = useState("");
+  const [sendingLate, setSendingLate] = useState(false);
+  const [studentLateSent, setStudentLateSent] = useState(!!booking.studentRunningLateSentAt);
+  const [studentLateNoteSaved, setStudentLateNoteSaved] = useState(booking.studentRunningLateNote ?? "");
 
   async function handleCancel() {
     if (
@@ -60,6 +67,32 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
     }
   }
 
+  async function handleStudentRunningLate(e: React.FormEvent) {
+    e.preventDefault();
+    setSendingLate(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/booking/running-late", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: booking.token, note: studentLateNote }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to send update.");
+      }
+      setStudentLateSent(true);
+      setStudentLateNoteSaved(studentLateNote);
+      setShowStudentLateForm(false);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || "Could not send notice.");
+    } finally {
+      setSendingLate(false);
+    }
+  }
+
   const portalHref = `${TUTOR_PUBLIC_PATH}/${booking.tutorUsername}`;
 
   return (
@@ -75,6 +108,20 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {booking.runningLateSentAt ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-500/10 dark:bg-amber-950/40 p-3.5 text-xs text-amber-800 dark:text-amber-300 leading-normal font-medium mb-3 flex items-start gap-2">
+            <span>⏳</span>
+            <div>
+              <p className="font-bold">{booking.tutorDisplayName} is running late</p>
+              {booking.runningLateNote ? (
+                <p className="mt-1 italic opacity-95 font-medium">&ldquo;{booking.runningLateNote}&rdquo;</p>
+              ) : (
+                <p className="mt-0.5 text-muted-foreground">They notified they will be running a little late. The lesson is still on!</p>
+              )}
+            </div>
+          </div>
+        ) : null}
+
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted-foreground">When</dt>
@@ -125,6 +172,50 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
             This lesson can no longer be cancelled online. Contact {booking.tutorDisplayName}{" "}
             directly if you need help.
           </p>
+        )}
+
+        {!cancelled && new Date(booking.slotEndsAt) > new Date() && (
+          <div className="pt-2.5 border-t border-border/40 mt-4 space-y-3">
+            {studentLateSent ? (
+              <div className="rounded-xl border border-primary/15 bg-primary/5 p-3.5 text-xs text-muted-foreground leading-normal">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  ✓ Running late notice sent to tutor
+                </p>
+                {studentLateNoteSaved && (
+                  <p className="mt-1 italic">&ldquo;{studentLateNoteSaved}&rdquo;</p>
+                )}
+              </div>
+            ) : showStudentLateForm ? (
+              <form onSubmit={handleStudentRunningLate} className="space-y-2.5 rounded-xl border border-border bg-muted/20 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                <p className="text-xs font-bold text-foreground">Notify tutor you are running late</p>
+                <div className="flex gap-2">
+                  <Input
+                    required
+                    placeholder="Optional message, e.g. 'Stuck in traffic, 10m late'"
+                    value={studentLateNote}
+                    onChange={(e) => setStudentLateNote(e.target.value)}
+                    className="h-9 text-xs bg-background flex-1"
+                    disabled={sendingLate}
+                  />
+                  <Button type="submit" size="sm" disabled={sendingLate} className="h-9 shrink-0">
+                    {sendingLate ? "Sending..." : "Send"}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowStudentLateForm(false)} className="h-9 shrink-0 text-xs">
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full text-xs font-semibold h-9 rounded-xl border-border/80 hover:bg-muted/50 transition-colors"
+                onClick={() => setShowStudentLateForm(true)}
+              >
+                ⏳ I&apos;m running late
+              </Button>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

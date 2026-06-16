@@ -56,19 +56,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: true, messages });
     }
 
-    // 2. Tutor context (requires logged-in user)
+    // 2. Logged-in user context
     const user = await safeGetAuthUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     const tutor = await getTutorProfileForUser(user.id);
-    if (!tutor) {
-      return NextResponse.json({ error: "Tutor profile not found." }, { status: 404 });
-    }
-
-    // If viewing a specific thread
-    if (parentEmailParam) {
+    if (tutor) {
+      // If viewing a specific thread
+      if (parentEmailParam) {
       const parentEmail = parentEmailParam.trim().toLowerCase();
 
       // Fetch messages
@@ -159,6 +156,48 @@ export async function GET(request: Request) {
     );
 
     return NextResponse.json({ ok: true, threads });
+    } else {
+      // Parent context (using logged-in user email)
+      const tutorId = searchParams.get("tutorId");
+      if (!tutorId) {
+        return NextResponse.json({ error: "Tutor ID is required." }, { status: 400 });
+      }
+
+      // Verify parent is connected with the tutor
+      const { data: student } = await admin
+        .from("students")
+        .select("id")
+        .eq("tutor_id", tutorId)
+        .eq("parent_email", user.email)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!student) {
+        return NextResponse.json({ error: "Unauthorized access to tutor thread." }, { status: 403 });
+      }
+
+      // Fetch messages
+      const { data: messages, error: msgErr } = await admin
+        .from("messages")
+        .select("*")
+        .eq("tutor_id", tutorId)
+        .eq("parent_email", user.email)
+        .order("created_at", { ascending: true });
+
+      if (msgErr) {
+        return NextResponse.json({ error: "Failed to retrieve messages." }, { status: 500 });
+      }
+
+      // Mark tutor messages as read for this parent
+      await admin
+        .from("messages")
+        .update({ is_read: true })
+        .eq("tutor_id", tutorId)
+        .eq("parent_email", user.email)
+        .eq("sender", "tutor");
+
+      return NextResponse.json({ ok: true, messages });
+    }
   } catch (error) {
     console.error("Messages endpoint GET error:", error);
     return NextResponse.json({ error: "Server error." }, { status: 500 });
@@ -215,18 +254,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, message });
     }
 
-    // 2. Tutor sending message (requires auth)
+    // 2. Logged-in user context
     const user = await safeGetAuthUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     const tutor = await getTutorProfileForUser(user.id);
-    if (!tutor) {
-      return NextResponse.json({ error: "Tutor profile not found." }, { status: 404 });
-    }
-
-    if (!parentEmailParam?.trim()) {
+    if (tutor) {
+      if (!parentEmailParam?.trim()) {
       return NextResponse.json({ error: "Recipient email is required." }, { status: 400 });
     }
 
@@ -249,6 +285,44 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true, message });
+    } else {
+      // Parent sending message (using logged-in user email)
+      const { tutorId } = body;
+      if (!tutorId) {
+        return NextResponse.json({ error: "Tutor ID is required." }, { status: 400 });
+      }
+
+      // Verify parent is connected with the tutor
+      const { data: student } = await admin
+        .from("students")
+        .select("id")
+        .eq("tutor_id", tutorId)
+        .eq("parent_email", user.email)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!student) {
+        return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+      }
+
+      // Insert message
+      const { data: message, error: insErr } = await admin
+        .from("messages")
+        .insert({
+          tutor_id: tutorId,
+          parent_email: user.email,
+          sender: "parent",
+          content: content.trim(),
+        })
+        .select("*")
+        .single();
+
+      if (insErr) {
+        return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
+      }
+
+      return NextResponse.json({ ok: true, message });
+    }
   } catch (error) {
     console.error("Messages endpoint POST error:", error);
     return NextResponse.json({ error: "Server error." }, { status: 500 });

@@ -27,6 +27,7 @@ export function LessonCheckoutButton({
   const [loading, setLoading] = useState(false);
   const [creditChecking, setCreditChecking] = useState(false);
   const [availableCredits, setAvailableCredits] = useState<number | null>(null);
+  const [creditLimit, setCreditLimit] = useState<number>(0);
   const [bookingWithCredit, setBookingWithCredit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creditSuccess, setBookingCreditSuccess] = useState(false);
@@ -60,9 +61,11 @@ export function LessonCheckoutButton({
       if (response.ok) {
         const data = await response.json();
         setAvailableCredits(data.credits ?? 0);
+        setCreditLimit(data.creditLimit ?? 0);
       }
     } catch {
       setAvailableCredits(null);
+      setCreditLimit(0);
     } finally {
       setCreditChecking(false);
     }
@@ -265,17 +268,36 @@ export function LessonCheckoutButton({
         </div>
       ) : null}
 
+      {availableCredits !== null && availableCredits <= -creditLimit ? (
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs text-destructive leading-normal font-medium mb-1">
+          ⚠️ Booking blocked: you have exceeded your credit limit. Please contact your tutor to clear your balance and resume bookings.
+        </div>
+      ) : null}
+
       {creditSuccess ? (
         <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-xs text-green-700 font-semibold text-center">
           {paymentMethod === "cash"
             ? "Lesson booked successfully! Pay your tutor directly."
             : "Lesson booked successfully using credit!"}
         </div>
-      ) : availableCredits !== null && availableCredits > 0 ? (
+      ) : availableCredits !== null && availableCredits <= -creditLimit ? (
+        <Button
+          className="w-full h-11 text-sm font-semibold shadow-md cursor-not-allowed opacity-55"
+          disabled
+        >
+          Booking Blocked (Limit Exceeded)
+        </Button>
+      ) : availableCredits !== null && availableCredits > -creditLimit ? (
         <div className="space-y-2">
           <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg font-medium flex items-center justify-between">
-            <span>You have {availableCredits} prepaid credit{availableCredits === 1 ? "" : "s"} left.</span>
-            <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-800">Available</span>
+            <span>
+              {availableCredits > 0
+                ? `You have ${availableCredits} prepaid credit${availableCredits === 1 ? "" : "s"} left.`
+                : `You will book on account (balance: ${availableCredits} credit${availableCredits === -1 ? "" : "s"}, limit: -${creditLimit}).`}
+            </span>
+            <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-800">
+              {availableCredits > 0 ? "Available" : "On Account"}
+            </span>
           </p>
           <Button
             type="button"
@@ -290,21 +312,11 @@ export function LessonCheckoutButton({
               </>
             ) : (
               <>
-                Book using 1 Credit
+                Book using Credit
                 <ArrowRight className="size-4" />
               </>
             )}
           </Button>
-          <div className="text-center">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleCheckout}
-              className="text-[11px] text-muted-foreground underline hover:text-foreground font-semibold"
-            >
-              Or pay standard {formatMoney(tutor.lessonPriceCents, tutor.currency)} instead
-            </button>
-          </div>
         </div>
       ) : (
         <Button

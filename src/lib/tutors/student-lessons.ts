@@ -29,6 +29,7 @@ export type StudentWithLessons = {
   parentEmail: string;
   notes: string | null;
   lessonCredits: number;
+  creditLimit: number;
   status: "active" | "archived";
   archivedAt: string | null;
   createdAt: string;
@@ -60,6 +61,10 @@ function bookingMatchesStudent(booking: BookingWithSlot, student: StudentRow): b
   );
 }
 
+// Memory cache for user emails to avoid slow listUsers() calls on every page render
+let cachedAuthEmails: { emails: Set<string>; timestamp: number } | null = null;
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
 export async function getStudentsWithLessonsForTutor(
   tutorId: string,
 ): Promise<{ active: StudentWithLessons[]; archived: StudentWithLessons[] }> {
@@ -70,44 +75,53 @@ export async function getStudentsWithLessonsForTutor(
     ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, availability_slots (starts_at, ends_at)"
     : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, availability_slots (starts_at, ends_at)";
 
-  const [{ data: students, error: studentsError }, { data: bookings, error: bookingsError }] =
-    await Promise.all([
-      supabase
-        .from("students")
-        .select("*")
-        .eq("tutor_id", tutorId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("bookings")
-        .select(bookingSelect)
-        .eq("tutor_id", tutorId)
-        .order("created_at", { ascending: false }),
-    ]);
-
-  let tasks: any[] = [];
-  try {
-    const { data: taskData } = await supabase
-      .from("student_tasks")
+  const [
+    { data: students, error: studentsError },
+    { data: bookings, error: bookingsError },
+    tasksResult,
+  ] = await Promise.all([
+    supabase
+      .from("students")
       .select("*")
       .eq("tutor_id", tutorId)
-      .order("created_at", { ascending: false });
-    tasks = taskData ?? [];
-  } catch (err) {
-    console.warn("Could not load tasks (table may not exist yet):", err);
-  }
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("bookings")
+      .select(bookingSelect)
+      .eq("tutor_id", tutorId)
+      .order("created_at", { ascending: false }),
+    Promise.resolve(
+      supabase
+        .from("student_tasks")
+        .select("*")
+        .eq("tutor_id", tutorId)
+        .order("created_at", { ascending: false })
+    )
+      .then((res) => res)
+      .catch((err) => ({ data: [], error: err })),
+  ]);
+
+  const tasks = tasksResult?.data ?? [];
 
   // Load auth users to check if parents have registered accounts
   const admin = createAdminClient();
   const authEmails = new Set<string>();
-  try {
-    const { data: usersData } = await admin.auth.admin.listUsers();
-    if (usersData?.users) {
-      usersData.users.forEach((u) => {
-        if (u.email) authEmails.add(u.email.toLowerCase());
-      });
+  const nowTime = Date.now();
+  
+  if (cachedAuthEmails && (nowTime - cachedAuthEmails.timestamp < CACHE_TTL)) {
+    cachedAuthEmails.emails.forEach((email) => authEmails.add(email));
+  } else {
+    try {
+      const { data: usersData } = await admin.auth.admin.listUsers();
+      if (usersData?.users) {
+        usersData.users.forEach((u) => {
+          if (u.email) authEmails.add(u.email.toLowerCase());
+        });
+      }
+      cachedAuthEmails = { emails: new Set(authEmails), timestamp: nowTime };
+    } catch (err) {
+      console.warn("Could not list auth users for email confirmation check:", err);
     }
-  } catch (err) {
-    console.warn("Could not list auth users for email confirmation check:", err);
   }
 
   if (studentsError) throw studentsError;
@@ -159,6 +173,7 @@ export async function getStudentsWithLessonsForTutor(
       parentEmail: student.parent_email,
       notes: student.notes,
       lessonCredits: (student as any).lesson_credits ?? 0,
+      creditLimit: (student as any).credit_limit ?? 0,
       status: status as "active" | "archived",
       archivedAt: features.studentStatus ? (row.archived_at ?? null) : null,
       createdAt: student.created_at,

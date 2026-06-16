@@ -100,7 +100,9 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
         student_name,
         status,
         running_late_sent_at,
-        running_late_note
+        running_late_note,
+        student_running_late_sent_at,
+        student_running_late_note
       )
     `)
     .eq("tutor_id", tutorId)
@@ -118,6 +120,8 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
       status: rawBooking.status,
       runningLateSentAt: rawBooking.running_late_sent_at,
       runningLateNote: rawBooking.running_late_note,
+      studentRunningLateSentAt: rawBooking.student_running_late_sent_at,
+      studentRunningLateNote: rawBooking.student_running_late_note,
     } : null;
 
     return {
@@ -147,6 +151,8 @@ export async function getRecentBookingsForTutor(
       status,
       running_late_sent_at,
       running_late_note,
+      student_running_late_sent_at,
+      student_running_late_note,
       created_at,
       availability_slots (starts_at, ends_at)
     `,
@@ -159,7 +165,7 @@ export async function getRecentBookingsForTutor(
   if (error || !data) return [];
 
   return data.map((row) => {
-    const booking = row as BookingRow & {
+    const booking = (row as unknown) as BookingRow & {
       slot_id: string;
       availability_slots:
         | Pick<AvailabilitySlotRow, "starts_at" | "ends_at">
@@ -178,6 +184,8 @@ export async function getRecentBookingsForTutor(
       status: booking.status,
       runningLateSentAt: booking.running_late_sent_at ?? null,
       runningLateNote: booking.running_late_note ?? null,
+      studentRunningLateSentAt: (booking as any).student_running_late_sent_at ?? null,
+      studentRunningLateNote: (booking as any).student_running_late_note ?? null,
       createdAt: booking.created_at,
       startsAt: slot?.starts_at ?? booking.created_at,
       endsAt: slot?.ends_at ?? booking.created_at,

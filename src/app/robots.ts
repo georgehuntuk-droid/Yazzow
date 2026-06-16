@@ -17,6 +17,12 @@ export async function robots(): Promise<Metadata["robots"] | any> {
           "/auth", // Block authentication routes
           "/auth/*",
           "/booking/manage/*", // Block parent-specific booking manage routes
+          "/tutor/*/workspace", // Block parent student workspace
+          "/tutor/*/workspace/*",
+          "/onboarding", // Block onboarding routes
+          "/onboarding/*",
+          "/admin", // Block admin routes
+          "/admin/*",
           "/api/*", // Block all background API endpoints
         ],
       },

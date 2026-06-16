@@ -1,6 +1,6 @@
 import sharp from "sharp";
 
-const sourcePath = "C:\\Users\\Gaming\\.gemini\\antigravity\\brain\\639ab0c1-fc7b-4784-8c97-4fbc0d92161f\\media__1781532652161.jpg";
+const sourcePath = "C:\\Users\\Gaming\\Desktop\\Tutorai\\public\\yazzow-logo-source.png";
 const outputPath = "C:\\Users\\Gaming\\Desktop\\Tutorai\\public\\yazzow-brand-icon.png";
 const outputLogoPath = "C:\\Users\\Gaming\\Desktop\\Tutorai\\public\\yazzow-logo-transparent.png";
 const outputStandardPath = "C:\\Users\\Gaming\\Desktop\\Tutorai\\public\\yazzow-logo.png";
@@ -67,8 +67,13 @@ async function run() {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx = y * width + x;
-      if (isBg[idx] === 1) {
-        const pixelIdx = idx * channels;
+      const pixelIdx = idx * channels;
+      const r = buffer[pixelIdx];
+      const g = buffer[pixelIdx + 1];
+      const b = buffer[pixelIdx + 2];
+      
+      // Clear if marked by flood fill OR if it's a light background color (to clear inner loops of O, A, etc.)
+      if (isBg[idx] === 1 || (r > 175 && g > 175 && b > 175)) {
         buffer[pixelIdx] = 255;     // R
         buffer[pixelIdx + 1] = 255; // G
         buffer[pixelIdx + 2] = 255; // B

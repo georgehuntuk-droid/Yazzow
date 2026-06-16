@@ -10,6 +10,7 @@ type RouteContext = {
 type JoinBody = {
   parentEmail?: string;
   studentName?: string;
+  password?: string;
 };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -21,10 +22,14 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const body = (await request.json()) as JoinBody;
+  const origin = request.headers.get("origin") || undefined;
+
   const result = await joinTutorFamily({
     tutorId: tutor.id,
     parentEmail: body.parentEmail ?? "",
     studentName: body.studentName ?? "",
+    password: body.password || undefined,
+    origin,
   });
 
   if (!result.ok) {

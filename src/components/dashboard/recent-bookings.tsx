@@ -147,9 +147,22 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                         <p className="mt-1 text-xs text-muted-foreground">
                           Running late notice sent
                           {booking.runningLateNote
-                            ? `: “${booking.runningLateNote}”`
+                            ? `: "${booking.runningLateNote}"`
                             : ""}
                         </p>
+                      ) : ""}
+                      {booking.studentRunningLateSentAt ? (
+                        <div className="mt-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl leading-normal flex items-start gap-1.5">
+                          <span>⏳</span>
+                          <div>
+                            <span>Student running late</span>
+                            {booking.studentRunningLateNote && (
+                              <p className="mt-0.5 font-medium italic text-[11px] opacity-90">
+                                &ldquo;{booking.studentRunningLateNote}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">

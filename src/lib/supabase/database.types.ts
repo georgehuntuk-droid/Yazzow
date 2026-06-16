@@ -56,6 +56,8 @@ export type StudentRow = {
   status: string;
   archived_at: string | null;
   created_at: string;
+  lesson_credits?: number;
+  credit_limit?: number;
 };
 
 export type BookingRow = {

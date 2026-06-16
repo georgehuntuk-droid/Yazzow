@@ -10,6 +10,7 @@ import type { TutorProfile } from "@/lib/types";
 type JoinTutorFamilyProps = {
   tutor: TutorProfile;
   tutorUsername: string;
+  currentUserEmail?: string;
 };
 
 type StoredFamily = {
@@ -21,12 +22,20 @@ function storageKey(username: string) {
   return `yazzow-family:${username}`;
 }
 
-export function JoinTutorFamily({ tutor, tutorUsername }: JoinTutorFamilyProps) {
-  const [parentEmail, setParentEmail] = useState("");
+export function JoinTutorFamily({ tutor, tutorUsername, currentUserEmail }: JoinTutorFamilyProps) {
+  const [parentEmail, setParentEmail] = useState(currentUserEmail ?? "");
   const [studentName, setStudentName] = useState("");
+  const [password, setPassword] = useState("");
   const [joined, setJoined] = useState<StoredFamily | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUserEmail) {
+      setParentEmail(currentUserEmail);
+    }
+  }, [currentUserEmail]);
 
   useEffect(() => {
     try {
@@ -43,21 +52,30 @@ export function JoinTutorFamily({ tutor, tutorUsername }: JoinTutorFamilyProps) 
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const response = await fetch(`/api/tutor/${tutorUsername}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parentEmail, studentName }),
+        body: JSON.stringify({
+          parentEmail: currentUserEmail || parentEmail,
+          studentName,
+          password: currentUserEmail ? undefined : password,
+        }),
       });
-      const data = (await response.json()) as { error?: string };
+      const data = (await response.json()) as { error?: string; needsVerification?: boolean };
       if (!response.ok) {
         setError(data.error ?? "Could not join.");
         return;
       }
 
+      if (data.needsVerification) {
+        setSuccessMessage("Please check your email to verify your account and set up your student workspace!");
+      }
+
       const record: StoredFamily = {
-        parentEmail: parentEmail.trim().toLowerCase(),
+        parentEmail: (currentUserEmail || parentEmail).trim().toLowerCase(),
         studentName: studentName.trim(),
       };
       localStorage.setItem(storageKey(tutorUsername), JSON.stringify(record));
@@ -71,37 +89,46 @@ export function JoinTutorFamily({ tutor, tutorUsername }: JoinTutorFamilyProps) 
 
   if (joined) {
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm shadow-blue-500/5">
-        <div className="flex items-start gap-3">
-          <Users className="mt-0.5 size-4 shrink-0 text-primary animate-pulse" />
-          <div className="text-sm">
-            <p className="font-bold text-foreground">
-              You&apos;re connected with {tutor.displayName}
-            </p>
-            <p className="mt-1 text-xs font-semibold text-muted-foreground leading-normal">
-              {joined.studentName} · {joined.parentEmail}
-            </p>
-            <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-              Ready to book below or wait for instant slot alerts.
-            </p>
+      <div className="flex flex-col gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm shadow-blue-500/5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <Users className="mt-0.5 size-4 shrink-0 text-primary animate-pulse" />
+            <div className="text-sm">
+              <p className="font-bold text-foreground">
+                You&apos;re connected with {tutor.displayName}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-muted-foreground leading-normal">
+                {joined.studentName} · {joined.parentEmail}
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                Ready to book below or wait for instant slot alerts.
+              </p>
+            </div>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            className="rounded-lg text-xs font-bold shrink-0 self-start sm:self-auto hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20"
+            onClick={() => {
+              if (confirm("Disconnect and change your student details?")) {
+                localStorage.removeItem(storageKey(tutorUsername));
+                setJoined(null);
+                setParentEmail(currentUserEmail ?? "");
+                setStudentName("");
+                setPassword("");
+                setSuccessMessage(null);
+              }
+            }}
+          >
+            Change Details
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          className="rounded-lg text-xs font-bold shrink-0 self-start sm:self-auto hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20"
-          onClick={() => {
-            if (confirm("Disconnect and change your student details?")) {
-              localStorage.removeItem(storageKey(tutorUsername));
-              setJoined(null);
-              setParentEmail(joined.parentEmail);
-              setStudentName(joined.studentName);
-            }
-          }}
-        >
-          Change Details
-        </Button>
+        {successMessage && (
+          <div className="p-3 bg-green-500/10 border border-green-500/20 text-xs font-semibold text-green-700 dark:text-green-300 rounded-xl leading-relaxed">
+            📬 {successMessage}
+          </div>
+        )}
       </div>
     );
   }
@@ -118,24 +145,9 @@ export function JoinTutorFamily({ tutor, tutorUsername }: JoinTutorFamilyProps) 
         </h2>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        One quick step so {tutor.displayName} knows who you are. You&apos;ll be on their
-        student list for bookings, updates, and when slots become available — no Yazzow
-        account needed.
+        Connect with {tutor.displayName} to access your student workspace, track lesson history, homework tasks, and receive slot alerts.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <label htmlFor="join-parent-email" className="text-sm font-medium">
-            Parent email
-          </label>
-          <Input
-            id="join-parent-email"
-            type="email"
-            required
-            placeholder="you@family.com"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
-          />
-        </div>
+      <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-2">
           <label htmlFor="join-student-name" className="text-sm font-medium">
             Student name
@@ -148,7 +160,42 @@ export function JoinTutorFamily({ tutor, tutorUsername }: JoinTutorFamilyProps) 
             onChange={(e) => setStudentName(e.target.value)}
           />
         </div>
+        <div className="space-y-2">
+          <label htmlFor="join-parent-email" className="text-sm font-medium">
+            Parent email
+          </label>
+          <Input
+            id="join-parent-email"
+            type="email"
+            required
+            disabled={!!currentUserEmail}
+            placeholder="you@family.com"
+            value={parentEmail}
+            onChange={(e) => setParentEmail(e.target.value)}
+          />
+        </div>
+        {!currentUserEmail && (
+          <div className="space-y-2">
+            <label htmlFor="join-password" className="text-sm font-medium">
+              Create password
+            </label>
+            <Input
+              id="join-password"
+              type="password"
+              required
+              minLength={8}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+        )}
       </div>
+      {!currentUserEmail && (
+        <p className="text-[11px] text-muted-foreground mt-2 font-medium">
+          🔒 Creating a password lets you log in to your Yazzow Student Workspace later.
+        </p>
+      )}
       {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
       <Button type="submit" className="mt-4" disabled={loading}>
         {loading ? "Joining…" : `Join ${tutor.displayName}'s group`}

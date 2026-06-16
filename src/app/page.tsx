@@ -14,6 +14,33 @@ import { getMarketingAuthCta } from "@/lib/marketing/auth-cta";
 import { redirect } from "next/navigation";
 import { safeGetAuthUser } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Yazzow · White-Label Private Tutor Booking Platform & CRM",
+  description:
+    "Yazzow is the ultimate booking platform and scheduling software for independent tutors. Manage student logs, automate lesson scheduling, handle invoices, and build your private teaching brand.",
+  keywords: [
+    "tutor booking platform",
+    "private tutor scheduling website",
+    "white label tutor software",
+    "tutor scheduling software",
+    "tutor CRM",
+    "independent tutor tools",
+    "online tutoring business software",
+    "worksheet storefront",
+  ],
+  openGraph: {
+    title: "Yazzow · White-Label Private Tutor Booking Platform & CRM",
+    description:
+      "Yazzow is the ultimate booking platform and scheduling software for independent tutors. Manage student logs, automate lesson scheduling, handle invoices, and build your private teaching brand.",
+  },
+  twitter: {
+    title: "Yazzow · White-Label Private Tutor Booking Platform & CRM",
+    description:
+      "Yazzow is the ultimate booking platform and scheduling software for independent tutors. Manage student logs, automate lesson scheduling, handle invoices, and build your private teaching brand.",
+  },
+};
 
 export default async function HomePage() {
   if (isSupabaseConfigured()) {

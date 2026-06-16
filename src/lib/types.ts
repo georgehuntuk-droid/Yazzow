@@ -49,6 +49,8 @@ export type TutorSlot = {
     status: string;
     runningLateSentAt: string | null;
     runningLateNote: string | null;
+    studentRunningLateSentAt: string | null;
+    studentRunningLateNote: string | null;
   } | null;
 };
 
@@ -64,6 +66,8 @@ export type RecentBooking = {
   endsAt: string;
   runningLateSentAt: string | null;
   runningLateNote: string | null;
+  studentRunningLateSentAt?: string | null;
+  studentRunningLateNote?: string | null;
 };
 
 export type StudentLedgerEntry = {

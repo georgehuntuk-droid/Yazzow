@@ -479,13 +479,21 @@ export async function updateStudentNotes(studentId: string, notes: string) {
 export async function updateStudentCredits(studentId: string, credits: number) {
   const { profile } = await requireTutorProfile();
   
-  if (credits < 0) {
-    return { ok: false as const, error: "Credits cannot be negative." };
-  }
-
   // Use admin client so tutors can override student table parameters safely
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const admin = createAdminClient();
+
+  const { data: student } = await admin
+    .from("students")
+    .select("credit_limit")
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id)
+    .maybeSingle();
+
+  const limit = student?.credit_limit ?? 0;
+  if (credits < -limit) {
+    return { ok: false as const, error: `Credits cannot go below the allowed credit limit of -${limit}.` };
+  }
 
   const { error } = await admin
     .from("students")
@@ -497,7 +505,31 @@ export async function updateStudentCredits(studentId: string, credits: number) {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/students");
+  return { ok: true as const };
+}
+
+export async function updateStudentCreditLimit(studentId: string, limit: number) {
+  const { profile } = await requireTutorProfile();
+  
+  if (limit < 0) {
+    return { ok: false as const, error: "Credit limit must be 0 or positive." };
+  }
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { error } = await admin
+    .from("students")
+    .update({ credit_limit: limit })
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard/students");
   return { ok: true as const };
 }
 

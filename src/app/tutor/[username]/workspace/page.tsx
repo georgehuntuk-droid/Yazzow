@@ -11,6 +11,7 @@ import { Logo } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkspaceClient } from "./workspace-client";
+import { WorkspaceChat } from "@/components/booking/workspace-chat";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 
 type WorkspacePageProps = {
@@ -296,6 +297,8 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
 
             {/* Sidebar with lessons & past feedback */}
             <div className="space-y-6">
+              <WorkspaceChat tutorId={tutor.id} tutorDisplayName={tutor.displayName} />
+
               {/* Upcoming schedule */}
               <section className="space-y-3">
                 <h3 className="font-heading text-base font-bold text-foreground">Upcoming Schedule</h3>

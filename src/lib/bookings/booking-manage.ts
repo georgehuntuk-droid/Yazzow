@@ -25,6 +25,11 @@ export type BookingManageView = {
   tutorUsername: string;
   amountLabel: string;
   canCancel: boolean;
+  tutorId: string;
+  runningLateSentAt: string | null;
+  runningLateNote: string | null;
+  studentRunningLateSentAt: string | null;
+  studentRunningLateNote: string | null;
 };
 
 type BookingManageRow = {
@@ -62,12 +67,17 @@ export async function getBookingForManage(
     .select(
       `
       id,
+      tutor_id,
       status,
       cancelled_at,
       cancelled_by,
       parent_email,
       student_name,
       amount_cents,
+      running_late_sent_at,
+      running_late_note,
+      student_running_late_sent_at,
+      student_running_late_note,
       tutor_profiles (display_name, username, currency),
       availability_slots (starts_at, ends_at)
     `,
@@ -77,7 +87,13 @@ export async function getBookingForManage(
 
   if (error || !data) return null;
 
-  const row = data as BookingManageRow;
+  const row = data as BookingManageRow & {
+    tutor_id: string;
+    running_late_sent_at: string | null;
+    running_late_note: string | null;
+    student_running_late_sent_at: string | null;
+    student_running_late_note: string | null;
+  };
   const tutor = firstRelation(row.tutor_profiles);
   const slot = firstRelation(row.availability_slots);
   if (!tutor || !slot) return null;
@@ -101,6 +117,11 @@ export async function getBookingForManage(
     tutorUsername: tutor.username,
     amountLabel: formatMoney(row.amount_cents, tutor.currency),
     canCancel,
+    tutorId: row.tutor_id,
+    runningLateSentAt: row.running_late_sent_at,
+    runningLateNote: row.running_late_note,
+    studentRunningLateSentAt: row.student_running_late_sent_at,
+    studentRunningLateNote: row.student_running_late_note,
   };
 }
 

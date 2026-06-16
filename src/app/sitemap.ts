@@ -19,6 +19,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.5,
     },
+    {
+      url: `${PUBLIC_SITE_URL}/terms-and-conditions`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.3,
+    },
+    {
+      url: `${PUBLIC_SITE_URL}/privacy-policy`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.3,
+    },
+    {
+      url: `${PUBLIC_SITE_URL}/refund-policy`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.3,
+    },
   ];
 
   // 2. Fetch all public tutor usernames from Database in dynamic manner

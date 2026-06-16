@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Archive, ArchiveRestore, ChevronDown, Star, Trash2, Mail, MessageSquare } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Archive, ArchiveRestore, ChevronDown, Star, Trash2, Mail, MessageSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +70,41 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     setLoading(false);
   }
 
-  const [updatingCreditsId, setUpdatingCreditsId] = useState<string | null>(null);
+  const [optimisticCredits, setOptimisticCredits] = useState<Record<string, number>>({});
+  const [optimisticLimits, setOptimisticLimits] = useState<Record<string, number>>({});
+  const [savingCredits, setSavingCredits] = useState<Record<string, boolean>>({});
+  const [savingLimits, setSavingLimits] = useState<Record<string, boolean>>({});
+
+  const saveTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const baselineCreditsRef = useRef<Record<string, number>>({});
+  const baselineLimitsRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    setOptimisticCredits((prev) => {
+      const next = { ...prev };
+      students.active.concat(students.archived).forEach((s) => {
+        if (next[s.id] === s.lessonCredits) {
+          delete next[s.id];
+        }
+      });
+      return next;
+    });
+    setOptimisticLimits((prev) => {
+      const next = { ...prev };
+      students.active.concat(students.archived).forEach((s) => {
+        if (next[s.id] === s.creditLimit) {
+          delete next[s.id];
+        }
+      });
+      return next;
+    });
+  }, [students]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(saveTimeoutsRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
   async function handleSaveNotes(studentId: string) {
     const value = editingNotes[studentId];
@@ -114,17 +148,63 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   }
 
   async function handleSaveCredits(studentId: string, credits: number) {
-    setUpdatingCreditsId(studentId);
-    setError(null);
-    const { updateStudentCredits } = await import("@/lib/dashboard/actions");
-    const result = await updateStudentCredits(studentId, credits);
-    setUpdatingCreditsId(null);
-
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    if (baselineCreditsRef.current[studentId] === undefined) {
+      baselineCreditsRef.current[studentId] = students.active.concat(students.archived).find((s) => s.id === studentId)?.lessonCredits ?? 0;
     }
-    router.refresh();
+
+    setOptimisticCredits((prev) => ({ ...prev, [studentId]: credits }));
+    setSavingCredits((prev) => ({ ...prev, [studentId]: true }));
+    setError(null);
+
+    if (saveTimeoutsRef.current[`credits-${studentId}`]) {
+      clearTimeout(saveTimeoutsRef.current[`credits-${studentId}`]);
+    }
+
+    saveTimeoutsRef.current[`credits-${studentId}`] = setTimeout(async () => {
+      const { updateStudentCredits } = await import("@/lib/dashboard/actions");
+      const result = await updateStudentCredits(studentId, credits);
+
+      setSavingCredits((prev) => ({ ...prev, [studentId]: false }));
+      delete baselineCreditsRef.current[studentId];
+
+      if (!result.ok) {
+        const rollbackVal = students.active.concat(students.archived).find((s) => s.id === studentId)?.lessonCredits ?? 0;
+        setOptimisticCredits((prev) => ({ ...prev, [studentId]: rollbackVal }));
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    }, 600);
+  }
+
+  async function handleSaveCreditLimit(studentId: string, limit: number) {
+    if (baselineLimitsRef.current[studentId] === undefined) {
+      baselineLimitsRef.current[studentId] = students.active.concat(students.archived).find((s) => s.id === studentId)?.creditLimit ?? 0;
+    }
+
+    setOptimisticLimits((prev) => ({ ...prev, [studentId]: limit }));
+    setSavingLimits((prev) => ({ ...prev, [studentId]: true }));
+    setError(null);
+
+    if (saveTimeoutsRef.current[`limit-${studentId}`]) {
+      clearTimeout(saveTimeoutsRef.current[`limit-${studentId}`]);
+    }
+
+    saveTimeoutsRef.current[`limit-${studentId}`] = setTimeout(async () => {
+      const { updateStudentCreditLimit } = await import("@/lib/dashboard/actions");
+      const result = await updateStudentCreditLimit(studentId, limit);
+
+      setSavingLimits((prev) => ({ ...prev, [studentId]: false }));
+      delete baselineLimitsRef.current[studentId];
+
+      if (!result.ok) {
+        const rollbackVal = students.active.concat(students.archived).find((s) => s.id === studentId)?.creditLimit ?? 0;
+        setOptimisticLimits((prev) => ({ ...prev, [studentId]: rollbackVal }));
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    }, 600);
   }
 
   async function handleArchive(studentId: string, studentLabel: string) {
@@ -269,11 +349,16 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             setFeedbackDraft={setFeedbackDraft}
             onSaveNotes={handleSaveNotes}
             onSaveCredits={handleSaveCredits}
+            onSaveCreditLimit={handleSaveCreditLimit}
             onSaveFeedback={handleSaveFeedback}
             onArchive={handleArchive}
             onRestore={handleRestore}
             onDelete={handleDelete}
             mode="active"
+            optimisticCredits={optimisticCredits}
+            optimisticLimits={optimisticLimits}
+            savingCredits={savingCredits}
+            savingLimits={savingLimits}
           />
         </TabsContent>
         <TabsContent value="archived" className="mt-4 space-y-3">
@@ -299,11 +384,16 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             setFeedbackDraft={setFeedbackDraft}
             onSaveNotes={handleSaveNotes}
             onSaveCredits={handleSaveCredits}
+            onSaveCreditLimit={handleSaveCreditLimit}
             onSaveFeedback={handleSaveFeedback}
             onArchive={handleArchive}
             onRestore={handleRestore}
             onDelete={handleDelete}
             mode="archived"
+            optimisticCredits={optimisticCredits}
+            optimisticLimits={optimisticLimits}
+            savingCredits={savingCredits}
+            savingLimits={savingLimits}
           />
         </TabsContent>
       </Tabs>
@@ -329,11 +419,16 @@ function StudentList({
   setFeedbackDraft,
   onSaveNotes,
   onSaveCredits,
+  onSaveCreditLimit,
   onSaveFeedback,
   onArchive,
   onRestore,
   onDelete,
   mode,
+  optimisticCredits,
+  optimisticLimits,
+  savingCredits,
+  savingLimits,
 }: {
   list: StudentWithLessons[];
   currency: string;
@@ -354,11 +449,16 @@ function StudentList({
   >;
   onSaveNotes: (id: string) => void;
   onSaveCredits: (id: string, credits: number) => Promise<void>;
+  onSaveCreditLimit: (id: string, limit: number) => Promise<void>;
   onSaveFeedback: (bookingId: string) => void;
   onArchive: (id: string, label: string) => void;
   onRestore: (id: string) => void;
   onDelete: (id: string, label: string) => void;
   mode: "active" | "archived";
+  optimisticCredits: Record<string, number>;
+  optimisticLimits: Record<string, number>;
+  savingCredits: Record<string, boolean>;
+  savingLimits: Record<string, boolean>;
 }) {
   const router = useRouter();
   if (list.length === 0) {
@@ -382,6 +482,14 @@ function StudentList({
         const draftName = editingNames[student.id] ?? student.studentName;
         const draftEmail = editingEmails[student.id] ?? student.parentEmail;
         const lessons = confirmedLessons(student);
+
+        const currentCredits = optimisticCredits[student.id] !== undefined
+          ? optimisticCredits[student.id]
+          : student.lessonCredits;
+        
+        const currentLimit = optimisticLimits[student.id] !== undefined
+          ? optimisticLimits[student.id]
+          : student.creditLimit;
 
         return (
           <Card key={student.id} className="yazz-surface overflow-hidden">
@@ -437,8 +545,11 @@ function StudentList({
                   <Badge variant={mode === "active" ? "default" : "secondary"}>
                     {mode === "active" ? "Active" : "Archived"}
                   </Badge>
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                    {student.lessonCredits} credit{student.lessonCredits === 1 ? "" : "s"}
+                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 flex items-center gap-1">
+                    {currentCredits} credit{currentCredits === 1 ? "" : "s"}
+                    {savingCredits[student.id] && (
+                      <Loader2 className="size-3 animate-spin text-primary/70" />
+                    )}
                   </Badge>
                   <Badge variant="outline">
                     {lessons.length} lesson{lessons.length === 1 ? "" : "s"}
@@ -455,7 +566,7 @@ function StudentList({
 
             {open ? (
               <CardContent className="space-y-4 border-t border-border/60 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-4">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Student Name</label>
                     <Input
@@ -468,7 +579,7 @@ function StudentList({
                       }
                       onBlur={() => {
                         if (draftName.trim() && draftName.trim() !== student.studentName) {
-                          onSaveDetails(student.id, draftName, draftEmail);
+                           onSaveDetails(student.id, draftName, draftEmail);
                         }
                       }}
                       placeholder="Student name"
@@ -488,7 +599,7 @@ function StudentList({
                       }
                       onBlur={() => {
                         if (draftEmail.trim() && draftEmail.trim() !== student.parentEmail) {
-                          onSaveDetails(student.id, draftName, draftEmail);
+                           onSaveDetails(student.id, draftName, draftEmail);
                         }
                       }}
                       placeholder="parent@example.com"
@@ -503,24 +614,64 @@ function StudentList({
                         variant="outline"
                         size="icon"
                         className="size-9"
-                        onClick={() => onSaveCredits(student.id, Math.max(0, student.lessonCredits - 1))}
+                        disabled={savingCredits[student.id]}
+                        onClick={() => onSaveCredits(student.id, currentCredits - 1)}
                       >
                         -
                       </Button>
                       <span className="w-12 text-center text-base font-bold">
-                        {student.lessonCredits}
+                        {currentCredits}
                       </span>
                       <Button
                         type="button"
                         variant="outline"
                         size="icon"
                         className="size-9"
-                        onClick={() => onSaveCredits(student.id, student.lessonCredits + 1)}
+                        disabled={savingCredits[student.id]}
+                        onClick={() => onSaveCredits(student.id, currentCredits + 1)}
                       >
                         +
                       </Button>
-                      <span className="text-xs text-muted-foreground ml-1">
+                      <span className="text-xs text-muted-foreground ml-1 flex items-center gap-1">
                         Override
+                        {savingCredits[student.id] && (
+                          <Loader2 className="size-3 animate-spin text-muted-foreground" />
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Credit Limit</label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-9"
+                        disabled={savingLimits[student.id]}
+                        onClick={() => onSaveCreditLimit(student.id, Math.max(0, currentLimit - 1))}
+                      >
+                        -
+                      </Button>
+                      <span className="w-12 text-center text-base font-bold">
+                        {currentLimit}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-9"
+                        disabled={savingLimits[student.id]}
+                        onClick={() => onSaveCreditLimit(student.id, currentLimit + 1)}
+                      >
+                        +
+                      </Button>
+                      <span className="text-xs text-muted-foreground ml-1 flex items-center gap-1">
+                        Overdraft
+                        {savingLimits[student.id] && (
+                          <Loader2 className="size-3 animate-spin text-muted-foreground" />
+                        )}
                       </span>
                     </div>
                   </div>

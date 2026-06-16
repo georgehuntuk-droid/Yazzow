@@ -26,30 +26,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That slot is no longer available." }, { status: 409 });
     }
 
-    // 2. Fetch student records matching this parent-tutor relationship with available credits
+    // 2. Fetch student records matching this parent-tutor relationship
     const { data: students } = await admin
       .from("students")
-      .select("id, student_name, lesson_credits")
+      .select("id, student_name, lesson_credits, credit_limit")
       .eq("tutor_id", tutorId)
-      .eq("parent_email", email)
-      .gt("lesson_credits", 0)
-      .order("lesson_credits", { ascending: false });
+      .eq("parent_email", email);
 
     if (!students || students.length === 0) {
-      return NextResponse.json({ error: "No available lesson credits found." }, { status: 400 });
+      return NextResponse.json({ error: "No student profile found. Please join the tutor family first." }, { status: 400 });
+    }
+
+    // Filter students who have not exceeded their credit limit
+    const eligibleStudents = students.filter(
+      (s) => (s.lesson_credits ?? 0) - 1 >= -(s.credit_limit ?? 0)
+    );
+
+    if (eligibleStudents.length === 0) {
+      return NextResponse.json({ error: "You have exceeded your booking credit limit. Please contact your tutor." }, { status: 400 });
     }
 
     // Pick the most eligible student record to deduct credit from
-    let selectedStudent = students[0];
+    let selectedStudent = eligibleStudents[0];
     if (studentName) {
-      const match = students.find(
+      const match = eligibleStudents.find(
         (s) => s.student_name.trim().toLowerCase() === studentName.trim().toLowerCase()
       );
       if (match) selectedStudent = match;
     }
 
-    // 3. Deduct 1 credit from the chosen student record
-    const newCredits = selectedStudent.lesson_credits - 1;
+    // 3. Deduct 1 credit from the chosen student record (can be negative)
+    const newCredits = (selectedStudent.lesson_credits ?? 0) - 1;
     const { error: deductError } = await admin
       .from("students")
       .update({ lesson_credits: newCredits })

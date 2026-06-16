@@ -122,8 +122,8 @@ export async function deleteSupportTicket(ticketId: string) {
 
 /** Authenticates the user as an admin using a custom password/passphrase. */
 export async function loginAsAdmin(password: string) {
-  const adminPassword = process.env.ADMIN_PASSWORD || "yazzow-admin-2026";
-  if (password === adminPassword) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminPassword && password === adminPassword) {
     const cookieStore = await cookies();
     cookieStore.set("yazzow_admin_session", adminPassword, {
       httpOnly: true,

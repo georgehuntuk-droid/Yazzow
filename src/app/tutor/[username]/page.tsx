@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 import { Logo } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button";
@@ -49,6 +50,9 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
   const { username } = await params;
   const query = await searchParams;
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const isSamplePortal = DEMO_USERNAMES.has(username);
   const liveTutor = isSamplePortal ? null : await getTutorByUsername(username);
   const demoTutor = isSamplePortal
@@ -95,20 +99,12 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     }
   }
 
-  const slots = liveTutor
-    ? await getOpenSlotsForTutor(liveTutor.id)
-    : DEMO_OPEN_SLOTS;
-  const resources = liveTutor
-    ? await getPublishedResourcesForTutor(liveTutor.id)
-    : DEMO_RESOURCES;
-
-  const packages = liveTutor
-    ? await getPackagesForTutor(liveTutor.id)
-    : [];
-
-  const portalBooking = liveTutor
-    ? await getPortalBookingStatus(liveTutor.id)
-    : await getPortalBookingStatus("", { isDemo: true });
+  const [slots, resources, packages, portalBooking] = await Promise.all([
+    liveTutor ? getOpenSlotsForTutor(liveTutor.id) : Promise.resolve(DEMO_OPEN_SLOTS),
+    liveTutor ? getPublishedResourcesForTutor(liveTutor.id) : Promise.resolve(DEMO_RESOURCES),
+    liveTutor ? getPackagesForTutor(liveTutor.id) : Promise.resolve([]),
+    liveTutor ? getPortalBookingStatus(liveTutor.id) : getPortalBookingStatus("", { isDemo: true }),
+  ]);
 
   const paymentsEnabled = portalBooking.canAcceptBookings;
   const paymentsBlockedReason =
@@ -165,7 +161,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
           <BookingStatusBanner manageUrl={bookingManageUrl} />
         </Suspense>
 
-        {liveTutor && tutor.allowPublicJoining !== false ? <JoinTutorFamily tutor={tutor} tutorUsername={username} /> : null}
+        {liveTutor && tutor.allowPublicJoining !== false ? <JoinTutorFamily tutor={tutor} tutorUsername={username} currentUserEmail={user?.email} /> : null}
 
         <Tabs defaultValue="book">
           <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">

@@ -52,20 +52,31 @@ export async function getConnectStatus(
     };
   }
 
-  const stripe = getStripe();
-  const account = await stripe.accounts.retrieve(accountId);
+  try {
+    const stripe = getStripe();
+    const account = await stripe.accounts.retrieve(accountId);
 
-  const chargesEnabled = account.charges_enabled ?? false;
-  const payoutsEnabled = account.payouts_enabled ?? false;
-  const detailsSubmitted = account.details_submitted ?? false;
+    const chargesEnabled = account.charges_enabled ?? false;
+    const payoutsEnabled = account.payouts_enabled ?? false;
+    const detailsSubmitted = account.details_submitted ?? false;
 
-  return {
-    accountId,
-    chargesEnabled,
-    payoutsEnabled,
-    detailsSubmitted,
-    ready: chargesEnabled && payoutsEnabled && detailsSubmitted,
-  };
+    return {
+      accountId,
+      chargesEnabled,
+      payoutsEnabled,
+      detailsSubmitted,
+      ready: chargesEnabled && payoutsEnabled && detailsSubmitted,
+    };
+  } catch (error) {
+    console.error("Error retrieving Stripe account details:", error);
+    return {
+      accountId,
+      chargesEnabled: false,
+      payoutsEnabled: false,
+      detailsSubmitted: false,
+      ready: false,
+    };
+  }
 }
 
 export async function createExpressDashboardLink(

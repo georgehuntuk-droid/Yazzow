@@ -73,8 +73,8 @@ export async function isPlatformAdmin(): Promise<boolean> {
   try {
     const cookieStore = await cookies();
     const adminSession = cookieStore.get("yazzow_admin_session")?.value;
-    const adminPassword = process.env.ADMIN_PASSWORD || "yazzow-admin-2026";
-    if (adminSession && adminSession === adminPassword) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminPassword && adminSession && adminSession === adminPassword) {
       return true;
     }
   } catch {

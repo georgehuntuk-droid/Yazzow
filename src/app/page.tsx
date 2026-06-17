@@ -53,8 +53,27 @@ export default async function HomePage() {
 
   const authCta = await getMarketingAuthCta();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Yazzow",
+    "url": "https://yazzow.com",
+    "operatingSystem": "All",
+    "applicationCategory": "BusinessApplication",
+    "description": "White-labeled scheduling, digital worksheet storefront, and student CRM for independent tutors.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "GBP"
+    }
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteHeader />
       <main className="flex-1">
         <MarketingHero authCta={authCta} />

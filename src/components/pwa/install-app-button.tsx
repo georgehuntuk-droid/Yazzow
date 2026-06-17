@@ -50,7 +50,22 @@ export function InstallAppButton({
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    const checkStatus = () => {
+    const checkInstalledApps = async () => {
+      if (typeof navigator !== "undefined" && "getInstalledRelatedApps" in navigator) {
+        try {
+          const relatedApps = await (navigator as any).getInstalledRelatedApps();
+          if (relatedApps && relatedApps.length > 0) {
+            setIsInstalled(true);
+            return true;
+          }
+        } catch (err) {
+          console.warn("Failed to check installed related apps:", err);
+        }
+      }
+      return false;
+    };
+
+    const checkStatus = async () => {
       const win = window as any;
       const isIOSUser = isIOSDevice();
       const isMacUser = isMacDevice();
@@ -58,7 +73,12 @@ export function InstallAppButton({
 
       setIsIOS(isIOSUser);
       setIsMac(isMacUser);
-      setIsInstalled(installed);
+
+      if (installed) {
+        setIsInstalled(true);
+      } else {
+        await checkInstalledApps();
+      }
 
       if (win.deferredPrompt) {
         setInstallPrompt(win.deferredPrompt);
@@ -115,19 +135,9 @@ export function InstallAppButton({
 
   if (!initialized) return null;
 
-  // If already installed, show a checked status button
+  // If already installed, hide the install buttons completely to prevent duplicate installations
   if (isInstalled) {
-    return (
-      <Button
-        variant="outline"
-        size={size}
-        disabled
-        className={`rounded-xl border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 gap-1.5 opacity-90 ${className}`}
-      >
-        <Check className="size-4" />
-        {showText && "App Installed"}
-      </Button>
-    );
+    return null;
   }
 
   // If we cannot install and it's not Apple (meaning standard desktop browser where install isn't supported/available)

@@ -34,6 +34,11 @@ export async function GET(_request: Request, context: RouteContext) {
   // Use tutor's avatar as the icon, falling back to Yazzow logo
   const iconUrl = tutor.avatarUrl || "/icon.png";
 
+  const host = _request.headers.get("host") || "yazzow.com";
+  // Check if secure connection, fallback to http on localhost/dev
+  const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+  const manifestUrl = `${protocol}://${host}/api/tutor/${tutor.username}/manifest.json`;
+
   const manifest = {
     name,
     short_name: shortName,
@@ -50,6 +55,13 @@ export async function GET(_request: Request, context: RouteContext) {
         sizes: "512x512",
         type: "image/png",
         purpose: "any maskable"
+      }
+    ],
+    prefer_related_applications: true,
+    related_applications: [
+      {
+        platform: "webapp",
+        url: manifestUrl
       }
     ]
   };

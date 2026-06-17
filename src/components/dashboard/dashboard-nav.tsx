@@ -30,6 +30,7 @@ const navItems = [
   { href: "/dashboard/storefront", label: "Shop Manager", icon: BookOpen },
   { href: "/dashboard/payments", label: "Earnings", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Palette },
+  { href: "/dashboard/demo-guide", label: "Tutor Guide", icon: HelpCircle },
 ] as const;
 
 type DashboardNavProps = {

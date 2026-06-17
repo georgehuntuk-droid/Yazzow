@@ -66,6 +66,8 @@ export async function updatePortalProfile(input: {
   allowPublicJoining: boolean;
   allowCashPayments?: boolean;
   paymentInstructions?: string;
+  paymentReminderAmountThresholdCents?: number;
+  paymentReminderDaysAfter?: number;
 }) {
   const { profile } = await requireTutorProfile();
 
@@ -98,22 +100,36 @@ export async function updatePortalProfile(input: {
     return { ok: false as const, error: "Unsupported currency." };
   }
 
+  const updatePayload: any = {
+    display_name: displayName,
+    headline: headline || null,
+    bio: bio || null,
+    lesson_price_cents: lessonPriceCents,
+    currency,
+    allow_public_joining: input.allowPublicJoining,
+    allow_cash_payments: input.allowCashPayments ?? true,
+    payment_instructions: paymentInstructions,
+    payment_reminder_amount_threshold_cents: input.paymentReminderAmountThresholdCents ?? 0,
+    payment_reminder_days_after: input.paymentReminderDaysAfter ?? 0,
+  };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("tutor_profiles")
-    .update({
-      display_name: displayName,
-      headline: headline || null,
-      bio: bio || null,
-      lesson_price_cents: lessonPriceCents,
-      currency,
-      allow_public_joining: input.allowPublicJoining,
-      allow_cash_payments: input.allowCashPayments ?? true,
-      payment_instructions: paymentInstructions,
-    })
+    .update(updatePayload)
     .eq("id", profile.id);
 
-  if (error) {
+  if (error && (error.code === "42703" || error.message.includes("payment_reminder"))) {
+    delete updatePayload.payment_reminder_amount_threshold_cents;
+    delete updatePayload.payment_reminder_days_after;
+    const retryRes = await supabase
+      .from("tutor_profiles")
+      .update(updatePayload)
+      .eq("id", profile.id);
+    if (retryRes.error) {
+      return { ok: false as const, error: formatSupabaseError(retryRes.error.message) };
+    }
+  } else if (error) {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 

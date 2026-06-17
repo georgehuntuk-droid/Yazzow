@@ -18,6 +18,8 @@ export type TutorProfile = {
   paymentInstructions?: string;
   portalAnnouncement?: string;
   portalAnnouncementActive?: boolean;
+  paymentReminderAmountThresholdCents?: number;
+  paymentReminderDaysAfter?: number;
 };
 
 export type OpenSlot = {

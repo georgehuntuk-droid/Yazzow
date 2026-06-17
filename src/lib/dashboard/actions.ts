@@ -15,6 +15,7 @@ import {
   splitAvailabilityIntoHourlySlots,
 } from "@/lib/scheduling/hourly-slots";
 import { formatSupabaseError } from "@/lib/supabase/errors";
+import { formatMoney } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { removeTutorFiles, uploadTutorFile } from "@/lib/supabase/tutor-storage";
 
@@ -903,6 +904,78 @@ export async function toggleBookingPaidStatus(bookingId: string, isPaid: boolean
   }
 
   await revalidateTutor(profile.username);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/students");
+  return { ok: true as const };
+}
+
+export async function sendManualPaymentReminder(studentId: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("student_name, parent_email")
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id)
+    .maybeSingle();
+
+  if (studentError || !student) {
+    return { ok: false as const, error: "Student not found." };
+  }
+
+  let selectQuery = `
+    id,
+    amount_cents,
+    is_paid,
+    stripe_payment_intent_id
+  `;
+
+  let res = await supabase
+    .from("bookings")
+    .select(selectQuery)
+    .eq("tutor_id", profile.id)
+    .eq("parent_email", student.parent_email)
+    .eq("status", "confirmed")
+    .eq("is_paid", false)
+    .eq("stripe_payment_intent_id", "cash");
+
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid"))) {
+    return { ok: false as const, error: "No unpaid cash bookings found." };
+  }
+
+  const bookings = res.data as any[];
+  if (res.error || !bookings || bookings.length === 0) {
+    return { ok: false as const, error: "No unpaid cash bookings found." };
+  }
+
+  const totalOwedCents = bookings.reduce((sum, b) => sum + b.amount_cents, 0);
+
+  const messageContent = `🔔 [Payment Reminder] Hello, this is a friendly reminder that you have an outstanding balance of ${formatMoney(totalOwedCents, profile.currency)} for our lessons. Please view payment instructions and settle at your convenience. Thank you!`;
+
+  const { error: msgErr } = await supabase.from("messages").insert({
+    tutor_id: profile.id,
+    parent_email: student.parent_email,
+    sender: "tutor",
+    content: messageContent,
+  });
+
+  if (msgErr) {
+    return { ok: false as const, error: "Failed to send chat reminder message." };
+  }
+
+  const bookingIds = bookings.map((b) => b.id);
+  const updatePayload: any = { payment_reminder_sent_at: new Date().toISOString() };
+  
+  const { error: updateErr } = await supabase
+    .from("bookings")
+    .update(updatePayload)
+    .in("id", bookingIds);
+
+  if (updateErr && (updateErr.code === "42703" || updateErr.message.includes("payment_reminder_sent_at"))) {
+    // Ignore if column doesn't exist
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/students");
   return { ok: true as const };

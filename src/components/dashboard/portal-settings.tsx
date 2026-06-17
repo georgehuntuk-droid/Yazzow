@@ -67,6 +67,13 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
   const [allowCashPayments, setAllowCashPayments] = useState(profile.allowCashPayments ?? true);
   const [paymentInstructions, setPaymentInstructions] = useState(profile.paymentInstructions ?? "");
 
+  const [reminderAmountThreshold, setReminderAmountThreshold] = useState(
+    profile.paymentReminderAmountThresholdCents ? (profile.paymentReminderAmountThresholdCents / 100).toString() : ""
+  );
+  const [reminderDaysAfter, setReminderDaysAfter] = useState(
+    profile.paymentReminderDaysAfter ? profile.paymentReminderDaysAfter.toString() : ""
+  );
+
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [coverUrl, setCoverUrl] = useState(profile.coverUrl);
   const [portalWelcomeMessage, setPortalWelcomeMessage] = useState(
@@ -116,6 +123,8 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       allowPublicJoining,
       allowCashPayments,
       paymentInstructions,
+      paymentReminderAmountThresholdCents: reminderAmountThreshold ? Math.round(parseFloat(reminderAmountThreshold) * 100) : 0,
+      paymentReminderDaysAfter: reminderDaysAfter ? parseInt(reminderDaysAfter, 10) : 0,
     }),
     [
       profile,
@@ -134,6 +143,8 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       allowPublicJoining,
       allowCashPayments,
       paymentInstructions,
+      reminderAmountThreshold,
+      reminderDaysAfter,
     ],
   );
 
@@ -784,6 +795,53 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   <p className="text-xs text-muted-foreground">
                     Shown to parents when booking via Cash/Direct payment, and included in their confirmation email.
                   </p>
+
+                  <div className="space-y-4 border-t border-border/50 pt-4 mt-3">
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      Automated Payment Reminders
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-normal">
+                      Configure when the system should automatically send in-app chat reminders to parents for unpaid direct/cash lessons. Leave blank or 0 to disable.
+                    </p>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label htmlFor="reminder-amount-threshold" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                          By Owed Balance ({currency.toUpperCase()})
+                        </label>
+                        <Input
+                          id="reminder-amount-threshold"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="e.g. 50.00"
+                          value={reminderAmountThreshold}
+                          onChange={(e) => setReminderAmountThreshold(e.target.value)}
+                        />
+                        <p className="text-[10px] text-muted-foreground leading-normal">
+                          Sends reminder when parent owes this amount or more.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="reminder-days-after" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                          By Time (Days post-lesson)
+                        </label>
+                        <Input
+                          id="reminder-days-after"
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="e.g. 7"
+                          value={reminderDaysAfter}
+                          onChange={(e) => setReminderDaysAfter(e.target.value)}
+                        />
+                        <p className="text-[10px] text-muted-foreground leading-normal">
+                          Sends reminder X days after a lesson is completed if still unpaid.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -71,6 +71,12 @@ const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 export async function getStudentsWithLessonsForTutor(
   tutorId: string,
 ): Promise<{ active: StudentWithLessons[]; archived: StudentWithLessons[] }> {
+  // Trigger automated payment reminders passively in the background
+  const { runAutomatedPaymentReminders } = await import("@/lib/bookings/payment-reminders");
+  void runAutomatedPaymentReminders(tutorId).catch((err) => {
+    console.error("Failed to run automated payment reminders background check:", err);
+  });
+
   const supabase = await createClient();
   const features = await getSchemaFeatures();
 

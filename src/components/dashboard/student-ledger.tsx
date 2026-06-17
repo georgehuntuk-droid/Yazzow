@@ -22,6 +22,7 @@ import {
   toggleTaskStatus,
   resendStudentInvitation,
   toggleBookingPaidStatus,
+  sendManualPaymentReminder,
 } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { StudentWithLessons } from "@/lib/tutors/student-lessons";
@@ -462,6 +463,23 @@ function StudentList({
   savingLimits: Record<string, boolean>;
 }) {
   const router = useRouter();
+  const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
+
+  async function handleSendReminder(studentId: string) {
+    setSendingReminderId(studentId);
+    try {
+      const res = await sendManualPaymentReminder(studentId);
+      if (res.ok) {
+        alert("Payment reminder sent to parent in chat!");
+      } else {
+        alert(`Failed to send reminder: ${res.error}`);
+      }
+    } catch (err) {
+      alert("An error occurred sending the reminder.");
+    } finally {
+      setSendingReminderId(null);
+    }
+  }
   if (list.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
@@ -548,9 +566,19 @@ function StudentList({
                     {lessons.length} lesson{lessons.length === 1 ? "" : "s"}
                   </Badge>
                   {student.owedAmountCents > 0 && (
-                    <Badge variant="outline" className="gap-1 border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-950/40 dark:bg-rose-950/20 dark:text-rose-400 font-bold">
-                      Owed: {formatMoney(student.owedAmountCents, currency)}
-                    </Badge>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <Badge variant="outline" className="gap-1 border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-950/40 dark:bg-rose-950/20 dark:text-rose-400 font-bold">
+                        Owed: {formatMoney(student.owedAmountCents, currency)}
+                      </Badge>
+                      <button
+                        type="button"
+                        disabled={sendingReminderId === student.id}
+                        onClick={() => handleSendReminder(student.id)}
+                        className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer"
+                      >
+                        {sendingReminderId === student.id ? "Sending..." : "Send Reminder"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

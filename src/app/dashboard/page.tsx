@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Globe, Settings, Sparkles, CalendarRange } from "lucide-react";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 import { PortalBookingStatusCard } from "@/components/dashboard/portal-booking-status-card";
 import { RecentBookings } from "@/components/dashboard/recent-bookings";
@@ -66,6 +67,7 @@ export default async function DashboardPage() {
           
           <div className="flex items-center gap-2 flex-wrap">
             <CopyLinkButton url={publicLink} size="sm" className="shadow-sm" />
+            <InstallAppButton size="sm" variant="outline" />
             <Button size="sm" render={<Link href={`/tutor/${profile.username}`} target="_blank" className="gap-1.5" />}>
               <Globe className="size-4" />
               Preview Portal

@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 export async function SiteHeader() {
   let user: { id: string } | null = null;
@@ -56,6 +57,7 @@ export async function SiteHeader() {
           </nav>
         </div>
         <nav className="flex shrink-0 items-center gap-2">
+          <InstallAppButton size="sm" variant="outline" className="hidden sm:inline-flex" />
           {user ? (
             <>
               <Link

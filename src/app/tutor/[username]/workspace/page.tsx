@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { BRAND_NAME } from "@/lib/constants";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -237,6 +238,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
               <span className="hidden sm:inline-block text-xs font-semibold text-muted-foreground bg-muted/70 px-2.5 py-1 rounded-lg">
                 Student: {studentRecord.student_name}
               </span>
+              <InstallAppButton size="sm" variant="outline" className="hidden sm:inline-flex" />
               <form action="/auth/signout" method="post">
                 <button type="submit" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-destructive/5">
                   <LogOut className="size-3.5" /> Sign Out

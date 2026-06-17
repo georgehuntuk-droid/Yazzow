@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { BRAND_NAME } from "@/lib/constants";
 import { isPlatformAdmin } from "@/lib/auth/platform-admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +13,11 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: `Admin Console · ${BRAND_NAME}`,
+  robots: { index: false, follow: false },
+};
 
 export const revalidate = 0; // Disable server caching for live admin console data
 

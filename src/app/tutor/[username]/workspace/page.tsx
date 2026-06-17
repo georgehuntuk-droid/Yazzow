@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles } from "lucide-react";
+import type { Metadata } from "next";
+import { BRAND_NAME } from "@/lib/constants";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,6 +23,17 @@ type WorkspacePageProps = {
 };
 
 const DEMO_USERNAMES = new Set(["demo", "maya-chen"]);
+
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
+  const { username } = await params;
+  const isDemo = DEMO_USERNAMES.has(username);
+  const tutor = isDemo ? getDemoTutorByUsername(username) : await getTutorByUsername(username);
+
+  return {
+    title: tutor ? `Student Workspace · ${tutor.displayName} · ${BRAND_NAME}` : `Student Workspace · ${BRAND_NAME}`,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function StudentWorkspacePage({ params, searchParams }: WorkspacePageProps) {
   const { username } = await params;

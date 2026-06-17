@@ -11,8 +11,9 @@ import { Input } from "@/components/ui/input";
 import {
   deleteDigitalResource,
   toggleDigitalResourcePublished,
-  uploadDigitalResource,
+  insertDigitalResourceRecord,
 } from "@/lib/dashboard/actions";
+import { createClient } from "@/lib/supabase/client";
 import { formatMoney } from "@/lib/format";
 
 function parsePricePreview(raw: string): number | null {
@@ -47,17 +48,86 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const result = await uploadDigitalResource(formData);
+    const title = String(formData.get("title") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const priceRaw = String(formData.get("price") ?? "").trim();
+    const file = formData.get("file") as File;
 
-    if (!result.ok) {
-      setError(result.error);
+    if (!title) {
+      setError("Title is required.");
       setLoading(false);
       return;
     }
 
-    formRef.current?.reset();
-    router.refresh();
-    setLoading(false);
+    if (!priceRaw) {
+      setError("Price is required.");
+      setLoading(false);
+      return;
+    }
+
+    if (!file || file.size === 0) {
+      setError("Choose a PDF or DOCX file.");
+      setLoading(false);
+      return;
+    }
+
+    if (file.size > 52_428_800) { // 50MB
+      setError("File must be 50 MB or smaller.");
+      setLoading(false);
+      return;
+    }
+
+    const allowedMime = new Set([
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]);
+    if (!allowedMime.has(file.type)) {
+      setError("Only PDF and DOCX files are allowed.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in to upload worksheets.");
+      }
+
+      const safeName = file.name.replace(/[^\w.\-() ]+/g, "_");
+      const storagePath = `${user.id}/${crypto.randomUUID()}-${safeName}`;
+
+      // 1. Direct upload from browser to 'worksheets' bucket
+      const { error: uploadErr } = await supabase.storage
+        .from("worksheets")
+        .upload(storagePath, file, { contentType: file.type });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      // 2. Insert record in DB
+      const dbRes = await insertDigitalResourceRecord({
+        title,
+        description,
+        priceRaw,
+        filePath: storagePath,
+      });
+
+      if (!dbRes.ok) {
+        // Cleanup uploaded file on DB insert error
+        await supabase.storage.from("worksheets").remove([storagePath]);
+        throw new Error(dbRes.error);
+      }
+
+      formRef.current?.reset();
+      setPricePreview("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload worksheet.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleDelete(resourceId: string) {

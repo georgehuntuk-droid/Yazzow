@@ -18,6 +18,7 @@ import {
   tutorPublicUrl,
 } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
 import {
   changePortalUsername,
   removePortalAvatar,
@@ -26,6 +27,8 @@ import {
   updatePortalStyle,
   uploadPortalAvatar,
   uploadPortalCover,
+  savePortalAvatarUrl,
+  savePortalCoverUrl,
   createTutorPackage,
   updateTutorPackage,
   deleteTutorPackage,
@@ -344,48 +347,116 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setAvatarLoading(true);
-    setError(null);
-
-    const formData = new FormData();
-    formData.set("file", file);
-    const result = await uploadPortalAvatar(formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setAvatarLoading(false);
+    if (file.size > 5_242_880) { // 5MB limit
+      setError("Photo must be 5 MB or smaller.");
       return;
     }
 
-    setAvatarUrl(result.url);
-    flashSuccess("Profile photo updated.");
-    router.refresh();
-    setAvatarLoading(false);
-    event.target.value = "";
+    const validMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+    if (!validMimes.has(file.type)) {
+      setError("Use JPG, PNG, WebP, or GIF.");
+      return;
+    }
+
+    setAvatarLoading(true);
+    setError(null);
+
+    // 1. Optimistic UI update - show the preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+
+    try {
+      // 2. Client-side direct upload
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "jpg";
+      const storagePath = `${profile.id}/avatar.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(storagePath, file, { upsert: true, contentType: file.type });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      // 3. Save URL to database via server action
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(storagePath);
+
+      const dbRes = await savePortalAvatarUrl(publicUrl);
+      if (!dbRes.ok) {
+        throw new Error(dbRes.error);
+      }
+
+      flashSuccess("Profile photo updated.");
+      router.refresh();
+    } catch (err) {
+      // Revert optimistic update on error
+      setAvatarUrl(profile.avatarUrl);
+      setError(err instanceof Error ? err.message : "Failed to upload avatar.");
+    } finally {
+      setAvatarLoading(false);
+      event.target.value = "";
+    }
   }
 
   async function handleCoverUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setCoverLoading(true);
-    setError(null);
-
-    const formData = new FormData();
-    formData.set("file", file);
-    const result = await uploadPortalCover(formData);
-
-    if (!result.ok) {
-      setError(result.error);
-      setCoverLoading(false);
+    if (file.size > 5_242_880) { // 5MB limit
+      setError("Cover image must be 5 MB or smaller.");
       return;
     }
 
-    setCoverUrl(result.url);
-    flashSuccess("Cover photo updated.");
-    router.refresh();
-    setCoverLoading(false);
-    event.target.value = "";
+    const validMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+    if (!validMimes.has(file.type)) {
+      setError("Use JPG, PNG, WebP, or GIF.");
+      return;
+    }
+
+    setCoverLoading(true);
+    setError(null);
+
+    // 1. Optimistic UI update - show the preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setCoverUrl(previewUrl);
+
+    try {
+      // 2. Client-side direct upload
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "jpg";
+      const storagePath = `${profile.id}/cover.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(storagePath, file, { upsert: true, contentType: file.type });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      // 3. Save URL to database via server action
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(storagePath);
+
+      const dbRes = await savePortalCoverUrl(publicUrl);
+      if (!dbRes.ok) {
+        throw new Error(dbRes.error);
+      }
+
+      flashSuccess("Cover photo updated.");
+      router.refresh();
+    } catch (err) {
+      // Revert optimistic update on error
+      setCoverUrl(profile.coverUrl);
+      setError(err instanceof Error ? err.message : "Failed to upload cover banner.");
+    } finally {
+      setCoverLoading(false);
+      event.target.value = "";
+    }
   }
 
   async function handleRemoveAvatar() {

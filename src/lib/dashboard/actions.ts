@@ -980,3 +980,43 @@ export async function sendManualPaymentReminder(studentId: string) {
   revalidatePath("/dashboard/students");
   return { ok: true as const };
 }
+
+export async function insertDigitalResourceRecord(input: {
+  title: string;
+  description: string;
+  priceRaw: string;
+  filePath: string;
+}) {
+  const { profile } = await requireTutorProfile();
+
+  const title = input.title.trim();
+  const description = input.description.trim();
+  const priceCents = parsePriceToCents(input.priceRaw);
+
+  if (!title) {
+    return { ok: false as const, error: "Title is required." };
+  }
+
+  if (priceCents === null) {
+    return { ok: false as const, error: "Enter a valid price (e.g. 4.99)." };
+  }
+
+  const supabase = await createClient();
+  const { error: insertError } = await supabase.from("digital_resources").insert({
+    tutor_id: profile.id,
+    title,
+    description: description || null,
+    price_cents: priceCents,
+    currency: profile.currency,
+    file_path: input.filePath,
+    is_published: true,
+  });
+
+  if (insertError) {
+    return { ok: false as const, error: formatSupabaseError(insertError.message) };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/tutor/${profile.username}`);
+  return { ok: true as const };
+}

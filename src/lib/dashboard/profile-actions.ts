@@ -545,3 +545,37 @@ export async function updatePortalAnnouncement(input: {
   await revalidatePortal(profile.username);
   return { ok: true as const };
 }
+
+export async function savePortalAvatarUrl(publicUrl: string | null) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ avatar_url: publicUrl })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function savePortalCoverUrl(publicUrl: string | null) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ cover_url: publicUrl })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}

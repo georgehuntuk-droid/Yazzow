@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Archive, ArchiveRestore, ChevronDown, Star, Trash2, Mail, MessageSquare, Loader2 } from "lucide-react";
+import { Archive, ArchiveRestore, ChevronDown, Star, Trash2, MessageSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -510,14 +510,6 @@ function StudentList({
                     <MessageSquare className="size-3 text-primary" />
                     Chat on Website
                   </Link>
-                  <a
-                    href={`mailto:${student.parentEmail}?subject=Lesson Update - Yazzow`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-background px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    <Mail className="size-3 text-primary" />
-                    Email Parent
-                  </a>
                   {student.hasAccount ? (
                     <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300">
                       Linked

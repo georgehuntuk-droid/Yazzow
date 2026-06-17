@@ -1,10 +1,6 @@
 import "server-only";
 
-import {
-  formatRunningLateSlotLabel,
-  sendRunningLateEmail,
-  sendStudentRunningLateEmail,
-} from "@/lib/notifications/booking-update";
+import { formatRunningLateSlotLabel } from "@/lib/notifications/booking-update";
 import { getTutorNotifyProfile } from "@/lib/notifications/slot-opened";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -55,15 +51,7 @@ export async function sendRunningLateNotice(input: {
   const note = input.note?.trim() || null;
   const slotLabel = formatRunningLateSlotLabel(slotRow.starts_at, slotRow.ends_at);
 
-  const emailed = await sendRunningLateEmail({
-    to: booking.parent_email,
-    tutorName: profile.display_name,
-    studentName: booking.student_name,
-    slotLabel,
-    tutorUsername: profile.username,
-    note,
-  });
-
+  // Update the booking row
   await admin
     .from("bookings")
     .update({
@@ -72,18 +60,17 @@ export async function sendRunningLateNotice(input: {
     })
     .eq("id", input.bookingId);
 
-  if (!process.env.RESEND_API_KEY) {
-    return { ok: true, emailed: false };
-  }
+  // Add system message to chat thread
+  const noteText = note ? `: "${note}"` : ".";
+  const messageContent = `⏳ [Running Late Notice] I am running late for our lesson scheduled on ${slotLabel}${noteText}`;
+  await admin.from("messages").insert({
+    tutor_id: input.tutorId,
+    parent_email: booking.parent_email,
+    sender: "tutor",
+    content: messageContent,
+  });
 
-  if (!emailed) {
-    return {
-      ok: false,
-      error: "Could not send email. Check RESEND_API_KEY is set on the server.",
-    };
-  }
-
-  return { ok: true, emailed: true };
+  return { ok: true, emailed: false };
 }
 
 export async function sendStudentRunningLateNotice(input: {
@@ -128,22 +115,10 @@ export async function sendStudentRunningLateNotice(input: {
     return { ok: false, error: "Tutor profile not found." };
   }
 
-  const { data: tutorUser } = await admin.auth.admin.getUserById(booking.tutor_id);
-  if (!tutorUser?.user?.email) {
-    return { ok: false, error: "Tutor email not found." };
-  }
-
   const note = input.note?.trim() || null;
   const slotLabel = formatRunningLateSlotLabel(slotRow.starts_at, slotRow.ends_at);
 
-  const emailed = await sendStudentRunningLateEmail({
-    to: tutorUser.user.email,
-    tutorName: profile.display_name,
-    studentName: booking.student_name,
-    slotLabel,
-    note,
-  });
-
+  // Update the booking row
   await admin
     .from("bookings")
     .update({
@@ -152,16 +127,16 @@ export async function sendStudentRunningLateNotice(input: {
     })
     .eq("id", input.bookingId);
 
-  if (!process.env.RESEND_API_KEY) {
-    return { ok: true, emailed: false };
-  }
+  // Add system message to chat thread
+  const noteText = note ? `: "${note}"` : ".";
+  const studentDisplayName = booking.student_name || "Student";
+  const messageContent = `⏳ [Running Late Notice] ${studentDisplayName} is running late for our lesson scheduled on ${slotLabel}${noteText}`;
+  await admin.from("messages").insert({
+    tutor_id: booking.tutor_id,
+    parent_email: booking.parent_email,
+    sender: "parent",
+    content: messageContent,
+  });
 
-  if (!emailed) {
-    return {
-      ok: false,
-      error: "Could not send email. Check RESEND_API_KEY is set on the server.",
-    };
-  }
-
-  return { ok: true, emailed: true };
+  return { ok: true, emailed: false };
 }

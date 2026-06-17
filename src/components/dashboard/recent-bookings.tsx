@@ -96,7 +96,7 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
       <CardHeader>
         <CardTitle>Upcoming bookings</CardTitle>
         <CardDescription>
-          Cancel to reopen the hour for other families. Use running late to email the parent
+          Cancel to reopen the hour for other families. Use running late to alert the parent
           without cancelling (lesson stays booked).
         </CardDescription>
       </CardHeader>
@@ -220,7 +220,7 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                           disabled={isLateLoading}
                           onClick={() => handleRunningLate(booking)}
                         >
-                          {isLateLoading ? "Sending…" : "Email parent"}
+                          {isLateLoading ? "Sending…" : "Notify parent"}
                         </Button>
                         <Button
                           type="button"
@@ -232,7 +232,7 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Emails the parent on this booking. Requires RESEND_API_KEY on the server.
+                        Sends an instant notification alert to the parent&apos;s workspace and chat thread.
                       </p>
                     </div>
                   ) : null}

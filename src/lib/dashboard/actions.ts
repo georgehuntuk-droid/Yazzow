@@ -170,10 +170,8 @@ export async function notifyRunningLate(bookingId: string, note?: string) {
   revalidatePath("/dashboard");
   return {
     ok: true as const,
-    emailed: result.emailed,
-    message: result.emailed
-      ? "Running late email sent to the parent."
-      : "Saved on the booking. Add RESEND_API_KEY to email parents automatically.",
+    emailed: false,
+    message: "Running late notice sent to parent workspace and chat thread.",
   };
 }
 

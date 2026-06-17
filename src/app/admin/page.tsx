@@ -179,6 +179,7 @@ export default async function AdminDashboardPage() {
       lessonVolumeCents: bStats.volume,
       resourceCount: pStats.count,
       resourceVolumeCents: pStats.volume,
+      paymentInstructions: p.payment_instructions,
     };
   });
 

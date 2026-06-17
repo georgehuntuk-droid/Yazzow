@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle,
+  Edit,
   Globe,
   Loader2,
   Mail,
@@ -28,7 +29,9 @@ import {
   updateSupportTicketNotes,
   deleteSupportTicket,
   logoutAsAdmin,
+  adminUpdateTutorProfile,
 } from "@/lib/dashboard/admin-actions";
+import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
 export type AdminTutorData = {
   id: string;
@@ -46,6 +49,7 @@ export type AdminTutorData = {
   lessonVolumeCents: number;
   resourceCount: number;
   resourceVolumeCents: number;
+  paymentInstructions?: string | null;
 };
 
 export type SupportTicket = {
@@ -80,6 +84,63 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
   const [ticketFilter, setTicketFilter] = useState<"all" | "open" | "resolved" | "closed">("open");
   const [editingNotesText, setEditingNotesText] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+
+  // Edit Tutor-specific states
+  const [editingTutor, setEditingTutor] = useState<AdminTutorData | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editCurrency, setEditCurrency] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editPaymentInstructions, setEditPaymentInstructions] = useState("");
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+
+  const handleOpenEditModal = (tutor: AdminTutorData) => {
+    setEditingTutor(tutor);
+    setEditDisplayName(tutor.displayName);
+    setEditUsername(tutor.username);
+    setEditCurrency(tutor.currency);
+    setEditPrice((tutor.lessonPriceCents / 100).toFixed(2));
+    setEditPaymentInstructions(tutor.paymentInstructions ?? "");
+  };
+
+  const handleSaveTutorDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTutor) return;
+
+    const priceFloat = parseFloat(editPrice);
+    if (isNaN(priceFloat) || priceFloat < 0) {
+      alert("Please enter a valid lesson price.");
+      return;
+    }
+
+    const priceCents = Math.round(priceFloat * 100);
+    const cleanUsername = editUsername.trim().toLowerCase();
+    if (!cleanUsername) {
+      alert("Username cannot be empty.");
+      return;
+    }
+
+    setIsSavingDetails(true);
+    try {
+      const res = await adminUpdateTutorProfile(editingTutor.id, {
+        displayName: editDisplayName.trim(),
+        username: cleanUsername,
+        currency: editCurrency.toLowerCase(),
+        lessonPriceCents: priceCents,
+        paymentInstructions: editPaymentInstructions.trim() || null,
+      });
+
+      if (res.ok) {
+        setEditingTutor(null);
+      } else {
+        alert(`Failed to update tutor details: ${res.error}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error saving tutor details");
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
 
   const handleUpdateTicketStatus = (ticketId: string, status: "open" | "resolved" | "closed") => {
     setActionLoadingId(ticketId);
@@ -416,6 +477,16 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-8 text-xs font-medium"
+                              onClick={() => handleOpenEditModal(tutor)}
+                            >
+                              <Edit className="size-3.5" />
+                              Edit Details
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
                               disabled={isLoading}
                               onClick={() => handleCompSubscription(tutor.id, tutor.subscriptionStatus)}
                               className="h-8 text-xs font-medium"
@@ -635,6 +706,133 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
           </div>
         </div>
       </TabsContent>
+
+      {/* Edit Tutor Modal */}
+      {editingTutor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-2xl border border-border/80 bg-background p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border/40 pb-4 mb-4">
+              <h3 className="font-heading text-lg font-semibold text-foreground">
+                Edit Tutor: {editingTutor.displayName}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingTutor(null)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <XCircle className="size-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTutorDetails} className="space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="edit-display-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Display Name
+                </label>
+                <Input
+                  id="edit-display-name"
+                  required
+                  placeholder="e.g. Jane Doe"
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="edit-username" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Username
+                </label>
+                <Input
+                  id="edit-username"
+                  required
+                  placeholder="e.g. janedoe"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Lowercase, letters, numbers, hyphens, and underscores only.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label htmlFor="edit-currency" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Currency
+                  </label>
+                  <select
+                    id="edit-currency"
+                    value={editCurrency}
+                    onChange={(e) => setEditCurrency(e.target.value)}
+                    className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
+                  >
+                    {SUPPORTED_CURRENCIES.map((code) => (
+                      <option key={code} value={code}>
+                        {code.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="edit-price" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Lesson Price / hr
+                  </label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    placeholder="25.00"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="edit-payment-instructions" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Payment Instructions
+                </label>
+                <textarea
+                  id="edit-payment-instructions"
+                  placeholder="Add custom bank details, Stripe info, or general offline billing instructions..."
+                  value={editPaymentInstructions}
+                  onChange={(e) => setEditPaymentInstructions(e.target.value)}
+                  className="flex min-h-24 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-4 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingTutor(null)}
+                  disabled={isSavingDetails}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingDetails}
+                  className="gap-1.5 font-semibold text-white bg-primary hover:bg-primary/90"
+                >
+                  {isSavingDetails ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Tabs>
   );
 }

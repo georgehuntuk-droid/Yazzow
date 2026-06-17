@@ -17,6 +17,7 @@ export type TutorSubscriptionState = {
   stripeSubscriptionId: string | null;
   /** Database migration 004 not applied — subscription cannot be tracked yet. */
   subscriptionTrackingUnavailable: boolean;
+  cancelAtPeriodEnd: boolean;
 };
 
 export function isSubscriptionActive(status: string | null | undefined): boolean {
@@ -36,13 +37,32 @@ export async function getTutorSubscriptionState(
   tutorId: string,
 ): Promise<TutorSubscriptionState> {
   const admin = createAdminClient();
-  const { data, error } = await admin
+  let data: any = null;
+  let error: any = null;
+
+  const res = await admin
     .from("tutor_profiles")
     .select(
-      "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id",
+      "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id, subscription_cancel_at_period_end",
     )
     .eq("id", tutorId)
     .maybeSingle();
+
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("subscription_cancel_at_period_end"))) {
+    // Fallback if migration 022 has not been applied yet
+    const retryRes = await admin
+      .from("tutor_profiles")
+      .select(
+        "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id",
+      )
+      .eq("id", tutorId)
+      .maybeSingle();
+    data = retryRes.data;
+    error = retryRes.error;
+  } else {
+    data = res.data;
+    error = res.error;
+  }
 
   const missingSubscriptionColumns =
     error &&
@@ -56,6 +76,7 @@ export async function getTutorSubscriptionState(
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       subscriptionTrackingUnavailable: true,
+      cancelAtPeriodEnd: false,
     };
   }
 
@@ -67,6 +88,7 @@ export async function getTutorSubscriptionState(
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       subscriptionTrackingUnavailable: false,
+      cancelAtPeriodEnd: false,
     };
   }
 
@@ -80,6 +102,7 @@ export async function getTutorSubscriptionState(
     stripeCustomerId,
     stripeSubscriptionId,
     subscriptionTrackingUnavailable: false,
+    cancelAtPeriodEnd: data?.subscription_cancel_at_period_end ?? false,
   };
   state.active = isTutorSubscriptionLive(state);
   return state;
@@ -99,17 +122,28 @@ export async function syncTutorSubscriptionFromStripe(
 
   const periodEndUnix = getSubscriptionPeriodEndUnix(subscription);
 
-  await admin
+  const updatePayload: any = {
+    stripe_subscription_id: subscription.id,
+    stripe_customer_id: customerId,
+    subscription_status: subscription.status,
+    subscription_current_period_end: periodEndUnix
+      ? new Date(periodEndUnix * 1000).toISOString()
+      : null,
+    subscription_cancel_at_period_end: subscription.cancel_at_period_end,
+  };
+
+  const { error: updateErr } = await admin
     .from("tutor_profiles")
-    .update({
-      stripe_subscription_id: subscription.id,
-      stripe_customer_id: customerId,
-      subscription_status: subscription.status,
-      subscription_current_period_end: periodEndUnix
-        ? new Date(periodEndUnix * 1000).toISOString()
-        : null,
-    })
+    .update(updatePayload)
     .eq("id", tutorId);
+
+  if (updateErr && (updateErr.code === "42703" || updateErr.message.includes("subscription_cancel_at_period_end"))) {
+    delete updatePayload.subscription_cancel_at_period_end;
+    await admin
+      .from("tutor_profiles")
+      .update(updatePayload)
+      .eq("id", tutorId);
+  }
 }
 
 function getSubscriptionPeriodEndUnix(subscription: Stripe.Subscription): number | null {
@@ -207,5 +241,21 @@ export async function fulfillTutorSubscriptionCheckout(
 
   const stripe = getStripe();
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  await syncTutorSubscriptionFromStripe(subscription);
+}
+
+export async function cancelTutorSubscription(tutorId: string): Promise<void> {
+  const state = await getTutorSubscriptionState(tutorId);
+  if (!state.stripeSubscriptionId) {
+    throw new Error("No active subscription found.");
+  }
+
+  const stripe = getStripe();
+  // Cancel at period end
+  const subscription = await stripe.subscriptions.update(state.stripeSubscriptionId, {
+    cancel_at_period_end: true,
+  });
+
+  // Sync to database
   await syncTutorSubscriptionFromStripe(subscription);
 }

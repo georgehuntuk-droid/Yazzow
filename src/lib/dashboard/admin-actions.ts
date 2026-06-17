@@ -143,3 +143,33 @@ export async function logoutAsAdmin() {
   cookieStore.delete("yazzow_admin_session");
   return { ok: true as const };
 }
+
+/** Allows an admin to edit a tutor's profile details on their behalf. */
+export async function adminUpdateTutorProfile(tutorId: string, payload: {
+  displayName: string;
+  username: string;
+  currency: string;
+  lessonPriceCents: number;
+  paymentInstructions?: string | null;
+}) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("tutor_profiles")
+    .update({
+      display_name: payload.displayName.trim(),
+      username: payload.username.trim().toLowerCase(),
+      currency: payload.currency.trim().toLowerCase(),
+      lesson_price_cents: payload.lessonPriceCents,
+      payment_instructions: payload.paymentInstructions?.trim() || null,
+    })
+    .eq("id", tutorId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}

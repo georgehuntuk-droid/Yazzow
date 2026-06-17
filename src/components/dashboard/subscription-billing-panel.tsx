@@ -90,6 +90,33 @@ export function SubscriptionBillingPanel({
     }
   }
 
+  async function handleCancelSubscription() {
+    if (
+      !confirm(
+        "Are you sure you want to cancel your Yazzow subscription? Your portal will remain active until the end of your paid billing cycle, and no further payments will be taken."
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/stripe/subscription/cancel", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to cancel subscription.");
+      }
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || "Could not cancel subscription. Please contact support.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const renewsLabel =
     subscribed &&
     subscription.currentPeriodEnd &&
@@ -150,17 +177,24 @@ export function SubscriptionBillingPanel({
         {subscribed ? (
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                <span className="size-1.5 rounded-full bg-primary animate-ping" />
-                Active Subscription
-              </span>
+              {subscription.cancelAtPeriodEnd ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="size-1.5 rounded-full bg-amber-500" />
+                  Cancelling (Active until {renewsLabel})
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  <span className="size-1.5 rounded-full bg-primary animate-ping" />
+                  Active Subscription
+                </span>
+              )}
               {!subscription.stripeCustomerId && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
                   Complimentary Access
                 </span>
               )}
             </div>
-            {renewsLabel ? (
+            {renewsLabel && !subscription.cancelAtPeriodEnd ? (
               <p className="text-sm text-muted-foreground">
                 Next billing date is <span className="text-foreground font-semibold">{renewsLabel}</span>.
               </p>
@@ -170,15 +204,38 @@ export function SubscriptionBillingPanel({
               </p>
             ) : null}
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            {subscription.stripeCustomerId ? (
-              <Button
-                variant="outline"
-                onClick={openPortal}
-                disabled={loading}
-                className="w-full sm:w-auto h-10 font-medium"
-              >
-                {loading ? "Opening…" : "Manage billing & invoices"}
-              </Button>
+
+            {subscription.stripeCustomerId && subscription.cancelAtPeriodEnd && (
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 flex items-start gap-3 mt-2">
+                <AlertCircle className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Cancellation scheduled</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Your subscription will remain active until the end of your current cycle on <strong>{renewsLabel}</strong>. No further payments will be taken.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {subscription.stripeCustomerId && !subscription.cancelAtPeriodEnd ? (
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <Button
+                  variant="outline"
+                  onClick={openPortal}
+                  disabled={loading}
+                  className="h-10 font-medium"
+                >
+                  {loading ? "Opening…" : "Manage billing & invoices"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleCancelSubscription}
+                  disabled={loading}
+                  className="h-10 font-medium"
+                >
+                  {loading ? "Cancelling…" : "Cancel Subscription"}
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : (

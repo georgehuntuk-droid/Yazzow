@@ -488,7 +488,7 @@ export async function updatePortalAnnouncement(input: {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 
-  // If emailAllStudents is checked and we have text, send email broadcast
+  // If emailAllStudents is checked and we have text, send direct chat messages instead of emails
   if (input.emailAllStudents && portalAnnouncement) {
     try {
       const { data: students } = await supabase
@@ -505,21 +505,20 @@ export async function updatePortalAnnouncement(input: {
           )
         );
 
-        const { sendAnnouncementNotificationEmail } = await import(
-          "@/lib/notifications/booking-update"
-        );
-
         await Promise.all(
-          uniqueEmails.map((email) =>
-            sendAnnouncementNotificationEmail({
-              to: email,
-              tutorName: profile.displayName,
-              tutorUsername: profile.username,
-              announcementText: portalAnnouncement,
-            }).catch((err) => {
-              console.error(`Failed to send announcement email to ${email}:`, err);
-            })
-          )
+          uniqueEmails.map(async (email) => {
+            try {
+              const { error: insErr } = await supabase.from("messages").insert({
+                tutor_id: profile.id,
+                parent_email: email,
+                sender: "tutor",
+                content: `📣 [Announcement Notice]\n\n${portalAnnouncement}`,
+              });
+              if (insErr) throw new Error(insErr.message);
+            } catch (err) {
+              console.error(`Failed to send announcement message to ${email}:`, err);
+            }
+          })
         );
       }
     } catch (err) {

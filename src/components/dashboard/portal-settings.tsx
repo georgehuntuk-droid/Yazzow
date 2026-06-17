@@ -301,7 +301,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       return;
     }
 
-    flashSuccess(emailAllStudents ? "Announcement updated and emailed to students." : "Announcement settings updated.");
+    flashSuccess(emailAllStudents ? "Announcement updated and sent to all student chats." : "Announcement settings updated.");
     setEmailAllStudents(false);
     router.refresh();
     setAnnouncementLoading(false);
@@ -598,9 +598,9 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                     className="mt-1 rounded border-input text-primary focus-visible:ring-ring"
                   />
                   <div>
-                    <span className="font-semibold text-foreground">Email this announcement to all my students</span>
+                    <span className="font-semibold text-foreground">Send this announcement to all student chats</span>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Sends a copy of this message directly to all active parent/student emails in your student ledger.
+                      Sends a copy of this message directly to the active chat threads of all your students.
                     </p>
                   </div>
                 </label>

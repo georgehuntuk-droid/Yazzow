@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,18 +24,34 @@ const categories = [
 type SupportTicketFormProps = {
   source?: string;
   className?: string;
+  initialCategory?: string;
+  initialMessage?: string;
 };
 
 export function SupportTicketForm({
   source = "support page",
   className,
+  initialCategory = "other",
+  initialMessage = "",
 }: SupportTicketFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [category, setCategory] = useState<string>("other");
-  const [message, setMessage] = useState("");
+  const [category, setCategory] = useState<string>(initialCategory);
+  const [message, setMessage] = useState(initialMessage);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setCategory(initialCategory);
+    }
+  }, [initialCategory]);
+
+  useEffect(() => {
+    if (initialMessage) {
+      setMessage(initialMessage);
+    }
+  }, [initialMessage]);
   const [sent, setSent] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {

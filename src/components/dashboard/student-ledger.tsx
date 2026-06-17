@@ -149,13 +149,13 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     router.refresh();
   }
 
+
   async function handleSaveCredits(studentId: string, credits: number) {
     if (baselineCreditsRef.current[studentId] === undefined) {
       baselineCreditsRef.current[studentId] = students.active.concat(students.archived).find((s) => s.id === studentId)?.lessonCredits ?? 0;
     }
 
     setOptimisticCredits((prev) => ({ ...prev, [studentId]: credits }));
-    setSavingCredits((prev) => ({ ...prev, [studentId]: true }));
     setError(null);
 
     if (saveTimeoutsRef.current[`credits-${studentId}`]) {
@@ -163,6 +163,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     }
 
     saveTimeoutsRef.current[`credits-${studentId}`] = setTimeout(async () => {
+      setSavingCredits((prev) => ({ ...prev, [studentId]: true }));
       const { updateStudentCredits } = await import("@/lib/dashboard/actions");
       const result = await updateStudentCredits(studentId, credits);
 
@@ -185,7 +186,6 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     }
 
     setOptimisticLimits((prev) => ({ ...prev, [studentId]: limit }));
-    setSavingLimits((prev) => ({ ...prev, [studentId]: true }));
     setError(null);
 
     if (saveTimeoutsRef.current[`limit-${studentId}`]) {
@@ -193,6 +193,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     }
 
     saveTimeoutsRef.current[`limit-${studentId}`] = setTimeout(async () => {
+      setSavingLimits((prev) => ({ ...prev, [studentId]: true }));
       const { updateStudentCreditLimit } = await import("@/lib/dashboard/actions");
       const result = await updateStudentCreditLimit(studentId, limit);
 

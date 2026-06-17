@@ -11,6 +11,7 @@ import { Logo } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkspaceClient } from "./workspace-client";
+import { CreateWorkspaceForm } from "./create-workspace-form";
 import { WorkspaceChat } from "@/components/booking/workspace-chat";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 
@@ -38,7 +39,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user || !user.email) {
     redirect(`/auth/login?next=/tutor/${username}/workspace`);
   }
 
@@ -52,6 +53,18 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     .eq("status", "active");
 
   if (!studentRecords || studentRecords.length === 0) {
+    if (tutor.allowPublicJoining !== false) {
+      return (
+        <PortalThemeWrapper tutor={tutor}>
+          <CreateWorkspaceForm
+            tutor={tutor}
+            tutorUsername={username}
+            parentEmail={user.email}
+          />
+        </PortalThemeWrapper>
+      );
+    }
+
     // Student not registered or archived/removed
     return (
       <PortalThemeWrapper tutor={tutor}>

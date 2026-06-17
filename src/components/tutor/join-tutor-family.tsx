@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Users } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Users, LogIn, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,75 +13,46 @@ type JoinTutorFamilyProps = {
   tutor: TutorProfile;
   tutorUsername: string;
   currentUserEmail?: string;
+  connectedStudents?: { studentName: string; parentEmail: string }[];
 };
 
-type StoredFamily = {
-  parentEmail: string;
-  studentName: string;
-};
-
-function storageKey(username: string) {
-  return `yazzow-family:${username}`;
-}
-
-export function JoinTutorFamily({ tutor, tutorUsername, currentUserEmail }: JoinTutorFamilyProps) {
-  const [parentEmail, setParentEmail] = useState(currentUserEmail ?? "");
+export function JoinTutorFamily({
+  tutor,
+  tutorUsername,
+  currentUserEmail,
+  connectedStudents = [],
+}: JoinTutorFamilyProps) {
+  const router = useRouter();
   const [studentName, setStudentName] = useState("");
-  const [password, setPassword] = useState("");
-  const [joined, setJoined] = useState<StoredFamily | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (currentUserEmail) {
-      setParentEmail(currentUserEmail);
-    }
-  }, [currentUserEmail]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey(tutorUsername));
-      if (raw) {
-        setJoined(JSON.parse(raw) as StoredFamily);
-      }
-    } catch {
-      // ignore
-    }
-  }, [tutorUsername]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!currentUserEmail) return;
+
     setLoading(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch(`/api/tutor/${tutorUsername}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          parentEmail: currentUserEmail || parentEmail,
+          parentEmail: currentUserEmail,
           studentName,
-          password: currentUserEmail ? undefined : password,
         }),
       });
-      const data = (await response.json()) as { error?: string; needsVerification?: boolean };
+      
+      const data = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setError(data.error ?? "Could not join.");
+        setError(data.error ?? "Could not connect to tutor.");
         return;
       }
 
-      if (data.needsVerification) {
-        setSuccessMessage("Please check your email to verify your account and set up your student workspace!");
-      }
-
-      const record: StoredFamily = {
-        parentEmail: (currentUserEmail || parentEmail).trim().toLowerCase(),
-        studentName: studentName.trim(),
-      };
-      localStorage.setItem(storageKey(tutorUsername), JSON.stringify(record));
-      setJoined(record);
+      setStudentName("");
+      // Refresh router so server component fetches new student record and renders the workspace launcher
+      router.refresh();
     } catch {
       setError("Network error. Try again.");
     } finally {
@@ -87,70 +60,94 @@ export function JoinTutorFamily({ tutor, tutorUsername, currentUserEmail }: Join
     }
   }
 
-  if (joined) {
+  // 1. Parent is already connected to student(s) with this tutor
+  if (connectedStudents.length > 0) {
+    const studentNames = connectedStudents.map((s) => s.studentName).join(", ");
     return (
-      <div className="flex flex-col gap-4 rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm shadow-blue-500/5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Users className="mt-0.5 size-4 shrink-0 text-primary animate-pulse" />
-            <div className="text-sm">
-              <p className="font-bold text-foreground">
-                You&apos;re connected with {tutor.displayName}
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary mt-0.5">
+              <Users className="size-5 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-bold text-foreground">
+                Connected with {tutor.displayName}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                Active parent account for: <strong className="text-foreground font-semibold">{studentNames}</strong>
               </p>
-              <p className="mt-1 text-xs font-semibold text-muted-foreground leading-normal">
-                {joined.studentName} · {joined.parentEmail}
-              </p>
-              <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-                Ready to book below or wait for instant slot alerts.
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Linked parent email: <code className="bg-muted px-1 py-0.2 rounded font-mono">{currentUserEmail}</code>
               </p>
             </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            className="rounded-lg text-xs font-bold shrink-0 self-start sm:self-auto hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20"
-            onClick={() => {
-              if (confirm("Disconnect and change your student details?")) {
-                localStorage.removeItem(storageKey(tutorUsername));
-                setJoined(null);
-                setParentEmail(currentUserEmail ?? "");
-                setStudentName("");
-                setPassword("");
-                setSuccessMessage(null);
-              }
-            }}
-          >
-            Change Details
-          </Button>
+          <Link href={`/tutor/${tutorUsername}/workspace`} className="shrink-0 self-start sm:self-auto w-full sm:w-auto">
+            <Button className="w-full sm:w-auto font-bold flex items-center gap-2 cursor-pointer shadow-sm">
+              Open Student Workspace
+              <ArrowRight className="size-4" />
+            </Button>
+          </Link>
         </div>
-        {successMessage && (
-          <div className="p-3 bg-green-500/10 border border-green-500/20 text-xs font-semibold text-green-700 dark:text-green-300 rounded-xl leading-relaxed">
-            📬 {successMessage}
-          </div>
-        )}
       </div>
     );
   }
 
+  // 2. Parent is NOT logged in (Guest) - Redirect to secure Auth Pages
+  if (!currentUserEmail) {
+    return (
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-5 sm:p-6 text-center space-y-4 shadow-sm">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
+          <Users className="size-5" />
+        </div>
+        <div className="space-y-1 max-w-md mx-auto">
+          <h2 className="font-heading text-lg font-semibold text-foreground">
+            Access Parent Portal & Workspace
+          </h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Log in or sign up to access your child's lessons, homework assignments, test credits, and chat directly with {tutor.displayName}.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-xs mx-auto pt-1">
+          <Link href={`/auth/login?next=/tutor/${tutorUsername}/workspace`} className="w-full sm:w-auto flex-1">
+            <Button size="sm" className="w-full font-bold flex items-center justify-center gap-1.5 cursor-pointer">
+              <LogIn className="size-4" />
+              Sign In
+            </Button>
+          </Link>
+          <Link href={`/auth/signup?next=/tutor/${tutorUsername}/workspace`} className="w-full sm:w-auto flex-1">
+            <Button size="sm" variant="outline" className="w-full font-bold cursor-pointer">
+              Register Account
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Parent is logged in but has no student profiles registered yet with this tutor
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent px-4 py-5 sm:px-6"
+      className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-5 sm:p-6 shadow-sm space-y-4"
     >
-      <div className="mb-3 flex items-center gap-2">
-        <Users className="size-5 text-primary" />
-        <h2 className="font-heading text-lg font-semibold">
-          Join {tutor.displayName}&apos;s families
+      <div className="flex items-center gap-2.5">
+        <div className="p-2 rounded-xl bg-primary/10 text-primary">
+          <Users className="size-5" />
+        </div>
+        <h2 className="font-heading text-base font-semibold text-foreground">
+          Join {tutor.displayName}&apos;s Group
         </h2>
       </div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Connect with {tutor.displayName} to access your student workspace, track lesson history, homework tasks, and receive slot alerts.
+
+      <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+        You are logged in as <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px]">{currentUserEmail}</code>. Enter your child's name below to link and activate their student workspace.
       </p>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-2">
-          <label htmlFor="join-student-name" className="text-sm font-medium">
-            Student name
+
+      <div className="grid gap-3 sm:grid-cols-2 max-w-lg">
+        <div className="space-y-1.5">
+          <label htmlFor="join-student-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+            Student Name
           </label>
           <Input
             id="join-student-name"
@@ -160,46 +157,26 @@ export function JoinTutorFamily({ tutor, tutorUsername, currentUserEmail }: Join
             onChange={(e) => setStudentName(e.target.value)}
           />
         </div>
-        <div className="space-y-2">
-          <label htmlFor="join-parent-email" className="text-sm font-medium">
-            Parent email
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+            Parent Email
           </label>
           <Input
-            id="join-parent-email"
             type="email"
-            required
-            disabled={!!currentUserEmail}
-            placeholder="you@family.com"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
+            disabled
+            value={currentUserEmail}
+            className="opacity-75 bg-muted/30"
           />
         </div>
-        {!currentUserEmail && (
-          <div className="space-y-2">
-            <label htmlFor="join-password" className="text-sm font-medium">
-              Create password
-            </label>
-            <Input
-              id="join-password"
-              type="password"
-              required
-              minLength={8}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-        )}
       </div>
-      {!currentUserEmail && (
-        <p className="text-[11px] text-muted-foreground mt-2 font-medium">
-          🔒 Creating a password lets you log in to your Yazzow Student Workspace later.
-        </p>
-      )}
-      {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
-      <Button type="submit" className="mt-4" disabled={loading}>
-        {loading ? "Joining…" : `Join ${tutor.displayName}'s group`}
-      </Button>
+
+      {error ? <p className="text-xs text-destructive font-medium">{error}</p> : null}
+
+      <div className="pt-1">
+        <Button type="submit" disabled={loading} className="font-bold cursor-pointer">
+          {loading ? "Joining..." : `Connect with ${tutor.displayName}`}
+        </Button>
+      </div>
     </form>
   );
 }

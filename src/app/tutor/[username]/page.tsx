@@ -55,6 +55,23 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
 
   const isSamplePortal = DEMO_USERNAMES.has(username);
   const liveTutor = isSamplePortal ? null : await getTutorByUsername(username);
+
+  let connectedStudents: any[] = [];
+  if (user && liveTutor) {
+    const admin = createAdminClient();
+    const { data: activeStudents } = await admin
+      .from("students")
+      .select("student_name, parent_email")
+      .eq("tutor_id", liveTutor.id)
+      .eq("parent_email", user.email)
+      .eq("status", "active");
+    if (activeStudents) {
+      connectedStudents = activeStudents.map((s) => ({
+        studentName: s.student_name,
+        parentEmail: s.parent_email,
+      }));
+    }
+  }
   const demoTutor = isSamplePortal
     ? getDemoTutorByUsername(username)
     : !liveTutor
@@ -161,7 +178,14 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
           <BookingStatusBanner manageUrl={bookingManageUrl} />
         </Suspense>
 
-        {liveTutor && tutor.allowPublicJoining !== false ? <JoinTutorFamily tutor={tutor} tutorUsername={username} currentUserEmail={user?.email} /> : null}
+        {liveTutor && tutor.allowPublicJoining !== false ? (
+          <JoinTutorFamily
+            tutor={tutor}
+            tutorUsername={username}
+            currentUserEmail={user?.email}
+            connectedStudents={connectedStudents}
+          />
+        ) : null}
 
         <Tabs defaultValue="book">
           <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">

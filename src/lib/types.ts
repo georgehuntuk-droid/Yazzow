@@ -68,6 +68,8 @@ export type RecentBooking = {
   runningLateNote: string | null;
   studentRunningLateSentAt?: string | null;
   studentRunningLateNote?: string | null;
+  isPaid?: boolean;
+  stripePaymentIntentId?: string | null;
 };
 
 export type StudentLedgerEntry = {

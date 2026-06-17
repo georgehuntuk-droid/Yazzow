@@ -7,7 +7,7 @@ import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { cancelBooking, confirmBooking, notifyRunningLate } from "@/lib/dashboard/actions";
+import { cancelBooking, confirmBooking, notifyRunningLate, toggleBookingPaidStatus } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { RecentBooking } from "@/lib/types";
 
@@ -139,8 +139,18 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                           <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
                             Pending approval
                           </span>
+                        ) : booking.stripePaymentIntentId === "cash" ? (
+                          booking.isPaid ? (
+                            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+                              paid (cash)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-800 border border-rose-200">
+                              unpaid (owed)
+                            </span>
+                          )
                         ) : (
-                          <span className="text-muted-foreground font-semibold">paid</span>
+                          <span className="text-muted-foreground font-semibold">paid via card</span>
                         )}
                       </div>
                       {booking.runningLateSentAt ? (
@@ -176,6 +186,34 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                           className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                         >
                           {loadingAction === `confirm-${booking.id}` ? "Approving…" : "Approve booking"}
+                        </Button>
+                      )}
+                      {booking.status === "confirmed" && booking.stripePaymentIntentId === "cash" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={loadingAction === `paid-${booking.id}`}
+                          onClick={async () => {
+                            setLoadingAction(`paid-${booking.id}`);
+                            try {
+                              const res = await toggleBookingPaidStatus(booking.id, !booking.isPaid);
+                              if (!res.ok) alert(`Error updating payment status: ${res.error}`);
+                            } catch (err) {
+                              alert("Failed to update payment status.");
+                            } finally {
+                              setLoadingAction(null);
+                            }
+                          }}
+                          className={booking.isPaid 
+                            ? "border-amber-200 text-amber-700 hover:bg-amber-50 text-xs font-semibold" 
+                            : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-bold text-xs"}
+                        >
+                          {loadingAction === `paid-${booking.id}` 
+                            ? "Updating…" 
+                            : booking.isPaid 
+                              ? "Mark Owed" 
+                              : "Mark Paid"}
                         </Button>
                       )}
                       <Button

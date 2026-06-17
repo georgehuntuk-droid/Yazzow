@@ -21,6 +21,7 @@ import {
   saveTaskFeedback,
   toggleTaskStatus,
   resendStudentInvitation,
+  toggleBookingPaidStatus,
 } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { StudentWithLessons } from "@/lib/tutors/student-lessons";
@@ -546,6 +547,11 @@ function StudentList({
                   <Badge variant="outline">
                     {lessons.length} lesson{lessons.length === 1 ? "" : "s"}
                   </Badge>
+                  {student.owedAmountCents > 0 && (
+                    <Badge variant="outline" className="gap-1 border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-950/40 dark:bg-rose-950/20 dark:text-rose-400 font-bold">
+                      Owed: {formatMoney(student.owedAmountCents, currency)}
+                    </Badge>
+                  )}
                 </div>
               </div>
               <ChevronDown
@@ -835,12 +841,48 @@ function StudentList({
                             className="rounded-xl border border-border/70 bg-muted/20 p-3"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-sm font-medium">
-                                {formatSlotRange(lesson.startsAt, lesson.endsAt)}
-                              </p>
-                              <span className="text-xs text-muted-foreground">
-                                {formatMoney(lesson.amountCents, currency)}
-                              </span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-medium">
+                                  {formatSlotRange(lesson.startsAt, lesson.endsAt)}
+                                </p>
+                                {lesson.stripePaymentIntentId === "cash" && (
+                                  lesson.isPaid ? (
+                                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+                                      Paid
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 border border-rose-200">
+                                      Owed
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground">
+                                  {formatMoney(lesson.amountCents, currency)}
+                                </span>
+                                {lesson.stripePaymentIntentId === "cash" && (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        const res = await toggleBookingPaidStatus(lesson.id, !lesson.isPaid);
+                                        if (!res.ok) alert(`Failed to update status: ${res.error}`);
+                                      } catch (err) {
+                                        alert("Failed to update status.");
+                                      }
+                                    }}
+                                    className={cn(
+                                      "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-all border",
+                                      lesson.isPaid 
+                                        ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+                                        : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                                    )}
+                                  >
+                                    {lesson.isPaid ? "Mark Owed" : "Mark Paid"}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <div className="mt-3 flex flex-wrap gap-1">
                               {[1, 2, 3, 4, 5].map((n) => (

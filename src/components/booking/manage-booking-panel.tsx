@@ -128,8 +128,18 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
             <dd className="font-medium">{booking.slotLabel}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Paid</dt>
-            <dd className="font-medium">{booking.amountLabel}</dd>
+            <dt className="text-muted-foreground">Payment Status</dt>
+            <dd className="font-medium">
+              {booking.stripePaymentIntentId === "cash" ? (
+                booking.isPaid ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Paid offline / cash ({booking.amountLabel})</span>
+                ) : (
+                  <span className="text-amber-600 dark:text-amber-400 font-bold animate-pulse">Unpaid / Owed ({booking.amountLabel})</span>
+                )
+              ) : (
+                <span className="text-muted-foreground font-semibold">Paid via card ({booking.amountLabel})</span>
+              )}
+            </dd>
           </div>
           {booking.studentName ? (
             <div>
@@ -142,6 +152,17 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
             <dd className="font-medium">{booking.parentEmail}</dd>
           </div>
         </dl>
+
+        {!booking.isPaid && booking.stripePaymentIntentId === "cash" && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-950/40 dark:bg-amber-950/10 p-4 space-y-2 mt-2">
+            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-400 uppercase tracking-wider">
+              Offline Payment Instructions
+            </h4>
+            <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed whitespace-pre-wrap">
+              {booking.tutorPaymentInstructions || "Please contact the tutor directly to arrange bank transfer or cash payment details."}
+            </p>
+          </div>
+        )}
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

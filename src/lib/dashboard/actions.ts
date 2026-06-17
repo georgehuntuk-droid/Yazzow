@@ -887,3 +887,23 @@ export async function confirmBooking(bookingId: string) {
   revalidatePath("/dashboard");
   return { ok: true as const };
 }
+
+export async function toggleBookingPaidStatus(bookingId: string, isPaid: boolean) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ is_paid: isPaid })
+    .eq("id", bookingId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/students");
+  return { ok: true as const };
+}

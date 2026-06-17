@@ -16,6 +16,7 @@ type TutorStatsMatrixProps = {
   totalEarningsCents: number;
   completedSessions: number;
   currency: string;
+  owedEarningsCents?: number;
 };
 
 export function TutorStatsMatrix({
@@ -24,6 +25,7 @@ export function TutorStatsMatrix({
   totalEarningsCents,
   completedSessions,
   currency,
+  owedEarningsCents,
 }: TutorStatsMatrixProps) {
   // Let's create realistic monthly bar values based on total earnings
   // We'll distribute the total earnings across 6 bars with some organic variation
@@ -96,7 +98,7 @@ export function TutorStatsMatrix({
           })}
         </div>
 
-        <div className="border-t border-border/50 mt-6 pt-5 grid grid-cols-2 gap-4">
+        <div className="border-t border-border/50 mt-6 pt-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Earnings</span>
             <span className="text-2xl sm:text-3xl font-black text-foreground mt-1 selection:bg-blue-100">
@@ -109,6 +111,14 @@ export function TutorStatsMatrix({
               {completedSessions || 42}
             </span>
           </div>
+          {owedEarningsCents !== undefined && owedEarningsCents > 0 && (
+            <div className="flex flex-col col-span-2 sm:col-span-1">
+              <span className="text-xs font-semibold text-rose-500 uppercase tracking-wider">Owed Outstanding</span>
+              <span className="text-2xl sm:text-3xl font-black text-rose-600 mt-1 animate-pulse">
+                {formatMoney(owedEarningsCents, currency)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

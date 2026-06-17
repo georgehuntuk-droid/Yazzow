@@ -38,6 +38,11 @@ export default async function DashboardPage() {
   const bookingEarnings = recentBookings.reduce((sum, b) => sum + (b.amountCents || 0), 0);
   const digitalEarnings = packSales.reduce((sum, s) => sum + (s.amountCents || 0), 0);
   const totalEarningsCents = bookingEarnings + digitalEarnings;
+
+  const totalOwedCents = [...studentGroups.active, ...studentGroups.archived].reduce(
+    (sum, student) => sum + (student.owedAmountCents || 0),
+    0
+  );
   
   const activeStudentsCount = studentGroups.active.length;
   const openSlotsCount = slots.filter((s) => !s.isBooked).length;
@@ -105,6 +110,7 @@ export default async function DashboardPage() {
           totalEarningsCents={totalEarningsCents}
           completedSessions={recentBookings.length}
           currency={profile.currency}
+          owedEarningsCents={totalOwedCents}
         />
 
         {/* 4. Bookings & Activities Two-Column Grid */}

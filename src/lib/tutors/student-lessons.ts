@@ -11,6 +11,8 @@ export type StudentLessonRecord = {
   amountCents: number;
   tutorLessonFeedback: string | null;
   lessonRating: number | null;
+  isPaid: boolean;
+  stripePaymentIntentId: string | null;
 };
 
 export type StudentTaskRecord = {
@@ -36,6 +38,7 @@ export type StudentWithLessons = {
   lessons: StudentLessonRecord[];
   tasks: StudentTaskRecord[];
   hasAccount: boolean;
+  owedAmountCents: number;
 };
 
 type BookingWithSlot = BookingRow & {
@@ -71,13 +74,13 @@ export async function getStudentsWithLessonsForTutor(
   const supabase = await createClient();
   const features = await getSchemaFeatures();
 
-  const bookingSelect = features.lessonFeedback
-    ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, availability_slots (starts_at, ends_at)"
-    : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, availability_slots (starts_at, ends_at)";
+  let bookingSelect = features.lessonFeedback
+    ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, is_paid, stripe_payment_intent_id, availability_slots (starts_at, ends_at)"
+    : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, is_paid, stripe_payment_intent_id, availability_slots (starts_at, ends_at)";
 
   const [
     { data: students, error: studentsError },
-    { data: bookings, error: bookingsError },
+    bookingsRes,
     tasksResult,
   ] = await Promise.all([
     supabase
@@ -100,6 +103,24 @@ export async function getStudentsWithLessonsForTutor(
       .then((res) => res)
       .catch((err) => ({ data: [], error: err })),
   ]);
+
+  let bookings = bookingsRes.data;
+  let bookingsError = bookingsRes.error;
+
+  if (bookingsError && (bookingsError.code === "42703" || bookingsError.message.includes("is_paid"))) {
+    bookingSelect = features.lessonFeedback
+      ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, stripe_payment_intent_id, availability_slots (starts_at, ends_at)"
+      : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, stripe_payment_intent_id, availability_slots (starts_at, ends_at)";
+
+    const retryRes = await supabase
+      .from("bookings")
+      .select(bookingSelect)
+      .eq("tutor_id", tutorId)
+      .order("created_at", { ascending: false });
+    
+    bookings = retryRes.data;
+    bookingsError = retryRes.error;
+  }
 
   const tasks = tasksResult?.data ?? [];
 
@@ -141,6 +162,11 @@ export async function getStudentsWithLessonsForTutor(
         const slot = Array.isArray(b.availability_slots)
           ? b.availability_slots[0]
           : b.availability_slots;
+        
+        const isPaid = (b as any).is_paid !== undefined
+          ? (b as any).is_paid
+          : (b.stripe_payment_intent_id !== "cash");
+
         return {
           id: b.id,
           startsAt: slot?.starts_at ?? b.created_at ?? "",
@@ -149,6 +175,8 @@ export async function getStudentsWithLessonsForTutor(
           amountCents: b.amount_cents,
           tutorLessonFeedback: b.tutor_lesson_feedback ?? null,
           lessonRating: b.lesson_rating ?? null,
+          isPaid,
+          stripePaymentIntentId: b.stripe_payment_intent_id ?? null,
         };
       });
 
@@ -167,6 +195,10 @@ export async function getStudentsWithLessonsForTutor(
     const status =
       features.studentStatus && row.status === "archived" ? "archived" : "active";
 
+    const owedAmountCents = lessons
+      .filter((l) => l.status === "confirmed" && !l.isPaid)
+      .reduce((sum, l) => sum + l.amountCents, 0);
+
     return {
       id: student.id,
       studentName: student.student_name,
@@ -180,6 +212,7 @@ export async function getStudentsWithLessonsForTutor(
       lessons,
       tasks: studentTasks,
       hasAccount: authEmails.has(student.parent_email.toLowerCase()),
+      owedAmountCents,
     };
   });
 

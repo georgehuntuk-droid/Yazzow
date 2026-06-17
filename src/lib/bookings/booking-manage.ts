@@ -30,6 +30,9 @@ export type BookingManageView = {
   runningLateNote: string | null;
   studentRunningLateSentAt: string | null;
   studentRunningLateNote: string | null;
+  isPaid: boolean;
+  stripePaymentIntentId: string | null;
+  tutorPaymentInstructions: string | null;
 };
 
 type BookingManageRow = {
@@ -40,9 +43,11 @@ type BookingManageRow = {
   parent_email: string;
   student_name: string | null;
   amount_cents: number;
+  stripe_payment_intent_id?: string | null;
+  is_paid?: boolean;
   tutor_profiles:
-    | { display_name: string; username: string; currency: string }
-    | { display_name: string; username: string; currency: string }[]
+    | { display_name: string; username: string; currency: string; payment_instructions: string | null }
+    | { display_name: string; username: string; currency: string; payment_instructions: string | null }[]
     | null;
   availability_slots:
     | { starts_at: string; ends_at: string }
@@ -62,7 +67,7 @@ export async function getBookingForManage(
   if (!bookingId) return null;
 
   const admin = createAdminClient();
-  const { data, error } = await admin
+  let res = await admin
     .from("bookings")
     .select(
       `
@@ -78,14 +83,43 @@ export async function getBookingForManage(
       running_late_note,
       student_running_late_sent_at,
       student_running_late_note,
-      tutor_profiles (display_name, username, currency),
+      is_paid,
+      stripe_payment_intent_id,
+      tutor_profiles (display_name, username, currency, payment_instructions),
       availability_slots (starts_at, ends_at)
     `,
     )
     .eq("id", bookingId)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid"))) {
+    res = await admin
+      .from("bookings")
+      .select(
+        `
+        id,
+        tutor_id,
+        status,
+        cancelled_at,
+        cancelled_by,
+        parent_email,
+        student_name,
+        amount_cents,
+        running_late_sent_at,
+        running_late_note,
+        student_running_late_sent_at,
+        student_running_late_note,
+        stripe_payment_intent_id,
+        tutor_profiles (display_name, username, currency, payment_instructions),
+        availability_slots (starts_at, ends_at)
+      `,
+      )
+      .eq("id", bookingId)
+      .maybeSingle();
+  }
+
+  if (res.error || !res.data) return null;
+  const data = res.data;
 
   const row = data as BookingManageRow & {
     tutor_id: string;
@@ -102,6 +136,10 @@ export async function getBookingForManage(
   const startsAt = new Date(slot.starts_at);
   const canCancel =
     row.status === "confirmed" && startsAt.getTime() > Date.now();
+
+  const isPaid = (row as any).is_paid !== undefined 
+    ? (row as any).is_paid 
+    : (row.stripe_payment_intent_id !== "cash");
 
   return {
     token: manageToken,
@@ -122,6 +160,9 @@ export async function getBookingForManage(
     runningLateNote: row.running_late_note,
     studentRunningLateSentAt: row.student_running_late_sent_at,
     studentRunningLateNote: row.student_running_late_note,
+    isPaid,
+    stripePaymentIntentId: row.stripe_payment_intent_id ?? null,
+    tutorPaymentInstructions: tutor.payment_instructions,
   };
 }
 

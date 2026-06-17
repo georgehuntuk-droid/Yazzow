@@ -139,10 +139,33 @@ export async function getRecentBookingsForTutor(
   limit = 10,
 ): Promise<RecentBooking[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let selectQuery = `
+    id,
+    slot_id,
+    parent_email,
+    student_name,
+    amount_cents,
+    status,
+    running_late_sent_at,
+    running_late_note,
+    student_running_late_sent_at,
+    student_running_late_note,
+    created_at,
+    is_paid,
+    stripe_payment_intent_id,
+    availability_slots (starts_at, ends_at)
+  `;
+
+  let res = await supabase
     .from("bookings")
-    .select(
-      `
+    .select(selectQuery)
+    .eq("tutor_id", tutorId)
+    .in("status", ["confirmed", "pending"])
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid"))) {
+    selectQuery = `
       id,
       slot_id,
       parent_email,
@@ -154,15 +177,20 @@ export async function getRecentBookingsForTutor(
       student_running_late_sent_at,
       student_running_late_note,
       created_at,
+      stripe_payment_intent_id,
       availability_slots (starts_at, ends_at)
-    `,
-    )
-    .eq("tutor_id", tutorId)
-    .in("status", ["confirmed", "pending"])
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    `;
+    res = await supabase
+      .from("bookings")
+      .select(selectQuery)
+      .eq("tutor_id", tutorId)
+      .in("status", ["confirmed", "pending"])
+      .order("created_at", { ascending: false })
+      .limit(limit);
+  }
 
-  if (error || !data) return [];
+  const data = res.data;
+  if (res.error || !data) return [];
 
   return data.map((row) => {
     const booking = (row as unknown) as BookingRow & {
@@ -175,6 +203,11 @@ export async function getRecentBookingsForTutor(
     const slot = Array.isArray(booking.availability_slots)
       ? booking.availability_slots[0]
       : booking.availability_slots;
+    
+    const isPaid = (booking as any).is_paid !== undefined 
+      ? (booking as any).is_paid 
+      : (booking.stripe_payment_intent_id !== "cash");
+
     return {
       id: booking.id,
       slotId: booking.slot_id,
@@ -189,6 +222,8 @@ export async function getRecentBookingsForTutor(
       createdAt: booking.created_at,
       startsAt: slot?.starts_at ?? booking.created_at,
       endsAt: slot?.ends_at ?? booking.created_at,
+      isPaid,
+      stripePaymentIntentId: booking.stripe_payment_intent_id ?? null,
     };
   });
 }

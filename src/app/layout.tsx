@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BRAND_NAME, PUBLIC_SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
@@ -98,6 +99,7 @@ export default function RootLayout({
         {children}
         <PwaInstallBanner />
         <Analytics />
+        <SpeedInsights />
         <script
           dangerouslySetInnerHTML={{
             __html: `

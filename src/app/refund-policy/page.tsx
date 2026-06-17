@@ -72,10 +72,10 @@ export default function RefundPolicyPage() {
 
             <section className="space-y-3">
               <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                <span className="text-primary">4.</span> Merchant of Record Transactions
+                <span className="text-primary">4.</span> Stripe Transactions &amp; Refunds
               </h2>
               <p>
-                For payments processed through Paddle (our Merchant of Record), Paddle handles the billing queries, chargebacks, and refund dispatches. All refund requests approved by our support team or by a tutor will be issued back to the original payment method by Paddle. Processing times vary (typically 5 to 10 business days for funds to appear on your bank statement).
+                For payments processed through Stripe, refunds are issued back to the original payment method. If a refund is approved by our support team or by a tutor, Stripe will process the refund. Processing times typically vary between 5 to 10 business days for funds to appear back on your card or bank statement.
               </p>
             </section>
 

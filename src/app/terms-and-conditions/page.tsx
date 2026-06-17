@@ -49,13 +49,13 @@ export default function TermsPage() {
 
             <section className="space-y-3">
               <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                <span className="text-primary">3.</span> Payment Processing &amp; Merchant of Record
+                <span className="text-primary">3.</span> Payment Processing
               </h2>
               <p>
-                To handle Platform subscription fees, lesson bookings, package checkouts, and worksheet purchases, we integrate with secure third-party payment processors, primarily **Paddle**.
+                To handle Platform subscription fees, lesson bookings, package checkouts, and worksheet purchases, we integrate with secure third-party payment processors, primarily **Stripe**.
               </p>
               <p>
-                For payments processed through Paddle, Paddle acts as the **Merchant of Record** (MOR). Paddle is the legal merchant of all such transactions, handles payment inquiries, billing issues, tax calculations, and compliance on our behalf. By purchasing services or digital products through a Paddle-enabled checkout, you agree to Paddle&apos;s checkout terms and conditions.
+                All transactions are processed securely via Stripe. By purchasing services, packages, or digital products through the Platform, you agree to Stripe&apos;s checkout terms and conditions. Tutors connect their own bank or card accounts via Stripe Connect to receive payouts. The Platform facilitates these payouts but does not store credit card credentials on our servers.
               </p>
             </section>
 

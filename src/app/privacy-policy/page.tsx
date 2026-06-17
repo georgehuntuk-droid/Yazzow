@@ -34,12 +34,12 @@ export default function PrivacyPolicyPage() {
                 <span className="text-primary">1.</span> Information We Collect
               </h2>
               <p>
-                We collect information directly from you when you register an account, fill out forms, connect Paddle accounts, or purchase services.
+                We collect information directly from you when you register an account, fill out forms, connect Stripe accounts, or purchase services.
               </p>
               <ul className="list-disc pl-5 space-y-2">
-                <li><strong>For Tutors:</strong> Name, display name, email, credentials, billing rates, and Paddle account details.</li>
+                <li><strong>For Tutors:</strong> Name, display name, email, credentials, billing rates, and Stripe account details.</li>
                 <li><strong>For Parents/Students:</strong> Parent email address, student names (used strictly for class scheduling and dashboard assignment tracking), homework tasks, and lesson notes.</li>
-                <li><strong>Payment Information:</strong> We do not store credit card numbers on our servers. All transaction details are processed securely by our payment partner (Paddle).</li>
+                <li><strong>Payment Information:</strong> We do not store credit card numbers on our servers. All transaction details are processed securely by our payment partner (Stripe).</li>
               </ul>
             </section>
 
@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Supabase:</strong> For cloud hosting, PostgreSQL database storage, and user authentication management under strict security policies.</li>
-                <li><strong>Paddle:</strong> Acting as the Merchant of Record, Paddle receives checkout transaction data, email addresses, and location data to process payments, manage subscriptions, compute regional taxes, and prevent fraudulent checkouts.</li>
+                <li><strong>Stripe:</strong> Used for secure payment processing, connected account payouts for tutors, and platform billing and subscription management.</li>
                 <li><strong>Resend:</strong> Used to dispatch system transaction emails, confirmation links, and user alerts.</li>
               </ul>
             </section>

@@ -36,15 +36,16 @@ const STORAGE_RLS_MESSAGE_PROD =
 
 export function formatSupabaseError(message: string | undefined): string {
   const isDev = process.env.NODE_ENV === "development";
+  const suffix = message ? ` (Details: ${message})` : "";
 
   if (isDatabaseSchemaMissingError(message)) {
-    return isDev ? DATABASE_NOT_MIGRATED_MESSAGE : DATABASE_NOT_MIGRATED_MESSAGE_PROD;
+    return (isDev ? DATABASE_NOT_MIGRATED_MESSAGE : DATABASE_NOT_MIGRATED_MESSAGE_PROD) + suffix;
   }
   if (isStorageBucketMissingError(message)) {
-    return isDev ? STORAGE_BUCKET_NOT_FOUND_MESSAGE : STORAGE_BUCKET_NOT_FOUND_MESSAGE_PROD;
+    return (isDev ? STORAGE_BUCKET_NOT_FOUND_MESSAGE : STORAGE_BUCKET_NOT_FOUND_MESSAGE_PROD) + suffix;
   }
   if (message && RLS_VIOLATION_PATTERN.test(message)) {
-    return isDev ? STORAGE_RLS_MESSAGE : STORAGE_RLS_MESSAGE_PROD;
+    return (isDev ? STORAGE_RLS_MESSAGE : STORAGE_RLS_MESSAGE_PROD) + suffix;
   }
   return message ?? "Something went wrong. Please try again.";
 }

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeGetAuthUser } from "@/lib/supabase/server";
+import {
+  sendSupportTicketEmail,
+  sendSupportTicketConfirmationEmail,
+} from "@/lib/notifications/support-email";
 
 const CATEGORIES = new Set(["bug", "billing", "account", "feature", "other"]);
 
@@ -49,6 +53,16 @@ export async function POST(request: Request) {
       throw new Error(error.message);
     }
 
+    // Attempt to send email notifications in background, catching errors so they don't fail the API
+    try {
+      await Promise.all([
+        sendSupportTicketEmail({ name, email, category, message, source }),
+        sendSupportTicketConfirmationEmail({ name, email, category, message, source }),
+      ]);
+    } catch (emailErr) {
+      console.error("Failed to send support ticket emails:", emailErr);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Could not submit support ticket.";
@@ -57,6 +71,16 @@ export async function POST(request: Request) {
     // Fallback for demo/offline testing: if the database is offline, simulate success for client preview
     if (process.env.NODE_ENV === "development" || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.warn("[Support API] Database connection failed or service key missing. Simulating success in development/sandbox.");
+      
+      try {
+        await Promise.all([
+          sendSupportTicketEmail({ name, email, category, message, source }),
+          sendSupportTicketConfirmationEmail({ name, email, category, message, source }),
+        ]);
+      } catch (emailErr) {
+        console.error("Failed to send support ticket emails in fallback:", emailErr);
+      }
+      
       return NextResponse.json({ ok: true });
     }
     

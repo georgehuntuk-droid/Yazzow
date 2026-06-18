@@ -71,6 +71,73 @@ export async function sendSupportTicketEmail(
   }
 }
 
+export async function sendSupportTicketConfirmationEmail(
+  payload: SupportTicketPayload,
+): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) return;
+
+  const inbox = getSupportInboxEmail();
+  const from =
+    process.env.RESEND_FROM_EMAIL?.trim() ?? `${BRAND_NAME} <support@${publicSiteHost()}>`;
+  const categoryLabel = CATEGORY_LABELS[payload.category] ?? payload.category;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: payload.email,
+      reply_to: inbox,
+      subject: `[Yazzow Support] Ticket Received: ${categoryLabel}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <!-- Logo Header -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+          </div>
+          
+          <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Support Ticket Received</h2>
+          
+          <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+            Hi ${escapeHtml(payload.name)}, thanks for reaching out to Yazzow! We have received your support ticket and our team is looking into it.
+          </p>
+          
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <p style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; font-family: sans-serif;">
+              Ticket Details:
+            </p>
+            <p style="font-size: 13px; color: #475569; margin: 0 0 6px 0; font-family: sans-serif;">
+              <strong>Category:</strong> ${escapeHtml(categoryLabel)}
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 12px 0;" />
+            <p style="font-size: 13px; color: #475569; margin: 0; white-space: pre-wrap; font-family: sans-serif;">
+              ${escapeHtml(payload.message)}
+            </p>
+          </div>
+          
+          <p style="font-size: 14px; color: #475569; text-align: center; font-family: sans-serif;">
+            You can reply directly to this email if you need to add any additional details.
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+          
+          <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.5; margin: 0; font-family: sans-serif;">
+            This is an automated confirmation of your request.
+          </p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error(`[sendSupportTicketConfirmationEmail] Failed to send confirmation email (${response.status}).`);
+  }
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")

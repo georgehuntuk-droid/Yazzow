@@ -14,6 +14,7 @@ import { getMarketingAuthCta } from "@/lib/marketing/auth-cta";
 import { redirect } from "next/navigation";
 import { safeGetAuthUser } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { PUBLIC_SITE_URL } from "@/lib/constants";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -55,7 +56,7 @@ export default async function HomePage() {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Yazzow",
-    "url": "https://yazzow.com",
+    "url": PUBLIC_SITE_URL,
     "operatingSystem": "All",
     "applicationCategory": "BusinessApplication",
     "description": "White-labeled scheduling, digital worksheet storefront, and student CRM for independent tutors.",

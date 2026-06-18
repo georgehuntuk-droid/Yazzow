@@ -82,6 +82,8 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
   // Ticket-specific states
   const [ticketSearch, setTicketSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState<"all" | "open" | "resolved" | "closed">("open");
+  const [closedTicketSearch, setClosedTicketSearch] = useState("");
+  const [closedSubFilter, setClosedSubFilter] = useState<"all" | "resolved" | "closed">("all");
   const [editingNotesText, setEditingNotesText] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
 
@@ -260,18 +262,155 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
     });
   };
 
-  // Search and filter logic for support tickets
-  const filteredTickets = supportTickets.filter((ticket) => {
-    const matchesSearch =
-      ticket.name.toLowerCase().includes(ticketSearch.toLowerCase()) ||
-      ticket.email.toLowerCase().includes(ticketSearch.toLowerCase()) ||
-      ticket.message.toLowerCase().includes(ticketSearch.toLowerCase()) ||
-      (ticket.admin_notes && ticket.admin_notes.toLowerCase().includes(ticketSearch.toLowerCase()));
+  // Open tickets search filter
+  const filteredOpenTickets = supportTickets
+    .filter((t) => t.status === "open")
+    .filter((ticket) => {
+      const matchesSearch =
+        ticket.name.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+        ticket.email.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+        ticket.message.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+        (ticket.admin_notes && ticket.admin_notes.toLowerCase().includes(ticketSearch.toLowerCase()));
+      return matchesSearch;
+    });
 
-    if (!matchesSearch) return false;
-    if (ticketFilter !== "all" && ticket.status !== ticketFilter) return false;
-    return true;
-  });
+  // Closed/Resolved tickets search and sub-filter
+  const filteredClosedTickets = supportTickets
+    .filter((t) => t.status === "resolved" || t.status === "closed")
+    .filter((ticket) => {
+      const matchesSearch =
+        ticket.name.toLowerCase().includes(closedTicketSearch.toLowerCase()) ||
+        ticket.email.toLowerCase().includes(closedTicketSearch.toLowerCase()) ||
+        ticket.message.toLowerCase().includes(closedTicketSearch.toLowerCase()) ||
+        (ticket.admin_notes && ticket.admin_notes.toLowerCase().includes(closedTicketSearch.toLowerCase()));
+
+      if (!matchesSearch) return false;
+      if (closedSubFilter !== "all" && ticket.status !== closedSubFilter) return false;
+      return true;
+    });
+
+  const renderTicketCard = (ticket: SupportTicket) => {
+    const isLoading = actionLoadingId === ticket.id && isPending;
+    const draftNotes = editingNotesText[ticket.id] ?? ticket.admin_notes ?? "";
+    const isNotesSaving = savingNotesId === ticket.id;
+
+    return (
+      <Card key={ticket.id} className="yazz-surface">
+        <CardContent className="p-6 space-y-4">
+          {/* Ticket header row */}
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/40 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-semibold text-base text-foreground leading-none">
+                  {ticket.name}
+                </h3>
+                <span className="text-xs text-muted-foreground">({ticket.email})</span>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
+                  {ticket.category}
+                </Badge>
+                <Badge 
+                  className={cn(
+                    "text-[10px] font-bold",
+                    ticket.status === "open" && "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10",
+                    ticket.status === "resolved" && "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10",
+                    ticket.status === "closed" && "bg-muted text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {ticket.status}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Submitted: <span className="font-medium text-foreground">{formatDate(ticket.created_at)}</span> from <span className="font-semibold">{ticket.source}</span>
+              </p>
+            </div>
+
+            {/* Status toggles & Delete button */}
+            <div className="flex items-center gap-1.5">
+              {ticket.status !== "resolved" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  disabled={isLoading}
+                  className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                  onClick={() => handleUpdateTicketStatus(ticket.id, "resolved")}
+                >
+                  Mark Resolved
+                </Button>
+              )}
+              {ticket.status !== "closed" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  disabled={isLoading}
+                  className="bg-muted text-muted-foreground border-border hover:bg-muted/60"
+                  onClick={() => handleUpdateTicketStatus(ticket.id, "closed")}
+                >
+                  Close
+                </Button>
+              )}
+              {(ticket.status === "resolved" || ticket.status === "closed") && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  disabled={isLoading}
+                  className="border-primary/20 text-primary bg-primary/5 hover:bg-primary/10"
+                  onClick={() => handleUpdateTicketStatus(ticket.id, "open")}
+                >
+                  Re-open Ticket
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isLoading}
+                className="size-8 p-0 text-destructive hover:bg-destructive/10"
+                onClick={() => handleDeleteTicket(ticket.id)}
+                aria-label="Delete ticket"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Ticket message body */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Message</p>
+            <div className="whitespace-pre-wrap text-sm text-foreground bg-muted/30 p-4 rounded-xl border border-border/40 italic leading-relaxed">
+              &ldquo;{ticket.message}&rdquo;
+            </div>
+          </div>
+
+          {/* Ticket Admin Notes section */}
+          <div className="space-y-2 border-t border-border/40 pt-4">
+            <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+              Internal Admin Notes / Resolutions
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <textarea
+                value={draftNotes}
+                onChange={(e) => setEditingNotesText(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                placeholder="Add notes about support resolution, followups, or actions taken..."
+                className="flex min-h-16 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+              <Button
+                type="button"
+                size="xs"
+                disabled={isNotesSaving || draftNotes === (ticket.admin_notes ?? "")}
+                className="self-end sm:self-auto sm:h-16 rounded-lg text-xs font-bold"
+                onClick={() => handleSaveTicketNotes(ticket.id)}
+              >
+                {isNotesSaving ? "Saving..." : "Save Note"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Tabs defaultValue="tutors" className="w-full">
@@ -281,7 +420,10 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
             Tutor Directory ({tutors.length})
           </TabsTrigger>
           <TabsTrigger value="tickets" className="rounded-lg px-4 font-semibold">
-            Support Tickets ({supportTickets.filter(t => t.status === "open").length} Open)
+            Open Tickets ({supportTickets.filter(t => t.status === "open").length})
+          </TabsTrigger>
+          <TabsTrigger value="closed_tickets" className="rounded-lg px-4 font-semibold">
+            Closed Tickets ({supportTickets.filter(t => t.status === "resolved" || t.status === "closed").length})
           </TabsTrigger>
         </TabsList>
 
@@ -380,6 +522,13 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
               filteredTutors.map((tutor) => {
                 const hasActiveSub = tutor.subscriptionStatus === "active" || tutor.subscriptionStatus === "trialing";
                 const isLoading = actionLoadingId === tutor.id && isPending;
+
+                // Previous resolved tickets for this tutor/user
+                const resolvedTutorTickets = supportTickets.filter(
+                  (ticket) =>
+                    (ticket.tutor_id === tutor.id || ticket.email.toLowerCase() === tutor.email.toLowerCase()) &&
+                    (ticket.status === "resolved" || ticket.status === "closed")
+                );
 
                 return (
                   <Card
@@ -516,6 +665,47 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                           </div>
                         </div>
                       </div>
+
+                      {/* Previous Resolved Tickets section */}
+                      {resolvedTutorTickets.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-border/40 space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                            Previous Resolved Tickets ({resolvedTutorTickets.length})
+                          </p>
+                          <div className="grid gap-2.5 sm:grid-cols-2">
+                            {resolvedTutorTickets.map((ticket) => (
+                              <div
+                                key={ticket.id}
+                                className="text-xs p-3.5 rounded-xl bg-muted/30 border border-border/40 space-y-1.5 animate-in fade-in-50 duration-200"
+                              >
+                                <div className="flex justify-between items-center flex-wrap gap-1">
+                                  <span className="font-semibold text-foreground">{ticket.category}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge 
+                                      className={cn(
+                                        "text-[9px] font-bold py-0 h-4 px-1.5",
+                                        ticket.status === "resolved" && "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10",
+                                        ticket.status === "closed" && "bg-muted text-muted-foreground hover:bg-muted"
+                                      )}
+                                    >
+                                      {ticket.status}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">{formatDate(ticket.created_at)}</span>
+                                  </div>
+                                </div>
+                                <p className="italic text-muted-foreground line-clamp-2 leading-relaxed">
+                                  &ldquo;{ticket.message}&rdquo;
+                                </p>
+                                {ticket.admin_notes && (
+                                  <p className="text-[10px] text-primary/80 font-medium bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                                    <strong>Admin Note:</strong> {ticket.admin_notes}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -532,39 +722,62 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
             <div className="relative max-w-md flex-1">
               <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search tickets by name, email, message..."
+                placeholder="Search open tickets by name, email, message..."
                 className="pl-10"
                 value={ticketSearch}
                 onChange={(e) => setTicketSearch(e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Tickets Listing */}
+          <div className="space-y-4">
+            {filteredOpenTickets.length === 0 ? (
+              <Card className="yazz-surface border-dashed p-10 text-center">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-muted-foreground">No open support tickets match your search.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredOpenTickets.map((ticket) => renderTicketCard(ticket))
+            )}
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="closed_tickets" className="space-y-6 outline-none">
+        <div className="space-y-6">
+          {/* Closed Tickets Search & Filtering */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search closed/resolved tickets by name, email, message..."
+                className="pl-10"
+                value={closedTicketSearch}
+                onChange={(e) => setClosedTicketSearch(e.target.value)}
+              />
+            </div>
 
             <div className="flex flex-wrap gap-1.5">
               <Button
-                variant={ticketFilter === "all" ? "default" : "outline"}
+                variant={closedSubFilter === "all" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTicketFilter("all")}
+                onClick={() => setClosedSubFilter("all")}
               >
-                All ({supportTickets.length})
+                All Closed/Resolved ({supportTickets.filter(t => t.status === "resolved" || t.status === "closed").length})
               </Button>
               <Button
-                variant={ticketFilter === "open" ? "default" : "outline"}
+                variant={closedSubFilter === "resolved" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTicketFilter("open")}
-              >
-                Open ({supportTickets.filter(t => t.status === "open").length})
-              </Button>
-              <Button
-                variant={ticketFilter === "resolved" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTicketFilter("resolved")}
+                onClick={() => setClosedSubFilter("resolved")}
               >
                 Resolved ({supportTickets.filter(t => t.status === "resolved").length})
               </Button>
               <Button
-                variant={ticketFilter === "closed" ? "default" : "outline"}
+                variant={closedSubFilter === "closed" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTicketFilter("closed")}
+                onClick={() => setClosedSubFilter("closed")}
               >
                 Closed ({supportTickets.filter(t => t.status === "closed").length})
               </Button>
@@ -573,135 +786,14 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
 
           {/* Tickets Listing */}
           <div className="space-y-4">
-            {filteredTickets.length === 0 ? (
+            {filteredClosedTickets.length === 0 ? (
               <Card className="yazz-surface border-dashed p-10 text-center">
                 <CardContent className="pt-6">
-                  <p className="text-sm text-muted-foreground">No support tickets match your search/filters.</p>
+                  <p className="text-sm text-muted-foreground">No closed/resolved support tickets match your search/filters.</p>
                 </CardContent>
               </Card>
             ) : (
-              filteredTickets.map((ticket) => {
-                const isLoading = actionLoadingId === ticket.id && isPending;
-                const draftNotes = editingNotesText[ticket.id] ?? ticket.admin_notes ?? "";
-                const isNotesSaving = savingNotesId === ticket.id;
-
-                return (
-                  <Card key={ticket.id} className="yazz-surface">
-                    <CardContent className="p-6 space-y-4">
-                      {/* Ticket header row */}
-                      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/40 pb-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold text-base text-foreground leading-none">
-                              {ticket.name}
-                            </h3>
-                            <span className="text-xs text-muted-foreground">({ticket.email})</span>
-                            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
-                              {ticket.category}
-                            </Badge>
-                            <Badge 
-                              className={cn(
-                                "text-[10px] font-bold",
-                                ticket.status === "open" && "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10",
-                                ticket.status === "resolved" && "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10",
-                                ticket.status === "closed" && "bg-muted text-muted-foreground hover:bg-muted"
-                              )}
-                            >
-                              {ticket.status}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Submitted: <span className="font-medium text-foreground">{formatDate(ticket.created_at)}</span> from <span className="font-semibold">{ticket.source}</span>
-                          </p>
-                        </div>
-
-                        {/* Status toggles & Delete button */}
-                        <div className="flex items-center gap-1.5">
-                          {ticket.status !== "resolved" && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              disabled={isLoading}
-                              className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                              onClick={() => handleUpdateTicketStatus(ticket.id, "resolved")}
-                            >
-                              Mark Resolved
-                            </Button>
-                          )}
-                          {ticket.status !== "closed" && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              disabled={isLoading}
-                              className="bg-muted text-muted-foreground border-border hover:bg-muted/60"
-                              onClick={() => handleUpdateTicketStatus(ticket.id, "closed")}
-                            >
-                              Close
-                            </Button>
-                          )}
-                          {(ticket.status === "resolved" || ticket.status === "closed") && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              disabled={isLoading}
-                              className="border-primary/20 text-primary bg-primary/5 hover:bg-primary/10"
-                              onClick={() => handleUpdateTicketStatus(ticket.id, "open")}
-                            >
-                              Re-open Ticket
-                            </Button>
-                          )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={isLoading}
-                            className="size-8 p-0 text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteTicket(ticket.id)}
-                            aria-label="Delete ticket"
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Ticket message body */}
-                      <div className="space-y-1.5">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Message</p>
-                        <div className="whitespace-pre-wrap text-sm text-foreground bg-muted/30 p-4 rounded-xl border border-border/40 italic leading-relaxed">
-                          &ldquo;{ticket.message}&rdquo;
-                        </div>
-                      </div>
-
-                      {/* Ticket Admin Notes section */}
-                      <div className="space-y-2 border-t border-border/40 pt-4">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
-                          Internal Admin Notes / Resolutions
-                        </label>
-                        <div className="flex flex-col sm:flex-row gap-2.5">
-                          <textarea
-                            value={draftNotes}
-                            onChange={(e) => setEditingNotesText(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                            placeholder="Add notes about support resolution, followups, or actions taken..."
-                            className="flex min-h-16 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                          />
-                          <Button
-                            type="button"
-                            size="xs"
-                            disabled={isNotesSaving || draftNotes === (ticket.admin_notes ?? "")}
-                            className="self-end sm:self-auto sm:h-16 rounded-lg text-xs font-bold"
-                            onClick={() => handleSaveTicketNotes(ticket.id)}
-                          >
-                            {isNotesSaving ? "Saving..." : "Save Note"}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
+              filteredClosedTickets.map((ticket) => renderTicketCard(ticket))
             )}
           </div>
         </div>

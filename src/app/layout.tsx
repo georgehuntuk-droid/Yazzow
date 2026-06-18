@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     icon: "/icon.png?v=3",
     apple: "/icon.png?v=3",
   },
+  verification: {
+    google: "3Cc3_pbbhitfL-m_TACF19q_Gj-NKzbQBQUTrKRselI",
+  },
   title: {
     default: `${BRAND_NAME} · The business home for independent tutors`,
     template: `%s · ${BRAND_NAME}`,

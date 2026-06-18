@@ -14,7 +14,11 @@ export const PLATFORM_OWNER_USER_IDS = [] as const;
 
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 export const PUBLIC_SITE_URL =
-  rawSiteUrl && rawSiteUrl !== "" ? rawSiteUrl : "https://yazzow.com";
+  rawSiteUrl && rawSiteUrl !== ""
+    ? (rawSiteUrl.includes("yazzow.com") && !rawSiteUrl.includes("www.yazzow.com")
+        ? rawSiteUrl.replace("yazzow.com", "www.yazzow.com")
+        : rawSiteUrl)
+    : "https://www.yazzow.com";
 
 /** Tutor SaaS plan — billed to the tutor (Stripe Billing on the platform account). */
 export const TUTOR_SUBSCRIPTION = {

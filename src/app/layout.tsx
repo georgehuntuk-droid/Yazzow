@@ -19,7 +19,7 @@ function getMetadataBase(): URL {
       : `https://${urlStr}`;
     return new URL(withProto);
   } catch {
-    return new URL("https://yazzow.com");
+    return new URL("https://www.yazzow.com");
   }
 }
 

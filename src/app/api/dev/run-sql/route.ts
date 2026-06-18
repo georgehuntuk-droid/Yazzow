@@ -4,7 +4,16 @@ import pg from "pg";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const envKeys = Object.keys(process.env).filter(key => 
+    key.includes("DB") || 
+    key.includes("DATABASE") || 
+    key.includes("POSTGRES") || 
+    key.includes("SUPABASE") || 
+    key.includes("URL")
+  );
+
   let connectionString = process.env.DATABASE_URL;
+  let source = "DATABASE_URL";
   
   if (!connectionString) {
     const password = process.env.SUPABASE_DB_PASSWORD;
@@ -12,12 +21,15 @@ export async function GET() {
     if (password && url) {
       const projectRef = new URL(url).hostname.split(".")[0];
       connectionString = `postgresql://postgres.${projectRef}:${password}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`;
+      source = "constructed from SUPABASE_DB_PASSWORD";
     }
   }
 
-  if (!connectionString) {
-    return NextResponse.json({ error: "Missing connection details in environment." }, { status: 500 });
-  }
+  // Also check other common Vercel DB variables
+  const alternatives: Record<string, string> = {};
+  if (process.env.POSTGRES_URL) alternatives.POSTGRES_URL = process.env.POSTGRES_URL.replace(/:[^:@]+@/, ":XXXXX@");
+  if (process.env.POSTGRES_URL_NON_POOLING) alternatives.POSTGRES_URL_NON_POOLING = process.env.POSTGRES_URL_NON_POOLING.replace(/:[^:@]+@/, ":XXXXX@");
+  if (process.env.DATABASE_URL) alternatives.DATABASE_URL = process.env.DATABASE_URL.replace(/:[^:@]+@/, ":XXXXX@");
 
   const client = new pg.Client({
     connectionString,
@@ -107,6 +119,11 @@ export async function GET() {
     try {
       await client.end();
     } catch {}
-    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : String(err),
+      envKeys,
+      source,
+      alternatives
+    }, { status: 500 });
   }
 }

@@ -28,7 +28,7 @@ export async function GET(_request: Request, context: RouteContext) {
     : `Private booking portal and workspace for ${tutor.displayName}`;
 
   // Default color fallback
-  const themeColor = "#446152"; 
+  const themeColor = "#4437a4"; 
   const backgroundColor = "#fbfbf8";
 
   // Use tutor's avatar as the icon, falling back to Yazzow logo

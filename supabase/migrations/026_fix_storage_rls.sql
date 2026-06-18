@@ -1,5 +1,5 @@
--- Fix "new row violates row-level security policy" on storage uploads.
--- Safe to re-run.
+-- Ensure cover_url column exists on tutor_profiles
+alter table public.tutor_profiles add column if not exists cover_url text;
 
 -- ---------------------------------------------------------------------------
 -- Worksheets (private) — tutors upload to their own folder: {user_id}/...

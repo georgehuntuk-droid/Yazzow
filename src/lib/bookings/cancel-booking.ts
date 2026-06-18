@@ -12,7 +12,7 @@ export async function cancelLessonBooking(input: {
 
   const { data: booking, error: fetchError } = await admin
     .from("bookings")
-    .select("id, slot_id, tutor_id, parent_email, status")
+    .select("id, slot_id, tutor_id, parent_email, student_name, status")
     .eq("id", input.bookingId)
     .eq("tutor_id", input.tutorId)
     .maybeSingle();
@@ -63,7 +63,54 @@ export async function cancelLessonBooking(input: {
     return { ok: false, error: slotError.message };
   }
 
+
   const profile = await getTutorNotifyProfile(input.tutorId);
+  
+  // 1. Send cancellation confirmation email to the parent
+  try {
+    const { sendBookingCancellationEmail } = await import(
+      "@/lib/notifications/booking-update"
+    );
+    const { formatSlotRange } = await import("@/lib/format");
+    const slotLabel = formatSlotRange(slotRow.starts_at, slotRow.ends_at);
+    
+    await sendBookingCancellationEmail({
+      to: booking.parent_email,
+      tutorName: profile?.display_name || "Tutor",
+      studentName: booking.student_name,
+      slotLabel,
+      cancelledBy: input.cancelledBy,
+    });
+  } catch (err) {
+    console.error("[cancelLessonBooking] Failed to send cancellation email to parent:", err);
+  }
+
+  // 2. If parent cancelled, notify the tutor as well
+  if (input.cancelledBy === "parent") {
+    try {
+      const { data: tutorUser } = await admin.auth.admin.getUserById(input.tutorId);
+      const tutorEmail = tutorUser?.user?.email;
+      if (tutorEmail) {
+        const { sendTutorCancellationEmail } = await import(
+          "@/lib/notifications/booking-update"
+        );
+        const { formatSlotRange } = await import("@/lib/format");
+        const slotLabel = formatSlotRange(slotRow.starts_at, slotRow.ends_at);
+        
+        await sendTutorCancellationEmail({
+          to: tutorEmail,
+          tutorName: profile?.display_name || "Tutor",
+          studentName: booking.student_name,
+          slotLabel,
+          parentEmail: booking.parent_email,
+        });
+      }
+    } catch (err) {
+      console.error("[cancelLessonBooking] Failed to send cancellation email to tutor:", err);
+    }
+  }
+
+  // 3. Notify other alert subscribers that a slot has reopened
   if (profile) {
     await notifyFamiliesSlotOpened({
       tutorId: input.tutorId,

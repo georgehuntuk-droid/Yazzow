@@ -17,10 +17,12 @@ export default function GlobalLoading() {
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#fbfbf8] dark:bg-[#0f172a] transition-colors duration-300">
       <div className="flex flex-col items-center max-w-xs px-6 text-center space-y-6">
         {/* Animated Brand Logo Icon Container */}
-        <div className="relative flex items-center justify-center size-20 rounded-2xl bg-gradient-to-tr from-[#446152] to-[#5d7d6c] shadow-[0_8px_30px_rgb(68,97,82,0.15)] animate-pulse">
-          {/* Inner glowing effect */}
-          <div className="absolute inset-0 rounded-2xl border border-white/25 animate-ping opacity-20 duration-1000" />
-          <span className="font-sans text-2xl font-black text-white select-none">y</span>
+        <div className="relative flex items-center justify-center size-24 select-none">
+          <img
+            src="/yazzow-brand-icon.png?v=5"
+            alt="Yazzow Brand Icon"
+            className="w-20 h-20 object-contain animate-pulse"
+          />
         </div>
 
         {/* Text and Spinner */}

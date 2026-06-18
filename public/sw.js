@@ -1,4 +1,4 @@
-const CACHE_NAME = "yazzow-cache-v4";
+const CACHE_NAME = "yazzow-cache-v5";
 const OFFLINE_URL = "/offline.html";
 
 const ASSETS_TO_CACHE = [

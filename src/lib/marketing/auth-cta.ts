@@ -8,17 +8,23 @@ export type MarketingAuthCta = {
   label: string;
 };
 
-export async function getMarketingAuthCta(): Promise<MarketingAuthCta> {
+export async function getMarketingAuthCta(user?: any): Promise<MarketingAuthCta> {
   if (!isSupabaseConfigured()) {
     return { href: "/auth/signup", label: "Get started free" };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // If user is passed (including null), use it; otherwise, fetch it
+  const activeUser = user !== undefined ? user : await (async () => {
+    try {
+      const supabase = await createClient();
+      const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+      return fetchedUser;
+    } catch {
+      return null;
+    }
+  })();
 
-  if (user) {
+  if (activeUser) {
     return { href: "/dashboard/payments", label: "Subscribe in dashboard" };
   }
 

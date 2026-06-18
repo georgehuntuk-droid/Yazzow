@@ -28,24 +28,59 @@ export function PwaInstallBanner() {
     // Check if dismissed already
     const isDismissed = localStorage.getItem("pwa-banner-dismissed") === "true";
     if (isDismissed) return;
+
+    const checkInstalledApps = async () => {
+      if (typeof navigator !== "undefined" && "getInstalledRelatedApps" in navigator) {
+        try {
+          const relatedApps = await (navigator as any).getInstalledRelatedApps();
+          if (relatedApps && relatedApps.length > 0) {
+            return true;
+          }
+        } catch (err) {
+          console.warn("Failed to check installed related apps in banner:", err);
+        }
+      }
+      return false;
+    };
     
-    const win = window as any;
-    const isIOSUser = isIOSDevice();
-    const isInstalled = isStandaloneMode();
+    const checkStatus = async () => {
+      const win = window as any;
+      const isIOSUser = isIOSDevice();
+      let installed = isStandaloneMode();
 
-    if (isIOSUser && !isInstalled) {
-      setIsIOS(true);
-      setShowBanner(true);
-      return;
-    }
+      if (!installed) {
+        installed = await checkInstalledApps();
+      }
 
-    if (win.deferredPrompt && !isInstalled) {
-      setInstallPrompt(win.deferredPrompt);
-      setShowBanner(true);
-    }
+      if (installed) {
+        setShowBanner(false);
+        return;
+      }
 
-    const handleCanInstall = () => {
-      if (!localStorage.getItem("pwa-banner-dismissed") && !isStandaloneMode()) {
+      if (isIOSUser) {
+        setIsIOS(true);
+        setShowBanner(true);
+        return;
+      }
+
+      if (win.deferredPrompt) {
+        setInstallPrompt(win.deferredPrompt);
+        setShowBanner(true);
+      }
+    };
+
+    checkStatus();
+
+    const handleCanInstall = async () => {
+      const win = window as any;
+      const dismissed = localStorage.getItem("pwa-banner-dismissed") === "true";
+      let installed = isStandaloneMode();
+
+      if (!installed) {
+        installed = await checkInstalledApps();
+      }
+
+      if (!dismissed && !installed) {
         setInstallPrompt(win.deferredPrompt);
         setShowBanner(true);
       }

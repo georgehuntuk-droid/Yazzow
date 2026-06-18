@@ -14,8 +14,10 @@ export const metadata = {
 
 export default async function StorefrontPage() {
   const { profile } = await requireTutorProfile();
-  const resources = await getResourcesForTutorOwner(profile.id);
-  const packSales = await getDigitalSalesForTutor(profile.id);
+  const [resources, packSales] = await Promise.all([
+    getResourcesForTutorOwner(profile.id),
+    getDigitalSalesForTutor(profile.id),
+  ]);
 
   return (
     <DashboardShell>

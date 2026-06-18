@@ -9,23 +9,37 @@ export async function sendResendEmail(input: {
   html: string;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) return false;
+  if (!apiKey) {
+    console.warn("[sendResendEmail] Missing RESEND_API_KEY");
+    return false;
+  }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: getResendFromAddress(),
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-    }),
-  });
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: getResendFromAddress(),
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+      }),
+    });
 
-  return response.ok;
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[sendResendEmail] Resend API failed:", response.status, text);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("[sendResendEmail] fetch exception:", err);
+    return false;
+  }
 }
 
 export async function sendSignupConfirmationEmail(input: {
@@ -36,9 +50,28 @@ export async function sendSignupConfirmationEmail(input: {
     to: input.to,
     subject: `Confirm your ${BRAND_NAME} account`,
     html: `
-      <p>Welcome to ${BRAND_NAME}.</p>
-      <p><a href="${input.confirmUrl}">Confirm your email and finish setup</a></p>
-      <p style="color:#666;font-size:12px;">If you did not request this, you can ignore this email.</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <!-- Logo Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        </div>
+        
+        <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Confirm your account</h2>
+        
+        <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+          Welcome to ${BRAND_NAME}! Please confirm your email address to complete your registration and activate your white-label tutoring dashboard.
+        </p>
+        
+        <div style="text-align: center; margin-bottom: 24px;">
+          <a href="${input.confirmUrl}" style="background-color: #446152; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 700; font-size: 14px; box-shadow: 0 2px 4px rgba(68, 97, 82, 0.15); font-family: sans-serif;">Confirm Email Address</a>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+        
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.5; margin: 0; font-family: sans-serif;">
+          If you did not create a Yazzow account, you can safely ignore this email.
+        </p>
+      </div>
     `,
   });
 }
@@ -51,9 +84,28 @@ export async function sendPasswordResetEmail(input: {
     to: input.to,
     subject: `Reset your ${BRAND_NAME} password`,
     html: `
-      <p>Reset your password:</p>
-      <p><a href="${input.resetUrl}">Choose a new password</a></p>
-      <p style="color:#666;font-size:12px;">This link expires after a while. If you did not ask for a reset, ignore this email.</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <!-- Logo Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        </div>
+        
+        <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Reset your password</h2>
+        
+        <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+          We received a request to reset the password associated with your Yazzow account. Click the button below to choose a new password.
+        </p>
+        
+        <div style="text-align: center; margin-bottom: 24px;">
+          <a href="${input.resetUrl}" style="background-color: #446152; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 700; font-size: 14px; box-shadow: 0 2px 4px rgba(68, 97, 82, 0.15); font-family: sans-serif;">Choose a New Password</a>
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+        
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.5; margin: 0; font-family: sans-serif;">
+          This link is temporary and will expire soon. If you did not request a password reset, you can safely ignore this email.
+        </p>
+      </div>
     `,
   });
 }

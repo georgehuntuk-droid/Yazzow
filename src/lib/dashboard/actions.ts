@@ -45,13 +45,12 @@ function parsePriceToCents(raw: string): number | null {
 }
 
 export async function createAvailabilitySlot(input: {
-  date: string;
-  startTime: string;
-  endTime: string;
+  startsAtIso: string;
+  endsAtIso: string;
 }) {
   const { profile } = await requireTutorProfile();
-  const startsAt = new Date(`${input.date}T${input.startTime}`);
-  const endsAt = new Date(`${input.date}T${input.endTime}`);
+  const startsAt = new Date(input.startsAtIso);
+  const endsAt = new Date(input.endsAtIso);
 
   if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
     return { ok: false as const, error: "Invalid date or time." };

@@ -41,17 +41,14 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
   const { studentId } = await searchParams;
 
   const isDemo = DEMO_USERNAMES.has(username);
-  const tutor = isDemo
-    ? getDemoTutorByUsername(username)
-    : await getTutorByUsername(username);
+  const [tutor, user] = await Promise.all([
+    isDemo ? Promise.resolve(getDemoTutorByUsername(username)) : getTutorByUsername(username),
+    createClient().then((s) => s.auth.getUser().then((res) => res.data.user).catch(() => null)),
+  ]);
 
   if (!tutor) {
     notFound();
   }
-
-  // 1. Get the current user session
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user || !user.email) {
     redirect(`/auth/login?next=/tutor/${username}/workspace`);

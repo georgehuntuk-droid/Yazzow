@@ -43,15 +43,13 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  if (isSupabaseConfigured()) {
-    const user = await safeGetAuthUser();
+  const user = isSupabaseConfigured() ? await safeGetAuthUser() : null;
 
-    if (user) {
-      redirect("/dashboard");
-    }
+  if (user) {
+    redirect("/dashboard");
   }
 
-  const authCta = await getMarketingAuthCta();
+  const authCta = await getMarketingAuthCta(user);
 
   const jsonLd = {
     "@context": "https://schema.org",

@@ -50,28 +50,26 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
   const { username } = await params;
   const query = await searchParams;
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
   const isSamplePortal = DEMO_USERNAMES.has(username);
-  const liveTutor = isSamplePortal ? null : await getTutorByUsername(username);
+  const [user, liveTutor] = await Promise.all([
+    createClient().then((s) => s.auth.getUser().then((res) => res.data.user).catch(() => null)),
+    isSamplePortal ? Promise.resolve(null) : getTutorByUsername(username),
+  ]);
 
-  let connectedStudents: any[] = [];
+  let activeStudentsPromise = Promise.resolve<any[] | null>(null);
   if (user && liveTutor) {
     const admin = createAdminClient();
-    const { data: activeStudents } = await admin
-      .from("students")
-      .select("student_name, parent_email")
-      .eq("tutor_id", liveTutor.id)
-      .eq("parent_email", user.email)
-      .eq("status", "active");
-    if (activeStudents) {
-      connectedStudents = activeStudents.map((s) => ({
-        studentName: s.student_name,
-        parentEmail: s.parent_email,
-      }));
-    }
+    activeStudentsPromise = Promise.resolve(
+      admin
+        .from("students")
+        .select("student_name, parent_email")
+        .eq("tutor_id", liveTutor.id)
+        .eq("parent_email", user.email)
+        .eq("status", "active")
+        .then((res) => res.data)
+    );
   }
+
   const demoTutor = isSamplePortal
     ? getDemoTutorByUsername(username)
     : !liveTutor
@@ -116,12 +114,21 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     }
   }
 
-  const [slots, resources, packages, portalBooking] = await Promise.all([
+  const [activeStudents, slots, resources, packages, portalBooking] = await Promise.all([
+    activeStudentsPromise,
     liveTutor ? getOpenSlotsForTutor(liveTutor.id) : Promise.resolve(DEMO_OPEN_SLOTS),
     liveTutor ? getPublishedResourcesForTutor(liveTutor.id) : Promise.resolve(DEMO_RESOURCES),
     liveTutor ? getPackagesForTutor(liveTutor.id) : Promise.resolve([]),
     liveTutor ? getPortalBookingStatus(liveTutor.id) : getPortalBookingStatus("", { isDemo: true }),
   ]);
+
+  let connectedStudents: any[] = [];
+  if (activeStudents) {
+    connectedStudents = activeStudents.map((s) => ({
+      studentName: s.student_name,
+      parentEmail: s.parent_email,
+    }));
+  }
 
   const paymentsEnabled = portalBooking.canAcceptBookings;
   const paymentsBlockedReason =

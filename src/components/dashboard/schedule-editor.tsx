@@ -62,13 +62,49 @@ export function ScheduleEditor({ slots }: ScheduleEditorProps) {
     return countHourlySlots(startsAt, endsAt);
   }, [date, startTime, endTime]);
 
+  const groupedSlots = useMemo(() => {
+    const groups: { [dateKey: string]: TutorSlot[] } = {};
+    
+    // Sort slots by startsAt date in ascending order
+    const sortedSlots = [...slots].sort(
+      (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
+    );
+    
+    sortedSlots.forEach((slot) => {
+      const dateObj = new Date(slot.startsAt);
+      const dateKey = dateObj.toLocaleDateString("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(slot);
+    });
+    return Object.entries(groups);
+  }, [slots]);
+
   async function handleAdd(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
 
-    const result = await createAvailabilitySlot({ date, startTime, endTime });
+    const startsAt = new Date(`${date}T${startTime}`);
+    const endsAt = new Date(`${date}T${endTime}`);
+
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+      setError("Invalid date or time.");
+      setLoading(false);
+      return;
+    }
+
+    const result = await createAvailabilitySlot({
+      startsAtIso: startsAt.toISOString(),
+      endsAtIso: endsAt.toISOString(),
+    });
 
     if (!result.ok) {
       setError(result.error);
@@ -250,233 +286,251 @@ export function ScheduleEditor({ slots }: ScheduleEditorProps) {
             No upcoming slots. Add some availability above to let families book you!
           </p>
         ) : (
-          <div className="space-y-3.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">Upcoming Schedule List</h3>
-            <ul className="space-y-3">
-              {slots.map((slot) => {
-                const isBooked = slot.isBooked && slot.booking;
-                const isManualFormOpen = activeManualBookId === slot.id;
-                const isLateFormOpen = activeRunningLateId === slot.id;
-                const isActionLoading = slotActionLoading?.includes(slot.id);
-                const hasMessage = slotMessage?.id === slot.id;
+          <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1 border-b border-border/30 pb-2">Upcoming Schedule</h3>
+            
+            {groupedSlots.map(([dateLabel, daySlots]) => (
+              <div key={dateLabel} className="space-y-3">
+                <div className="flex items-center gap-2 px-1 pt-2">
+                  <Calendar className="size-4 text-primary/70" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">
+                    {dateLabel}
+                  </h4>
+                </div>
+                <ul className="space-y-3">
+                  {daySlots.map((slot) => {
+                    const isBooked = slot.isBooked && slot.booking;
+                    const isManualFormOpen = activeManualBookId === slot.id;
+                    const isLateFormOpen = activeRunningLateId === slot.id;
+                    const isActionLoading = slotActionLoading?.includes(slot.id);
+                    const hasMessage = slotMessage?.id === slot.id;
 
-                return (
-                  <li
-                    key={slot.id}
-                    className={cn(
-                      "rounded-2xl border transition-all duration-300 overflow-hidden",
-                      isBooked
-                        ? "border-blue-200 bg-blue-50/20 shadow-sm shadow-blue-500/5"
-                        : "border-border/80 bg-card hover:border-primary/20 hover:shadow-sm"
-                    )}
-                  >
-                    {/* Main Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-bold text-foreground text-sm flex items-center gap-1.5">
-                            <Clock className={cn("size-4", isBooked ? "text-primary" : "text-muted-foreground")} />
-                            {formatSlotRange(slot.startsAt, slot.endsAt)}
-                          </p>
-                          <Badge 
-                            variant="secondary" 
-                            className={cn(
-                              "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                              isBooked 
-                                ? "bg-blue-100 text-primary dark:bg-blue-950/50" 
-                                : "bg-muted text-muted-foreground border border-border"
-                            )}
-                          >
-                            {isBooked ? "Booked" : "Open Slot"}
-                          </Badge>
-                        </div>
-                        {isBooked ? (
-                          <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                            <User className="size-3.5 text-primary" />
-                            <span>
-                              Student: <strong className="text-foreground">{slot.booking?.studentName || "GCSE Student"}</strong> · ({slot.booking?.parentEmail})
-                            </span>
+                    const timeFormatter = (isoStr: string) => {
+                      return new Date(isoStr).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+                    };
+
+                    return (
+                      <li
+                        key={slot.id}
+                        className={cn(
+                          "rounded-2xl border transition-all duration-300 overflow-hidden",
+                          isBooked
+                            ? "border-blue-200 bg-blue-50/20 shadow-sm shadow-blue-500/5"
+                            : "border-border/80 bg-card hover:border-primary/20 hover:shadow-sm"
+                        )}
+                      >
+                        {/* Main Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-bold text-foreground text-sm flex items-center gap-1.5">
+                                <Clock className={cn("size-4", isBooked ? "text-primary" : "text-muted-foreground")} />
+                                {timeFormatter(slot.startsAt)} – {timeFormatter(slot.endsAt)}
+                              </p>
+                              <Badge 
+                                variant="secondary" 
+                                className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                  isBooked 
+                                    ? "bg-blue-100 text-primary dark:bg-blue-950/50" 
+                                    : "bg-muted text-muted-foreground border border-border"
+                                )}
+                              >
+                                {isBooked ? "Booked" : "Open Slot"}
+                              </Badge>
+                            </div>
+                            {isBooked ? (
+                              <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                                <User className="size-3.5 text-primary" />
+                                <span>
+                                  Student: <strong className="text-foreground">{slot.booking?.studentName || "GCSE Student"}</strong> · ({slot.booking?.parentEmail})
+                                </span>
+                              </div>
+                            ) : null}
                           </div>
-                        ) : null}
-                      </div>
 
-                      {/* Inline Actions Toolbar */}
-                      <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-                        {isBooked ? (
-                          <>
-                            {/* Running Late Toggle Button */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              className={cn(
-                                "rounded-lg text-xs font-bold border-border/80 gap-1",
-                                isLateFormOpen && "bg-amber-50 border-amber-200 text-amber-600"
-                              )}
-                              disabled={isActionLoading}
-                              onClick={() => {
-                                setActiveRunningLateId(isLateFormOpen ? null : slot.id);
-                                setActiveManualBookId(null);
-                              }}
-                            >
-                              <AlertCircle className="size-3.5" />
-                              Running Late
-                            </Button>
+                          {/* Inline Actions Toolbar */}
+                          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                            {isBooked ? (
+                              <>
+                                {/* Running Late Toggle Button */}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="xs"
+                                  className={cn(
+                                    "rounded-lg text-xs font-bold border-border/80 gap-1",
+                                    isLateFormOpen && "bg-amber-50 border-amber-200 text-amber-600"
+                                  )}
+                                  disabled={isActionLoading}
+                                  onClick={() => {
+                                    setActiveRunningLateId(isLateFormOpen ? null : slot.id);
+                                    setActiveManualBookId(null);
+                                  }}
+                                >
+                                  <AlertCircle className="size-3.5" />
+                                  Running Late
+                                </Button>
 
-                            {/* Cancel Booking Button */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              className="rounded-lg text-xs font-bold text-destructive hover:bg-destructive/5 border-destructive/20"
-                              disabled={isActionLoading}
-                              onClick={() => handleCancelBooking(slot.booking!.id, slot.id)}
+                                {/* Cancel Booking Button */}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="xs"
+                                  className="rounded-lg text-xs font-bold text-destructive hover:bg-destructive/5 border-destructive/20"
+                                  disabled={isActionLoading}
+                                  onClick={() => handleCancelBooking(slot.booking!.id, slot.id)}
+                                >
+                                  <X className="size-3.5" />
+                                  Cancel Booking
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                {/* Book Manually Toggle Button */}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="xs"
+                                  className={cn(
+                                    "rounded-lg text-xs font-bold gap-1",
+                                    isManualFormOpen && "bg-primary/5 border-primary/30 text-primary"
+                                  )}
+                                  disabled={isActionLoading}
+                                  onClick={() => {
+                                    setActiveManualBookId(isManualFormOpen ? null : slot.id);
+                                    setActiveRunningLateId(null);
+                                  }}
+                                >
+                                  <User className="size-3.5 text-primary" />
+                                  Book Manually
+                                </Button>
+
+                                {/* Delete Open Slot Button */}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                                  disabled={isActionLoading}
+                                  onClick={() => handleDelete(slot.id)}
+                                  aria-label="Delete slot"
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Inline Form Panels */}
+                        {isManualFormOpen && (
+                          <div className="border-t border-border/60 bg-muted/10 p-4.5 space-y-4">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                              <User className="size-3.5 text-primary" />
+                              Book open slot manually
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-muted-foreground">Parent Email</label>
+                                <Input
+                                  type="email"
+                                  placeholder="parent@example.com"
+                                  value={manualParentEmail}
+                                  required
+                                  className="rounded-xl bg-background border-border/80 h-9.5 text-xs"
+                                  onChange={(e) => setManualParentEmail(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-muted-foreground">Student Name (optional)</label>
+                                <Input
+                                  type="text"
+                                  placeholder="Leo Chen"
+                                  value={manualStudentName}
+                                  className="rounded-xl bg-background border-border/80 h-9.5 text-xs"
+                                  onChange={(e) => setManualStudentName(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-lg text-xs font-bold"
+                                onClick={() => setActiveManualBookId(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="rounded-lg text-xs font-bold bg-primary text-white"
+                                disabled={isActionLoading}
+                                onClick={() => handleManualBook(slot.id)}
+                              >
+                                {isActionLoading ? "Booking..." : "Confirm Booking"}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {isLateFormOpen && (
+                          <div className="border-t border-border/60 bg-muted/10 p-4.5 space-y-3">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                              <Clock className="size-3.5 text-amber-500" />
+                              Notify parent you are running late
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <Input
+                                type="text"
+                                placeholder="e.g. 5-10 minutes, sorry for any inconvenience!"
+                                value={lateMessage}
+                                className="rounded-xl bg-background border-border/80 text-xs flex-1"
+                                onChange={(e) => setLateMessage(e.target.value)}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="rounded-xl text-xs font-bold bg-primary text-white px-4 gap-1.5"
+                                disabled={isActionLoading}
+                                onClick={() => handleSendLateNotice(slot.booking!.id, slot.id)}
+                              >
+                                <Send className="size-3.5" />
+                                Send Notice
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Inline Status Messages */}
+                        {hasMessage && (
+                          <div className={cn(
+                            "border-t px-4.5 py-2.5 text-xs font-semibold flex items-center gap-1.5",
+                            slotMessage.type === "error" 
+                              ? "bg-destructive/5 text-destructive border-destructive/10" 
+                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          )}>
+                            {slotMessage.type === "error" ? <AlertCircle className="size-3.5 shrink-0" /> : <Check className="size-3.5 shrink-0" />}
+                            <span>{slotMessage.text}</span>
+                            <button 
+                              className="ml-auto text-muted-foreground hover:text-foreground"
+                              onClick={() => setSlotMessage(null)}
                             >
                               <X className="size-3.5" />
-                              Cancel Booking
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            {/* Book Manually Toggle Button */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="xs"
-                              className={cn(
-                                "rounded-lg text-xs font-bold gap-1",
-                                isManualFormOpen && "bg-primary/5 border-primary/30 text-primary"
-                              )}
-                              disabled={isActionLoading}
-                              onClick={() => {
-                                setActiveManualBookId(isManualFormOpen ? null : slot.id);
-                                setActiveRunningLateId(null);
-                              }}
-                            >
-                              <User className="size-3.5 text-primary" />
-                              Book Manually
-                            </Button>
-
-                            {/* Delete Open Slot Button */}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/5"
-                              disabled={isActionLoading}
-                              onClick={() => handleDelete(slot.id)}
-                              aria-label="Delete slot"
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </>
+                            </button>
+                          </div>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Inline Form Panels */}
-                    {isManualFormOpen && (
-                      <div className="border-t border-border/60 bg-muted/10 p-4.5 space-y-4">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                          <User className="size-3.5 text-primary" />
-                          Book open slot manually
-                        </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-muted-foreground">Parent Email</label>
-                            <Input
-                              type="email"
-                              placeholder="parent@example.com"
-                              value={manualParentEmail}
-                              required
-                              className="rounded-xl bg-background border-border/80 h-9.5 text-xs"
-                              onChange={(e) => setManualParentEmail(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold text-muted-foreground">Student Name (optional)</label>
-                            <Input
-                              type="text"
-                              placeholder="Leo Chen"
-                              value={manualStudentName}
-                              className="rounded-xl bg-background border-border/80 h-9.5 text-xs"
-                              onChange={(e) => setManualStudentName(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-lg text-xs font-bold"
-                            onClick={() => setActiveManualBookId(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="rounded-lg text-xs font-bold bg-primary text-white"
-                            disabled={isActionLoading}
-                            onClick={() => handleManualBook(slot.id)}
-                          >
-                            {isActionLoading ? "Booking..." : "Confirm Booking"}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {isLateFormOpen && (
-                      <div className="border-t border-border/60 bg-muted/10 p-4.5 space-y-3">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                          <Clock className="size-3.5 text-amber-500" />
-                          Notify parent you are running late
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <Input
-                            type="text"
-                            placeholder="e.g. 5-10 minutes, sorry for any inconvenience!"
-                            value={lateMessage}
-                            className="rounded-xl bg-background border-border/80 text-xs flex-1"
-                            onChange={(e) => setLateMessage(e.target.value)}
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="rounded-xl text-xs font-bold bg-primary text-white px-4 gap-1.5"
-                            disabled={isActionLoading}
-                            onClick={() => handleSendLateNotice(slot.booking!.id, slot.id)}
-                          >
-                            <Send className="size-3.5" />
-                            Send Notice
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Inline Status Messages */}
-                    {hasMessage && (
-                      <div className={cn(
-                        "border-t px-4.5 py-2.5 text-xs font-semibold flex items-center gap-1.5",
-                        slotMessage.type === "error" 
-                          ? "bg-destructive/5 text-destructive border-destructive/10" 
-                          : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                      )}>
-                        {slotMessage.type === "error" ? <AlertCircle className="size-3.5 shrink-0" /> : <Check className="size-3.5 shrink-0" />}
-                        <span>{slotMessage.text}</span>
-                        <button 
-                          className="ml-auto text-muted-foreground hover:text-foreground"
-                          onClick={() => setSlotMessage(null)}
-                        >
-                          <X className="size-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

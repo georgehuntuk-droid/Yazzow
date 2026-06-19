@@ -6,8 +6,18 @@ import { isPlatformAdminUser } from "@/lib/auth/platform-admin";
 import { requireUser } from "@/lib/auth/session";
 import { getTutorProfileForUser } from "@/lib/tutors/queries";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 
 export default async function DashboardLayout({
   children,

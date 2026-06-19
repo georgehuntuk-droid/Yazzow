@@ -5,7 +5,12 @@ import Link from "next/link";
 export const metadata = {
   title: `Refund Policy · ${BRAND_NAME}`,
   description: `Read the Refund Policy for platform subscriptions, digital worksheets, and lesson bookings on ${BRAND_NAME}.`,
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
+
 
 export default function RefundPolicyPage() {
   return (

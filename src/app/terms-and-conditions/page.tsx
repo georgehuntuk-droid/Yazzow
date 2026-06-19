@@ -5,7 +5,12 @@ import Link from "next/link";
 export const metadata = {
   title: `Terms & Conditions · ${BRAND_NAME}`,
   description: `Read the Terms of Service and user agreement for the ${BRAND_NAME} platform.`,
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
+
 
 export default function TermsPage() {
   return (

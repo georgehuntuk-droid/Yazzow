@@ -5,7 +5,12 @@ import Link from "next/link";
 export const metadata = {
   title: `Privacy Policy · ${BRAND_NAME}`,
   description: `Read the Privacy Policy and find out how we protect your personal data on ${BRAND_NAME}.`,
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
+
 
 export default function PrivacyPolicyPage() {
   return (

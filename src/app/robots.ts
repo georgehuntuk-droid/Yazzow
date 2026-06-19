@@ -8,10 +8,14 @@ export async function robots(): Promise<Metadata["robots"] | any> {
         userAgent: "*",
         allow: [
           "/",
-          "/support",
-          "/tutor/*", // Allow search engines to index all public tutor portals!
         ],
         disallow: [
+          "/support",
+          "/privacy-policy",
+          "/terms-and-conditions",
+          "/refund-policy",
+          "/tutor",
+          "/tutor/*", // Block indexing all public tutor portals
           "/dashboard", // Block private dashboards
           "/dashboard/*",
           "/auth", // Block authentication routes
@@ -30,5 +34,6 @@ export async function robots(): Promise<Metadata["robots"] | any> {
     sitemap: `${PUBLIC_SITE_URL}/sitemap.xml`,
   };
 }
+
 
 export default robots;

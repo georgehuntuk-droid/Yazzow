@@ -5,7 +5,12 @@ import { BRAND_NAME } from "@/lib/constants";
 export const metadata = {
   title: `Support · ${BRAND_NAME}`,
   description: `Get in touch with the ${BRAND_NAME} support team. Submit a support ticket for billing, account setup, or general assistance.`,
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
+
 
 export default function SupportPage() {
   return (

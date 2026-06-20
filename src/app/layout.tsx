@@ -38,11 +38,11 @@ export const metadata: Metadata = {
     template: `%s · ${BRAND_NAME}`,
   },
   description:
-    "White-labeled scheduling, digital worksheet storefront, and student CRM for independent tutors. No public marketplace — build your private teaching brand.",
+    "Tutor-pupil management, lesson scheduling, and digital worksheet storefront for independent tutors. No public marketplace — build your private teaching brand.",
   keywords: [
     "tutor scheduling software",
     "private tutor platform",
-    "white label tutoring",
+    "tutor pupil management",
     "tutor billing website",
     "worksheet storefront",
     "independent educator software",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${BRAND_NAME} · The business home for independent tutors`,
     description:
-      "White-labeled scheduling, digital worksheet storefront, and student CRM for independent tutors. Build your private brand without a marketplace taking a cut.",
+      "Tutor-pupil management, lesson scheduling, and digital worksheet storefront for independent tutors. Build your private brand without a marketplace taking a cut.",
     url: PUBLIC_SITE_URL,
     siteName: BRAND_NAME,
     images: [
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${BRAND_NAME} · The business home for independent tutors`,
     description:
-      "White-labeled scheduling, digital worksheet storefront, and student CRM for independent tutors. Build your private brand.",
+      "Tutor-pupil management, lesson scheduling, and digital worksheet storefront for independent tutors. Build your private brand.",
     images: ["/icon.png"],
   },
   robots: {

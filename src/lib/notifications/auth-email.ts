@@ -59,7 +59,7 @@ export async function sendSignupConfirmationEmail(input: {
         <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Confirm your account</h2>
         
         <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
-          Welcome to ${BRAND_NAME}! Please confirm your email address to complete your registration and activate your white-label tutoring dashboard.
+          Welcome to ${BRAND_NAME}! Please confirm your email address to complete your registration and activate your tutor-pupil management dashboard.
         </p>
         
         <div style="text-align: center; margin-bottom: 24px;">

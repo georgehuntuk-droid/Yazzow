@@ -17,13 +17,13 @@ import { PUBLIC_SITE_URL } from "@/lib/constants";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Yazzow · White-Label Private Tutor Booking Platform & CRM",
+  title: "Yazzow · Private Tutor Pupil Management, Scheduling & CRM",
   description:
     "Yazzow is the ultimate booking platform and scheduling software for independent tutors. Manage student logs, automate lesson scheduling, handle invoices, and build your private teaching brand.",
   keywords: [
     "tutor booking platform",
     "private tutor scheduling website",
-    "white label tutor software",
+    "tutor pupil management software",
     "tutor scheduling software",
     "tutor CRM",
     "independent tutor tools",
@@ -31,12 +31,12 @@ export const metadata: Metadata = {
     "worksheet storefront",
   ],
   openGraph: {
-    title: "Yazzow · White-Label Private Tutor Booking Platform & CRM",
+    title: "Yazzow · Private Tutor Pupil Management, Scheduling & CRM",
     description:
       "Yazzow is the ultimate booking platform and scheduling software for independent tutors. Manage student logs, automate lesson scheduling, handle invoices, and build your private teaching brand.",
   },
   twitter: {
-    title: "Yazzow · White-Label Private Tutor Booking Platform & CRM",
+    title: "Yazzow · Private Tutor Pupil Management, Scheduling & CRM",
     description:
       "Yazzow is the ultimate booking platform and scheduling software for independent tutors. Manage student logs, automate lesson scheduling, handle invoices, and build your private teaching brand.",
   },
@@ -58,7 +58,7 @@ export default async function HomePage() {
     "url": PUBLIC_SITE_URL,
     "operatingSystem": "All",
     "applicationCategory": "BusinessApplication",
-    "description": "White-labeled scheduling, digital worksheet storefront, and student CRM for independent tutors.",
+    "description": "Tutor-pupil management, lesson scheduling, and digital worksheet storefront for independent tutors.",
     "offers": {
       "@type": "Offer",
       "price": "0.00",

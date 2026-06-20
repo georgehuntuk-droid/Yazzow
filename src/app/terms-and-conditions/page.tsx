@@ -48,7 +48,7 @@ export default function TermsPage() {
                 <span className="text-primary">2.</span> Description of Service
               </h2>
               <p>
-                {BRAND_NAME} provides a white-label scheduling platform, digital worksheet storefront, parent messaging portal, and student CRM system for independent educators and tutors. The Platform allows tutors to list availability slots, sell educational resources, manage credits, and assign tasks. We do not operate a public tutor marketplace; we provide software solutions to host your private teaching brand.
+                {BRAND_NAME} provides a tutor-pupil management and scheduling platform, digital worksheet storefront, parent messaging portal, and student CRM system for independent educators and tutors. The Platform allows tutors to list availability slots, sell educational resources, manage credits, and assign tasks. We do not operate a public tutor marketplace; we provide software solutions to host your private teaching brand.
               </p>
             </section>
 

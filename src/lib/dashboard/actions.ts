@@ -384,12 +384,51 @@ export async function addStudent(input: {
   try {
     const { sendStudentInvitationEmail } = await import("@/lib/notifications/auth-email");
     const { PUBLIC_SITE_URL } = await import("@/lib/constants");
-    const workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
+    
+    let workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
+    let isNewUser = false;
+
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const admin = createAdminClient();
+      const { data: usersData } = await admin.auth.admin.listUsers();
+      const existingUser = usersData?.users?.find(
+        (u) => u.email?.toLowerCase() === parentEmail
+      );
+
+      if (!existingUser) {
+        isNewUser = true;
+        const tempPassword = Math.random().toString(36).substring(2, 12) + "Temp123!";
+        await admin.auth.admin.createUser({
+          email: parentEmail,
+          password: tempPassword,
+          email_confirm: true,
+        });
+
+        const { data: linkData } = await admin.auth.admin.generateLink({
+          type: "recovery",
+          email: parentEmail,
+          options: {
+            redirectTo: `${PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(
+              `/auth/reset-password`
+            )}`,
+          },
+        });
+
+        if (linkData?.properties?.action_link) {
+          workspaceUrl = linkData.properties.action_link;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to pre-create student auth account:", err);
+    }
+
     await sendStudentInvitationEmail({
       to: parentEmail,
       tutorName: profile.displayName,
       studentName: studentName,
       workspaceUrl,
+      isNewUser,
     });
   } catch (err) {
     console.error("Failed to send student invitation email:", err);
@@ -797,16 +836,56 @@ export async function resendStudentInvitation(studentId: string) {
     return { ok: false as const, error: "Student not found." };
   }
 
+  const parentEmail = student.parent_email.trim().toLowerCase();
+
   try {
     const { sendStudentInvitationEmail } = await import("@/lib/notifications/auth-email");
     const { PUBLIC_SITE_URL } = await import("@/lib/constants");
-    const workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
     
+    let workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
+    let isNewUser = false;
+
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const admin = createAdminClient();
+      const { data: usersData } = await admin.auth.admin.listUsers();
+      const existingUser = usersData?.users?.find(
+        (u) => u.email?.toLowerCase() === parentEmail
+      );
+
+      if (!existingUser) {
+        isNewUser = true;
+        const tempPassword = Math.random().toString(36).substring(2, 12) + "Temp123!";
+        await admin.auth.admin.createUser({
+          email: parentEmail,
+          password: tempPassword,
+          email_confirm: true,
+        });
+
+        const { data: linkData } = await admin.auth.admin.generateLink({
+          type: "recovery",
+          email: parentEmail,
+          options: {
+            redirectTo: `${PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(
+              `/auth/reset-password`
+            )}`,
+          },
+        });
+
+        if (linkData?.properties?.action_link) {
+          workspaceUrl = linkData.properties.action_link;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to pre-create student auth account on resend:", err);
+    }
+
     await sendStudentInvitationEmail({
-      to: student.parent_email,
+      to: parentEmail,
       tutorName: profile.displayName,
       studentName: student.student_name,
       workspaceUrl,
+      isNewUser,
     });
     return { ok: true as const };
   } catch (err) {

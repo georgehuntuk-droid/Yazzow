@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles } from "lucide-react";
+import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles, ChevronDown } from "lucide-react";
 import type { Metadata } from "next";
 import { BRAND_NAME } from "@/lib/constants";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
@@ -56,12 +56,37 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
 
   // 2. Check student records via Admin Client to bypass RLS (since students can't read profiles of other students)
   const admin = createAdminClient();
-  const { data: studentRecords } = await admin
-    .from("students")
-    .select("*")
-    .eq("tutor_id", tutor.id)
-    .ilike("parent_email", user.email)
-    .eq("status", "active");
+  const [studentRecordsRes, allStudentsRes] = await Promise.all([
+    admin
+      .from("students")
+      .select("*")
+      .eq("tutor_id", tutor.id)
+      .ilike("parent_email", user.email)
+      .eq("status", "active"),
+    admin
+      .from("students")
+      .select("tutor_id")
+      .ilike("parent_email", user.email)
+      .eq("status", "active")
+  ]);
+
+  const studentRecords = studentRecordsRes.data;
+  const allStudentRecords = allStudentsRes.data;
+
+  // Fetch other tutors if the parent is registered with multiple tutors
+  let otherTutors: { username: string; display_name: string }[] = [];
+  if (allStudentRecords && allStudentRecords.length > 0) {
+    const tutorIds = Array.from(new Set(allStudentRecords.map((s) => s.tutor_id)));
+    if (tutorIds.length > 1) {
+      const { data: tutorsData } = await admin
+        .from("tutor_profiles")
+        .select("username, display_name")
+        .in("id", tutorIds);
+      if (tutorsData) {
+        otherTutors = tutorsData;
+      }
+    }
+  }
 
   if (!studentRecords || studentRecords.length === 0) {
     if (tutor.allowPublicJoining !== false) {
@@ -224,6 +249,26 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
           <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
             <Logo size="header" href="/" />
             <div className="flex items-center gap-3">
+              {otherTutors.length > 1 && (
+                <div className="relative group">
+                  <button className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline transition-colors mr-1 cursor-pointer">
+                    ⇄ Switch Tutor <ChevronDown className="size-3" />
+                  </button>
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-border bg-card p-1 shadow-lg hidden group-hover:block hover:block z-50 animate-in fade-in duration-200">
+                    {otherTutors.map((t) => (
+                      <Link
+                        key={t.username}
+                        href={`/tutor/${t.username}/workspace`}
+                        className={`block px-3 py-2 text-xs font-semibold rounded-lg hover:bg-muted transition-colors ${
+                          t.username === username ? "text-primary bg-primary/5 font-bold" : "text-foreground"
+                        }`}
+                      >
+                        {t.display_name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               {studentRecords.length > 1 && (
                 <Link
                   href={`/tutor/${username}/workspace`}

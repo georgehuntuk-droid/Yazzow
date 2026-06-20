@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
+import { PushSubscriptionToggle } from "@/components/pwa/push-subscription-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -90,6 +91,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
         )}
       </nav>
       <div className="flex flex-col gap-2.5 border-t border-sidebar-border p-4">
+        <PushSubscriptionToggle className="w-full justify-start border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 text-xs" />
         <InstallAppButton
           variant="outline"
           className="w-full justify-start border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 text-xs"

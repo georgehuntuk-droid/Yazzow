@@ -113,6 +113,8 @@ export default async function DashboardPage() {
           completedSessions={recentBookings.length}
           currency={profile.currency}
           owedEarningsCents={totalOwedCents}
+          recentBookings={recentBookings}
+          digitalSales={packSales}
         />
 
         {/* 4. Bookings & Activities Two-Column Grid */}

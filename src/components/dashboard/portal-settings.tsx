@@ -79,6 +79,12 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
 
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [coverUrl, setCoverUrl] = useState(profile.coverUrl);
+  const [bgStyle, setBgStyle] = useState(profile.portalBgStyle ?? "grid");
+  const [sideBannerUrl, setSideBannerUrl] = useState(profile.portalSideBannerUrl);
+  const [sideBannerLink, setSideBannerLink] = useState(profile.portalSideBannerLink ?? "");
+  const [sideWidgetTitle, setSideWidgetTitle] = useState(profile.portalSideWidgetTitle ?? "");
+  const [sideWidgetContent, setSideWidgetContent] = useState(profile.portalSideWidgetContent ?? "");
+  const [sideBannerLoading, setSideBannerLoading] = useState(false);
   const [portalWelcomeMessage, setPortalWelcomeMessage] = useState(
     profile.portalWelcomeMessage ?? "",
   );
@@ -121,6 +127,11 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       portalAccentOklch:
         PORTAL_ACCENT_PRESETS.find((p) => p.id === accentPresetId)?.oklch ??
         profile.portalAccentOklch,
+      portalBgStyle: bgStyle,
+      portalSideBannerUrl: sideBannerUrl || undefined,
+      portalSideBannerLink: sideBannerLink || undefined,
+      portalSideWidgetTitle: sideWidgetTitle || undefined,
+      portalSideWidgetContent: sideWidgetContent || undefined,
       blockPackageLessonsCount: blockLessonsCount,
       blockPackageDiscountPercent: blockDiscountPercent,
       allowPublicJoining,
@@ -141,6 +152,11 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       coverUrl,
       portalWelcomeMessage,
       accentPresetId,
+      bgStyle,
+      sideBannerUrl,
+      sideBannerLink,
+      sideWidgetTitle,
+      sideWidgetContent,
       blockLessonsCount,
       blockDiscountPercent,
       allowPublicJoining,
@@ -284,6 +300,10 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
     const result = await updatePortalStyle({
       portalWelcomeMessage,
       portalAccentPresetId: accentPresetId,
+      portalBgStyle: bgStyle,
+      portalSideBannerLink: sideBannerLink,
+      portalSideWidgetTitle: sideWidgetTitle,
+      portalSideWidgetContent: sideWidgetContent,
     });
 
     if (!result.ok) {
@@ -483,6 +503,75 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
     router.refresh();
   }
 
+  async function handleSideBannerUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5_242_880) { // 5MB limit
+      setError("Banner image must be 5 MB or smaller.");
+      return;
+    }
+
+    const validMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+    if (!validMimes.has(file.type)) {
+      setError("Use JPG, PNG, WebP, or GIF.");
+      return;
+    }
+
+    setSideBannerLoading(true);
+    setError(null);
+
+    // Optimistic UI update
+    const previewUrl = URL.createObjectURL(file);
+    setSideBannerUrl(previewUrl);
+
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "jpg";
+      const storagePath = `${profile.id}/side_banner.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(storagePath, file, { upsert: true, contentType: file.type });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(storagePath);
+
+      const { savePortalSideBannerUrl } = await import("@/lib/dashboard/profile-actions");
+      const dbRes = await savePortalSideBannerUrl(publicUrl);
+      if (!dbRes.ok) {
+        throw new Error(dbRes.error);
+      }
+
+      flashSuccess("Side banner photo updated.");
+      router.refresh();
+    } catch (err) {
+      setSideBannerUrl(profile.portalSideBannerUrl);
+      setError(err instanceof Error ? err.message : "Failed to upload side banner.");
+    } finally {
+      setSideBannerLoading(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleRemoveSideBanner() {
+    if (!confirm("Remove your side banner image?")) return;
+    const { removePortalSideBanner } = await import("@/lib/dashboard/profile-actions");
+    const result = await removePortalSideBanner();
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setSideBannerUrl(undefined);
+    flashSuccess("Side banner removed.");
+    router.refresh();
+  }
+
   const initials = displayName
     .split(" ")
     .map((part) => part[0])
@@ -516,7 +605,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
             )}
           </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-2">
+          <CardContent className="grid gap-6 sm:grid-cols-3">
             <div className="space-y-3">
               <p className="text-sm font-medium">Profile photo</p>
               <div className="flex items-center gap-4">
@@ -579,6 +668,37 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                 ) : null}
               </div>
             </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Side banner image</p>
+              <div
+                className="flex h-20 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 bg-cover bg-center"
+                style={sideBannerUrl ? { backgroundImage: `url(${sideBannerUrl})` } : undefined}
+              >
+                {!sideBannerUrl ? (
+                  <ImageIcon className="size-6 text-muted-foreground" aria-hidden />
+                ) : null}
+              </div>
+              <div className="flex gap-2">
+                <label className="cursor-pointer">
+                  <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted">
+                    {sideBannerLoading ? "Uploading…" : "Upload banner"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    disabled={sideBannerLoading}
+                    onChange={handleSideBannerUpload}
+                  />
+                </label>
+                {sideBannerUrl ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoveSideBanner}>
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -624,6 +744,63 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="portal-bg-style" className="text-sm font-medium">
+                  Background style
+                </label>
+                <select
+                  id="portal-bg-style"
+                  value={bgStyle}
+                  onChange={(e) => setBgStyle(e.target.value)}
+                  className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="grid">Grid Pattern</option>
+                  <option value="dots">Dotted Pattern</option>
+                  <option value="glow">Mesh Glow Only</option>
+                  <option value="solid">Solid (Minimalist)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="portal-side-banner-link" className="text-sm font-medium">
+                  Side banner link (optional)
+                </label>
+                <Input
+                  id="portal-side-banner-link"
+                  value={sideBannerLink}
+                  onChange={(e) => setSideBannerLink(e.target.value)}
+                  placeholder="e.g. https://trustpilot.com/review/yoursite"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Where students are sent when clicking your custom side banner image.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="portal-side-widget-title" className="text-sm font-medium">
+                  Side widget title (optional)
+                </label>
+                <Input
+                  id="portal-side-widget-title"
+                  value={sideWidgetTitle}
+                  onChange={(e) => setSideWidgetTitle(e.target.value)}
+                  placeholder="e.g. Testimonials or Qualifications"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="portal-side-widget-content" className="text-sm font-medium">
+                  Side widget content
+                </label>
+                <textarea
+                  id="portal-side-widget-content"
+                  rows={3}
+                  value={sideWidgetContent}
+                  onChange={(e) => setSideWidgetContent(e.target.value)}
+                  placeholder="e.g. ★★★★★ 'Best math tutor ever!' - Sarah's Mom"
+                  className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  A text card shown in the sidebar to highlight reviews or certifications.
+                </p>
               </div>
               <Button type="submit" variant="outline" disabled={styleLoading}>
                 {styleLoading ? "Saving…" : "Save style"}

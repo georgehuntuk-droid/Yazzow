@@ -24,6 +24,11 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     portalAnnouncementActive: (row as any).portal_announcement_active === true,
     paymentReminderAmountThresholdCents: (row as any).payment_reminder_amount_threshold_cents ?? 0,
     paymentReminderDaysAfter: (row as any).payment_reminder_days_after ?? 0,
+    portalBgStyle: row.portal_bg_style ?? "grid",
+    portalSideBannerUrl: row.portal_side_banner_url ?? undefined,
+    portalSideBannerLink: row.portal_side_banner_link ?? undefined,
+    portalSideWidgetTitle: row.portal_side_widget_title ?? undefined,
+    portalSideWidgetContent: row.portal_side_widget_content ?? undefined,
   };
 }
 

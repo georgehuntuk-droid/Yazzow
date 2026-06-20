@@ -178,72 +178,105 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
         </div>
       </header>
 
-      <main className="yazz-container max-w-5xl space-y-8 py-8 sm:space-y-10 sm:py-10">
-        <PublicProfile tutor={tutor} />
-
+      <main className="yazz-container max-w-5xl py-8 sm:py-10">
         <Suspense fallback={null}>
           <BookingStatusBanner manageUrl={bookingManageUrl} />
         </Suspense>
 
-        {liveTutor && tutor.allowPublicJoining !== false ? (
-          <JoinTutorFamily
-            tutor={tutor}
-            tutorUsername={username}
-            currentUserEmail={user?.email}
-            connectedStudents={connectedStudents}
-          />
-        ) : null}
+        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+          {/* Main Area */}
+          <div className="space-y-8">
+            <PublicProfile tutor={tutor} />
 
-        <Tabs defaultValue="book">
-          <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">
-            <TabsTrigger value="book" className="rounded-lg px-4">
-              Book a lesson
-            </TabsTrigger>
-            <TabsTrigger value="packages" className="rounded-lg px-4">
-              Lesson packages
-            </TabsTrigger>
-            <TabsTrigger value="shelf" className="rounded-lg px-4">
-              The shelf
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="book" className="mt-6">
-            {slots.filter((s) => s.available).length === 0 ? (
-              <div className="yazz-panel px-6 py-14 text-center text-muted-foreground">
-                No open slots right now. Check back soon or message your tutor directly.
+            <Tabs defaultValue="book">
+              <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">
+                <TabsTrigger value="book" className="rounded-lg px-4">
+                  Book a lesson
+                </TabsTrigger>
+                <TabsTrigger value="packages" className="rounded-lg px-4">
+                  Lesson packages
+                </TabsTrigger>
+                <TabsTrigger value="shelf" className="rounded-lg px-4">
+                  The shelf
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="book" className="mt-6">
+                {slots.filter((s) => s.available).length === 0 ? (
+                  <div className="yazz-panel px-6 py-14 text-center text-muted-foreground">
+                    No open slots right now. Check back soon or message your tutor directly.
+                  </div>
+                ) : liveTutor ? (
+                  <BookingCalendarLive
+                    tutor={tutor}
+                    tutorUsername={username}
+                    initialSlots={slots.filter((s) => s.available)}
+                    paymentsEnabled={paymentsEnabled}
+                    paymentsBlockedReason={paymentsBlockedReason}
+                    paymentsBlockedMessage={paymentsBlockedMessage}
+                  />
+                ) : (
+                  <BookingCalendar
+                    tutor={tutor}
+                    slots={slots.filter((s) => s.available)}
+                    paymentsEnabled={false}
+                    paymentsBlockedReason="demo"
+                    paymentsBlockedMessage="This is a sample portal. Create your own account to accept real bookings."
+                    isDemo={true}
+                  />
+                )}
+              </TabsContent>
+              <TabsContent value="packages" className="mt-6">
+                <LessonPackagesTab
+                  tutor={tutor}
+                  packages={packages}
+                  paymentsEnabled={paymentsEnabled}
+                  paymentsBlockedMessage={paymentsBlockedMessage}
+                  isDemo={isSamplePortal}
+                />
+              </TabsContent>
+              <TabsContent value="shelf" className="mt-6">
+                <ResourceShelf resources={resources} />
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Sidebar Area */}
+          <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            {/* Custom Side Banner (Image upload with click link) */}
+            {tutor.portalSideBannerUrl && (
+              <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:scale-[1.01] transition-transform duration-200">
+                {tutor.portalSideBannerLink ? (
+                  <a href={tutor.portalSideBannerLink} target="_blank" rel="noopener noreferrer" className="block">
+                    <img src={tutor.portalSideBannerUrl} alt="Side Banner" className="w-full h-auto object-cover" />
+                  </a>
+                ) : (
+                  <img src={tutor.portalSideBannerUrl} alt="Side Banner" className="w-full h-auto object-cover" />
+                )}
               </div>
-            ) : liveTutor ? (
-              <BookingCalendarLive
+            )}
+
+            {/* Custom Side Text Widget (Credentials / Testimonials) */}
+            {tutor.portalSideWidgetTitle && tutor.portalSideWidgetContent && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-2">
+                <h4 className="font-heading text-sm font-bold text-foreground">
+                  {tutor.portalSideWidgetTitle}
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {tutor.portalSideWidgetContent}
+                </p>
+              </div>
+            )}
+
+            {liveTutor && tutor.allowPublicJoining !== false ? (
+              <JoinTutorFamily
                 tutor={tutor}
                 tutorUsername={username}
-                initialSlots={slots.filter((s) => s.available)}
-                paymentsEnabled={paymentsEnabled}
-                paymentsBlockedReason={paymentsBlockedReason}
-                paymentsBlockedMessage={paymentsBlockedMessage}
+                currentUserEmail={user?.email}
+                connectedStudents={connectedStudents}
               />
-            ) : (
-              <BookingCalendar
-                tutor={tutor}
-                slots={slots.filter((s) => s.available)}
-                paymentsEnabled={false}
-                paymentsBlockedReason="demo"
-                paymentsBlockedMessage="This is a sample portal. Create your own account to accept real bookings."
-                isDemo={true}
-              />
-            )}
-          </TabsContent>
-          <TabsContent value="packages" className="mt-6">
-            <LessonPackagesTab
-              tutor={tutor}
-              packages={packages}
-              paymentsEnabled={paymentsEnabled}
-              paymentsBlockedMessage={paymentsBlockedMessage}
-              isDemo={isSamplePortal}
-            />
-          </TabsContent>
-          <TabsContent value="shelf" className="mt-6">
-            <ResourceShelf resources={resources} />
-          </TabsContent>
-        </Tabs>
+            ) : null}
+          </div>
+        </div>
       </main>
     </div>
     </PortalThemeWrapper>

@@ -171,12 +171,20 @@ export async function updateBlockPackagePricing(input: {
 export async function updatePortalStyle(input: {
   portalWelcomeMessage: string;
   portalAccentPresetId: string;
+  portalBgStyle?: string;
+  portalSideBannerLink?: string;
+  portalSideWidgetTitle?: string;
+  portalSideWidgetContent?: string;
 }) {
   const { profile } = await requireTutorProfile();
 
   const portalWelcomeMessage = input.portalWelcomeMessage.trim();
   const preset = PORTAL_ACCENT_PRESETS.find((p) => p.id === input.portalAccentPresetId);
   const portalAccentOklch = preset?.oklch ?? null;
+  const portalBgStyle = input.portalBgStyle || "grid";
+  const portalSideBannerLink = input.portalSideBannerLink?.trim() || null;
+  const portalSideWidgetTitle = input.portalSideWidgetTitle?.trim() || null;
+  const portalSideWidgetContent = input.portalSideWidgetContent?.trim() || null;
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -184,6 +192,10 @@ export async function updatePortalStyle(input: {
     .update({
       portal_welcome_message: portalWelcomeMessage || null,
       portal_accent_oklch: portalAccentOklch,
+      portal_bg_style: portalBgStyle,
+      portal_side_banner_link: portalSideBannerLink,
+      portal_side_widget_title: portalSideWidgetTitle,
+      portal_side_widget_content: portalSideWidgetContent,
     })
     .eq("id", profile.id);
 
@@ -191,6 +203,42 @@ export async function updatePortalStyle(input: {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function savePortalSideBannerUrl(publicUrl: string | null) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ portal_side_banner_url: publicUrl })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function removePortalSideBanner() {
+  const { profile } = await requireTutorProfile();
+  const path = storagePathFromPublicUrl(AVATAR_BUCKET, profile.portalSideBannerUrl);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ portal_side_banner_url: null })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await removeStorageObject(profile.id, path);
   await revalidatePortal(profile.username);
   return { ok: true as const };
 }

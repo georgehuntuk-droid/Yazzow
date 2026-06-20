@@ -1119,3 +1119,48 @@ export async function insertDigitalResourceRecord(input: {
   revalidatePath(`/tutor/${profile.username}`);
   return { ok: true as const };
 }
+
+export async function savePushSubscription(input: {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}) {
+  const { requireUser } = await import("@/lib/auth/session");
+  const user = await requireUser();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    {
+      user_id: user.id,
+      endpoint: input.endpoint,
+      p256dh: input.p256dh,
+      auth: input.auth,
+    },
+    { onConflict: "endpoint" }
+  );
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  return { ok: true as const };
+}
+
+export async function deletePushSubscription(endpoint: string) {
+  const { requireUser } = await import("@/lib/auth/session");
+  const user = await requireUser();
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", endpoint)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  return { ok: true as const };
+}
+

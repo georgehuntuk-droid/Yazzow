@@ -21,6 +21,11 @@ export type TutorProfileRow = {
   block_package_lessons_count: number;
   block_package_discount_percent: number;
   is_platform_admin: boolean;
+  portal_bg_style: string;
+  portal_side_banner_url: string | null;
+  portal_side_banner_link: string | null;
+  portal_side_widget_title: string | null;
+  portal_side_widget_content: string | null;
   created_at: string;
   updated_at: string;
 };

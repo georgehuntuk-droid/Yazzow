@@ -14,6 +14,7 @@ import { Logo } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkspaceClient } from "./workspace-client";
+import { PushSubscriptionToggle } from "@/components/pwa/push-subscription-toggle";
 import { CreateWorkspaceForm } from "./create-workspace-form";
 import { WorkspaceChat } from "@/components/booking/workspace-chat";
 import { formatMoney, formatSlotRange } from "@/lib/format";
@@ -281,6 +282,13 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
                 Student: {studentRecord.student_name}
               </span>
               <InstallAppButton size="sm" variant="outline" className="hidden sm:inline-flex" />
+              <PushSubscriptionToggle />
+              <Link
+                href={`/tutor/${username}/workspace/guide`}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-foreground transition-colors py-1.5 px-3 rounded-lg border border-primary/20 hover:bg-primary/5 bg-primary/5 shadow-sm"
+              >
+                <BookOpen className="size-3.5 text-primary" /> Guide & Simulator
+              </Link>
               <Link
                 href="/support"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-muted/30 bg-background/30"

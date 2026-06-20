@@ -17,6 +17,8 @@ type TutorStatsMatrixProps = {
   completedSessions: number;
   currency: string;
   owedEarningsCents?: number;
+  recentBookings?: any[];
+  digitalSales?: any[];
 };
 
 export function TutorStatsMatrix({
@@ -26,20 +28,58 @@ export function TutorStatsMatrix({
   completedSessions,
   currency,
   owedEarningsCents,
+  recentBookings = [],
+  digitalSales = [],
 }: TutorStatsMatrixProps) {
-  // Let's create realistic monthly bar values based on total earnings
-  // We'll distribute the total earnings across 6 bars with some organic variation
-  const baseValue = totalEarningsCents > 0 ? (totalEarningsCents / 100) / 4.8 : 850;
-  const barHeights = [
-    Math.round(baseValue * 0.75),
-    Math.round(baseValue * 0.9),
-    Math.round(baseValue * 1.25),
-    Math.round(baseValue * 0.8),
-    Math.round(baseValue * 1.1),
-    Math.round(baseValue * 1.15),
-  ];
+  const months: string[] = [];
+  const barHeights: number[] = [0, 0, 0, 0, 0, 0];
   
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+  // Generate last 6 months (ending with current month)
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toLocaleDateString("en-GB", { month: "short" }));
+  }
+
+  const hasRealData = recentBookings.length > 0 || digitalSales.length > 0;
+
+  if (hasRealData) {
+    // 1. Process recent bookings
+    recentBookings.forEach((b) => {
+      if (b.status === "cancelled") return;
+      
+      const bDate = new Date(b.startsAt || b.createdAt);
+      if (isNaN(bDate.getTime())) return;
+      
+      const diffMonths = (now.getFullYear() - bDate.getFullYear()) * 12 + (now.getMonth() - bDate.getMonth());
+      if (diffMonths >= 0 && diffMonths < 6) {
+        const idx = 5 - diffMonths;
+        barHeights[idx] += (b.amountCents || 0) / 100;
+      }
+    });
+
+    // 2. Process digital sales
+    digitalSales.forEach((s) => {
+      const sDate = new Date(s.createdAt);
+      if (isNaN(sDate.getTime())) return;
+      
+      const diffMonths = (now.getFullYear() - sDate.getFullYear()) * 12 + (now.getMonth() - sDate.getMonth());
+      if (diffMonths >= 0 && diffMonths < 6) {
+        const idx = 5 - diffMonths;
+        barHeights[idx] += (s.amountCents || 0) / 100;
+      }
+    });
+  } else {
+    // Fallback: distribute total earnings across months if there's total but no arrays passed
+    const baseValue = totalEarningsCents > 0 ? (totalEarningsCents / 100) / 4.8 : 850;
+    barHeights[0] = Math.round(baseValue * 0.75);
+    barHeights[1] = Math.round(baseValue * 0.9);
+    barHeights[2] = Math.round(baseValue * 1.25);
+    barHeights[3] = Math.round(baseValue * 0.8);
+    barHeights[4] = Math.round(baseValue * 1.1);
+    barHeights[5] = Math.round(baseValue * 1.15);
+  }
+  
   const maxVal = Math.max(...barHeights, 100);
 
   return (

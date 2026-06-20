@@ -20,6 +20,11 @@ export type TutorProfile = {
   portalAnnouncementActive?: boolean;
   paymentReminderAmountThresholdCents?: number;
   paymentReminderDaysAfter?: number;
+  portalBgStyle?: string;
+  portalSideBannerUrl?: string;
+  portalSideBannerLink?: string;
+  portalSideWidgetTitle?: string;
+  portalSideWidgetContent?: string;
 };
 
 export type OpenSlot = {

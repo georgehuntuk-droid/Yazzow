@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles, ChevronDown } from "lucide-react";
+import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles, ChevronDown, HelpCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { BRAND_NAME } from "@/lib/constants";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
@@ -281,8 +281,14 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
                 Student: {studentRecord.student_name}
               </span>
               <InstallAppButton size="sm" variant="outline" className="hidden sm:inline-flex" />
+              <Link
+                href="/support"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-muted/30 bg-background/30"
+              >
+                <HelpCircle className="size-3.5 text-primary" /> Support & AI Helper
+              </Link>
               <form action="/auth/signout" method="post">
-                <button type="submit" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-destructive/5">
+                <button type="submit" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-destructive/5 cursor-pointer">
                   <LogOut className="size-3.5" /> Sign Out
                 </button>
               </form>

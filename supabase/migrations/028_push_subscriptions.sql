@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS public.push_subscriptions (
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they already exist
+DROP POLICY IF EXISTS "Users can view their own push subscriptions" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "Users can insert their own push subscriptions" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "Users can delete their own push subscriptions" ON public.push_subscriptions;
+
 -- Policies for push_subscriptions
 CREATE POLICY "Users can view their own push subscriptions"
     ON public.push_subscriptions FOR SELECT

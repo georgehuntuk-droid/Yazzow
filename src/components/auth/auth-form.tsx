@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, User, Users } from "lucide-react";
 
 import {
   signInAction,
@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -29,7 +30,11 @@ const REMEMBER_ME_STORAGE_KEY = "yazzow-remember-me";
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const defaultNext = mode === "signup" ? "/onboarding" : "/dashboard";
+  
+  const [role, setRole] = useState<"tutor" | "parent">("tutor");
+  const defaultNext = role === "parent" 
+    ? "/onboarding?role=parent" 
+    : (mode === "signup" ? "/onboarding" : "/dashboard");
   const next = searchParams.get("next") ?? defaultNext;
 
   const [email, setEmail] = useState("");
@@ -110,6 +115,36 @@ export function AuthForm({ mode }: AuthFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Role Switcher */}
+        <div className="grid grid-cols-2 gap-1.5 bg-muted/60 p-1.5 rounded-xl border border-border/40">
+          <button
+            type="button"
+            onClick={() => setRole("tutor")}
+            className={cn(
+              "py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer",
+              role === "tutor"
+                ? "bg-background text-foreground shadow-sm font-bold border border-border/30"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <User className="size-3.5" />
+            I am a Tutor
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole("parent")}
+            className={cn(
+              "py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer",
+              role === "parent"
+                ? "bg-background text-foreground shadow-sm font-bold border border-border/30"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Users className="size-3.5" />
+            I am a Parent / Student
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

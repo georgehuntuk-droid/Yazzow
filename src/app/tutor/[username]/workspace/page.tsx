@@ -60,7 +60,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     .from("students")
     .select("*")
     .eq("tutor_id", tutor.id)
-    .eq("parent_email", user.email)
+    .ilike("parent_email", user.email)
     .eq("status", "active");
 
   if (!studentRecords || studentRecords.length === 0) {
@@ -180,7 +180,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
       .from("bookings")
       .select("id, status, amount_cents, created_at, tutor_lesson_feedback, lesson_rating, availability_slots (starts_at, ends_at)")
       .eq("tutor_id", tutor.id)
-      .eq("parent_email", user.email)
+      .ilike("parent_email", user.email)
       .order("created_at", { ascending: false }),
     admin
       .from("student_tasks")

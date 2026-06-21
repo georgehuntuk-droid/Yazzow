@@ -8,6 +8,8 @@ export async function robots(): Promise<Metadata["robots"] | any> {
         userAgent: "*",
         allow: [
           "/",
+          "/tools/invoice-generator",
+          "/tools/rate-calculator",
         ],
         disallow: [
           "/support",

@@ -30,6 +30,7 @@ export type BookingManageView = {
   runningLateNote: string | null;
   studentRunningLateSentAt: string | null;
   studentRunningLateNote: string | null;
+  lessonReminderSentAt: string | null;
   isPaid: boolean;
   stripePaymentIntentId: string | null;
   tutorPaymentInstructions: string | null;
@@ -83,6 +84,7 @@ export async function getBookingForManage(
       running_late_note,
       student_running_late_sent_at,
       student_running_late_note,
+      lesson_reminder_sent_at,
       is_paid,
       stripe_payment_intent_id,
       tutor_profiles (display_name, username, currency, payment_instructions),
@@ -109,6 +111,7 @@ export async function getBookingForManage(
         running_late_note,
         student_running_late_sent_at,
         student_running_late_note,
+        lesson_reminder_sent_at,
         stripe_payment_intent_id,
         tutor_profiles (display_name, username, currency, payment_instructions),
         availability_slots (starts_at, ends_at)
@@ -127,6 +130,7 @@ export async function getBookingForManage(
     running_late_note: string | null;
     student_running_late_sent_at: string | null;
     student_running_late_note: string | null;
+    lesson_reminder_sent_at: string | null;
   };
   const tutor = firstRelation(row.tutor_profiles);
   const slot = firstRelation(row.availability_slots);
@@ -160,6 +164,7 @@ export async function getBookingForManage(
     runningLateNote: row.running_late_note,
     studentRunningLateSentAt: row.student_running_late_sent_at,
     studentRunningLateNote: row.student_running_late_note,
+    lessonReminderSentAt: row.lesson_reminder_sent_at,
     isPaid,
     stripePaymentIntentId: row.stripe_payment_intent_id ?? null,
     tutorPaymentInstructions: tutor.payment_instructions,

@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { cancelBooking, confirmBooking, notifyRunningLate, toggleBookingPaidStatus } from "@/lib/dashboard/actions";
+import { cancelBooking, confirmBooking, notifyRunningLate, toggleBookingPaidStatus, sendLessonReminderAction } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { RecentBooking } from "@/lib/types";
 
@@ -87,6 +87,25 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
     setShowLateForm(null);
     router.refresh();
     setLoadingAction(null);
+  }
+
+  async function handleSendReminder(booking: RecentBooking) {
+    setLoadingAction(`reminder-${booking.id}`);
+    setError(null);
+    try {
+      const result = await sendLessonReminderAction(booking.id);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setSuccess("Lesson reminder sent to parent!");
+      setTimeout(() => setSuccess(null), 4000);
+      router.refresh();
+    } catch {
+      setError("Failed to send reminder.");
+    } finally {
+      setLoadingAction(null);
+    }
   }
 
   const upcoming = bookings.filter((b) => new Date(b.endsAt) > new Date());
@@ -216,6 +235,47 @@ export function RecentBookings({ bookings, currency }: RecentBookingsProps) {
                               : "Mark Paid"}
                         </Button>
                       )}
+                      {/* Lesson Reminder Action */}
+                      {(() => {
+                        const startsAtDate = new Date(booking.startsAt);
+                        const hoursUntil = (startsAtDate.getTime() - Date.now()) / (1000 * 60 * 60);
+                        const isWithin24Hours = hoursUntil <= 24 && hoursUntil > 0;
+                        const isReminderSent = !!booking.lessonReminderSentAt;
+
+                        if (hoursUntil <= 0) return null;
+
+                        if (isReminderSent) {
+                          return (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={true}
+                              className="border-emerald-200 text-emerald-700 bg-emerald-50 text-xs font-semibold cursor-default"
+                            >
+                              ✓ Reminder Sent
+                            </Button>
+                          );
+                        }
+
+                        return (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={!isWithin24Hours || loadingAction === `reminder-${booking.id}`}
+                            onClick={() => handleSendReminder(booking)}
+                            className={isWithin24Hours 
+                              ? "border-primary text-primary hover:bg-primary/5 text-xs font-bold cursor-pointer" 
+                              : "border-border text-muted-foreground bg-muted/10 text-xs font-semibold cursor-not-allowed"}
+                            title={!isWithin24Hours ? "Reminders can be sent up to 24 hours before the lesson starts." : undefined}
+                          >
+                            <Bell className="size-3.5" data-icon="inline-start" />
+                            {loadingAction === `reminder-${booking.id}` ? "Sending…" : "Send 24h Reminder"}
+                          </Button>
+                        );
+                      })()}
+
                       <Button
                         type="button"
                         variant="outline"

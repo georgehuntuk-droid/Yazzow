@@ -58,6 +58,7 @@ export type TutorSlot = {
     runningLateNote: string | null;
     studentRunningLateSentAt: string | null;
     studentRunningLateNote: string | null;
+    lessonReminderSentAt: string | null;
   } | null;
 };
 
@@ -77,6 +78,7 @@ export type RecentBooking = {
   studentRunningLateNote?: string | null;
   isPaid?: boolean;
   stripePaymentIntentId?: string | null;
+  lessonReminderSentAt?: string | null;
 };
 
 export type StudentLedgerEntry = {

@@ -124,7 +124,7 @@ export function BookingCalendar({
                         if (firstSlot) setSelectedId(firstSlot.id);
                       }}
                       className={cn(
-                        "flex flex-col items-start gap-0.5 justify-center w-36 md:w-full p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer",
+                        "flex flex-col items-start gap-0.5 justify-center w-36 shrink-0 md:w-full p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer",
                         isDateSelected
                           ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-blue-500/15"
                           : "border-border bg-card hover:bg-muted/40 hover:border-primary/20 text-foreground"

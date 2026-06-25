@@ -102,7 +102,8 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
         running_late_sent_at,
         running_late_note,
         student_running_late_sent_at,
-        student_running_late_note
+        student_running_late_note,
+        lesson_reminder_sent_at
       )
     `)
     .eq("tutor_id", tutorId)
@@ -122,6 +123,7 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
       runningLateNote: rawBooking.running_late_note,
       studentRunningLateSentAt: rawBooking.student_running_late_sent_at,
       studentRunningLateNote: rawBooking.student_running_late_note,
+      lessonReminderSentAt: rawBooking.lesson_reminder_sent_at,
     } : null;
 
     return {
@@ -150,6 +152,7 @@ export async function getRecentBookingsForTutor(
     running_late_note,
     student_running_late_sent_at,
     student_running_late_note,
+    lesson_reminder_sent_at,
     created_at,
     is_paid,
     stripe_payment_intent_id,
@@ -176,6 +179,7 @@ export async function getRecentBookingsForTutor(
       running_late_note,
       student_running_late_sent_at,
       student_running_late_note,
+      lesson_reminder_sent_at,
       created_at,
       stripe_payment_intent_id,
       availability_slots (starts_at, ends_at)
@@ -219,6 +223,7 @@ export async function getRecentBookingsForTutor(
       runningLateNote: booking.running_late_note ?? null,
       studentRunningLateSentAt: (booking as any).student_running_late_sent_at ?? null,
       studentRunningLateNote: (booking as any).student_running_late_note ?? null,
+      lessonReminderSentAt: (booking as any).lesson_reminder_sent_at ?? null,
       createdAt: booking.created_at,
       startsAt: slot?.starts_at ?? booking.created_at,
       endsAt: slot?.ends_at ?? booking.created_at,

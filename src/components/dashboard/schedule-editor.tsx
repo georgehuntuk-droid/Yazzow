@@ -12,7 +12,8 @@ import {
   Check, 
   X, 
   Send,
-  PlusCircle
+  PlusCircle,
+  Bell
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,8 @@ import {
   deleteAvailabilitySlot,
   bookSlotManually,
   cancelBooking,
-  notifyRunningLate
+  notifyRunningLate,
+  sendLessonReminderAction
 } from "@/lib/dashboard/actions";
 import { countHourlySlots } from "@/lib/scheduling/hourly-slots";
 import { formatSlotRange } from "@/lib/format";
@@ -196,6 +198,22 @@ export function ScheduleEditor({ slots }: ScheduleEditorProps) {
 
     setSlotMessage({ id: slotId, type: "success", text: result.message ?? "Running late notice sent!" });
     setActiveRunningLateId(null);
+    router.refresh();
+  }
+
+  async function handleSendReminder(bookingId: string, slotId: string) {
+    setSlotActionLoading(`reminder-${slotId}`);
+    setSlotMessage(null);
+
+    const result = await sendLessonReminderAction(bookingId);
+    setSlotActionLoading(null);
+
+    if (!result.ok) {
+      setSlotMessage({ id: slotId, type: "error", text: result.error });
+      return;
+    }
+
+    setSlotMessage({ id: slotId, type: "success", text: "Lesson reminder sent!" });
     router.refresh();
   }
 
@@ -374,6 +392,50 @@ export function ScheduleEditor({ slots }: ScheduleEditorProps) {
                                   <AlertCircle className="size-3.5" />
                                   Running Late
                                 </Button>
+
+                                {/* Lesson Reminder Action */}
+                                {(() => {
+                                  const startsAtDate = new Date(slot.startsAt);
+                                  const hoursUntil = (startsAtDate.getTime() - Date.now()) / (1000 * 60 * 60);
+                                  const isWithin24Hours = hoursUntil <= 24 && hoursUntil > 0;
+                                  const isReminderSent = !!slot.booking?.lessonReminderSentAt;
+
+                                  if (hoursUntil <= 0) return null;
+
+                                  if (isReminderSent) {
+                                    return (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        disabled={true}
+                                        className="rounded-lg text-xs font-semibold border-emerald-200 text-emerald-700 bg-emerald-50 cursor-default"
+                                      >
+                                        ✓ Reminder Sent
+                                      </Button>
+                                    );
+                                  }
+
+                                  return (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="xs"
+                                      disabled={!isWithin24Hours || isActionLoading}
+                                      onClick={() => handleSendReminder(slot.booking!.id, slot.id)}
+                                      className={cn(
+                                        "rounded-lg text-xs font-bold gap-1",
+                                        isWithin24Hours 
+                                          ? "border-primary text-primary hover:bg-primary/5 cursor-pointer" 
+                                          : "border-border text-muted-foreground bg-muted/10 cursor-not-allowed"
+                                      )}
+                                      title={!isWithin24Hours ? "Reminders can be sent up to 24 hours before the lesson starts." : undefined}
+                                    >
+                                      <Bell className="size-3.5" />
+                                      {slotActionLoading === `reminder-${slot.id}` ? "Sending…" : "Send 24h Reminder"}
+                                    </Button>
+                                  );
+                                })()}
 
                                 {/* Cancel Booking Button */}
                                 <Button

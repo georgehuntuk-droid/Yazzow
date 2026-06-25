@@ -60,7 +60,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200",
+                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
                 active
                   ? "bg-primary text-primary-foreground shadow-[0_4px_16px_oklch(0.55_0.18_250/0.25)] ring-1 ring-primary/10"
                   : "text-muted-foreground hover:bg-primary/5 hover:text-primary",
@@ -78,7 +78,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
             <Link
               href="/admin"
               className={cn(
-                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all duration-200",
+                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
                 pathname.startsWith("/admin")
                   ? "bg-amber-500 text-white shadow-sm ring-1 ring-amber-500/15"
                   : "text-muted-foreground hover:bg-amber-500/5 hover:text-amber-600",

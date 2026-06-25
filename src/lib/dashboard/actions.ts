@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { cancelLessonBooking } from "@/lib/bookings/cancel-booking";
 import { sendRunningLateNotice } from "@/lib/bookings/running-late";
+import { sendLessonReminder } from "@/lib/bookings/lesson-reminders";
 import { requireTutorProfile } from "@/lib/auth/session";
 import {
   LESSON_SLOT_DURATION_MINUTES,
@@ -194,6 +195,18 @@ export async function notifyRunningLate(bookingId: string, note?: string) {
     emailed: false,
     message: "Running late notice sent to parent workspace and chat thread.",
   };
+}
+
+export async function sendLessonReminderAction(bookingId: string) {
+  const { profile } = await requireTutorProfile();
+  const result = await sendLessonReminder(bookingId, profile.id);
+
+  if (!result.ok) {
+    return { ok: false as const, error: result.error };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
 }
 
 export async function deleteAvailabilitySlot(slotId: string) {

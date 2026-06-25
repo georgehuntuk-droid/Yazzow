@@ -141,22 +141,22 @@ export function DemoGuideClient() {
           <h1 className="font-heading text-3xl font-semibold">Tutor Feature Guide & Playground</h1>
         </div>
         <p className="text-muted-foreground mt-1 text-sm">
-          Learn how to use Yazzow's credit limits, owed balances, automated payment reminders, and student feedback.
+          Learn how to use Yazzow&apos;s credit limits, owed balances, automated payment reminders, and student feedback.
         </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border pb-px overflow-x-auto">
-        {[
+        {([
           { id: "credits", label: "Credits & Overdraft", icon: Users },
           { id: "owed", label: "Owed Balances", icon: CreditCard },
           { id: "reminders", label: "Payment Reminders", icon: MessageSquare },
           { id: "feedback", label: "Notes & Feedback", icon: CalendarRange }
-        ].map((tab) => (
+        ] as const).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 px-3 transition-all cursor-pointer whitespace-nowrap ${
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 px-3 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === tab.id
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -302,16 +302,16 @@ export function DemoGuideClient() {
               </p>
               <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">Offline Payment Terms:</strong> Direct cash bookings do not default to "paid". They start as unpaid/owed.
+                  <strong className="text-foreground">Offline Payment Terms:</strong> Direct cash bookings do not default to &quot;paid&quot;. They start as unpaid/owed.
                 </li>
                 <li>
                   <strong className="text-foreground">Owed Badge:</strong> Students owing money display a red **Owed: £XX.XX** badge on the student ledger headers.
                 </li>
                 <li>
-                  <strong className="text-foreground">Marking Statuses:</strong> Tutors can mark these bookings as "Paid" or "Owed" at any time from the lesson history.
+                  <strong className="text-foreground">Marking Statuses:</strong> Tutors can mark these bookings as &quot;Paid&quot; or &quot;Owed&quot; at any time from the lesson history.
                 </li>
                 <li>
-                  <strong className="text-foreground">Outstanding Revenue Card:</strong> Total unpaid lessons accumulate on the main dashboard stats widget under "Owed Outstanding" so you always know what is due.
+                  <strong className="text-foreground">Outstanding Revenue Card:</strong> Total unpaid lessons accumulate on the main dashboard stats widget under &quot;Owed Outstanding&quot; so you always know what is due.
                 </li>
               </ul>
             </div>
@@ -406,7 +406,7 @@ export function DemoGuideClient() {
                   <strong className="text-foreground">In-App Delivery:</strong> All non-auth billing notices are sent as chat messages rather than emails.
                 </li>
                 <li>
-                  <strong className="text-foreground">Manual reminders:</strong> Tutors can click **"Send Reminder"** next to any student owing money in the student ledger.
+                  <strong className="text-foreground">Manual reminders:</strong> Tutors can click **&quot;Send Reminder&quot;** next to any student owing money in the student ledger.
                 </li>
                 <li>
                   <strong className="text-foreground">Automated reminders:</strong> Tutors can configure automatic reminders in **Settings** triggered by:
@@ -538,13 +538,13 @@ export function DemoGuideClient() {
               </p>
               <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">General Notes:</strong> For permanent notes (such as year group, academic goals, learning preferences, or temperament) that stay at the top of the student's file.
+                  <strong className="text-foreground">General Notes:</strong> For permanent notes (such as year group, academic goals, learning preferences, or temperament) that stay at the top of the student&apos;s file.
                 </li>
                 <li>
                   <strong className="text-foreground">Lesson Feedback:</strong> Formatted rating (1-5 stars) and comments saved for each individual completed lesson booking.
                 </li>
                 <li>
-                  <strong className="text-foreground">Private:</strong> Feedback is private to the tutor's ledger and is not shared with the parent/pupil unless explicitly sent.
+                  <strong className="text-foreground">Private:</strong> Feedback is private to the tutor&apos;s ledger and is not shared with the parent/pupil unless explicitly sent.
                 </li>
               </ul>
             </div>

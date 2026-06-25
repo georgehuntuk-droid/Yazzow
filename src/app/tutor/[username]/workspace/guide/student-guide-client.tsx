@@ -121,16 +121,16 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border pb-px overflow-x-auto">
-        {[
+        {([
           { id: "credits", label: "Prepaid Credits", icon: GraduationCap },
           { id: "tasks", label: "Homework & Tasks", icon: BookOpen },
           { id: "cash", label: "Direct/Cash Pay", icon: CreditCard },
           { id: "pwa", label: "Phone alerts & PWA", icon: Smartphone }
-        ].map((tab) => (
+        ] as const).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 px-3 transition-all cursor-pointer whitespace-nowrap ${
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 pb-3 text-sm font-semibold border-b-2 px-3 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === tab.id
                 ? "border-primary text-foreground font-bold"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -177,7 +177,7 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
             <CardContent className="space-y-5">
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Oliver's Balance</span>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Oliver&apos;s Balance</span>
                   <p className="text-3xl font-black text-foreground">{credits} credits</p>
                 </div>
                 <Badge variant={credits >= 0 ? "outline" : "destructive"} className="px-2.5 py-1">

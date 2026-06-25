@@ -7,7 +7,7 @@ export default function GlobalLoading() {
 
   useEffect(() => {
     // Prevent flash of loading screen for instant loads by introducing a tiny delay
-    const timer = setTimeout(() => setShow(true), 150);
+    const timer = setTimeout(() => setShow(true), 400);
     return () => clearTimeout(timer);
   }, []);
 

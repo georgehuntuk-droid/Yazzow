@@ -126,8 +126,8 @@ export function BookingCalendar({
                       className={cn(
                         "flex flex-col items-start gap-0.5 justify-center w-36 shrink-0 md:w-full p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer",
                         isDateSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-blue-500/15"
-                          : "border-border bg-card hover:bg-muted/40 hover:border-primary/20 text-foreground"
+                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20 scale-[1.02]"
+                          : "border-border bg-card hover:bg-muted/50 hover:border-primary/30 text-foreground hover:scale-[1.01] active:scale-[0.99]"
                       )}
                     >
                       <span className={cn("text-[10px] font-black uppercase tracking-wider", isDateSelected ? "text-primary-foreground/80" : "text-muted-foreground")}>
@@ -159,18 +159,15 @@ export function BookingCalendar({
                       type="button"
                       onClick={() => setSelectedId(slot.id)}
                       className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer h-13",
+                        "flex items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 cursor-pointer h-12 text-sm font-bold",
                         isSlotSelected
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border hover:bg-muted/40 hover:border-primary/25 bg-card"
+                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30 shadow-sm shadow-primary/10"
+                          : "border-border hover:bg-muted/50 hover:border-primary/30 bg-card text-foreground hover:scale-[1.02] active:scale-[0.98]"
                       )}
                     >
-                      <span className="text-xs sm:text-sm font-bold flex items-center gap-2 text-foreground">
-                        <span className={cn("size-2 rounded-full", isSlotSelected ? "bg-primary animate-pulse" : "bg-muted-foreground/30")} />
+                      <span className="flex items-center gap-2">
+                        <Clock className={cn("size-4", isSlotSelected ? "text-primary animate-pulse" : "text-muted-foreground")} />
                         {formatTimeOnly(slot.startsAt, slot.endsAt)}
-                      </span>
-                      <span className="text-xs font-black text-primary">
-                        {formatMoney(tutor.lessonPriceCents, tutor.currency)}
                       </span>
                     </button>
                   );

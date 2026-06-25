@@ -5,7 +5,8 @@ import { Lock, ShieldCheck, CreditCard, Loader2, ArrowRight } from "lucide-react
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatSlotRange } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
 import type { OpenSlot, TutorProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function LessonCheckoutButton({
 }: LessonCheckoutButtonProps) {
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [creditChecking, setCreditChecking] = useState(false);
   const [availableCredits, setAvailableCredits] = useState<number | null>(null);
@@ -62,6 +64,9 @@ export function LessonCheckoutButton({
         const data = await response.json();
         setAvailableCredits(data.credits ?? 0);
         setCreditLimit(data.creditLimit ?? 0);
+        if (data.studentName) {
+          setStudentName(data.studentName);
+        }
       }
     } catch {
       setAvailableCredits(null);
@@ -70,6 +75,25 @@ export function LessonCheckoutButton({
       setCreditChecking(false);
     }
   }
+
+  useEffect(() => {
+    async function checkSession() {
+      if (isDemo) return;
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          setEmail(session.user.email);
+          setIsLoggedIn(true);
+          // Trigger credits check right away
+          void handleCheckCredits(session.user.email);
+        }
+      } catch {
+        // ignore session load errors
+      }
+    }
+    void checkSession();
+  }, [isDemo]);
 
   async function handleBookWithCredit() {
     setBookingWithCredit(true);
@@ -158,28 +182,62 @@ export function LessonCheckoutButton({
 
   return (
     <div className="space-y-4 pt-1">
-      <div className="space-y-1.5">
-        <label htmlFor="parent-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Parent Email Address
-        </label>
-        <div className="relative">
-          <Input
-            id="parent-email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (!e.target.value.includes("@")) {
-                setAvailableCredits(null);
-              }
-            }}
-            onBlur={(e) => handleCheckCredits(e.target.value)}
-            placeholder="you@family.com"
-            className="h-10 bg-background"
-          />
+      {/* Selected Lesson Summary Card */}
+      <div className="rounded-xl border border-border bg-card/60 p-4 flex flex-col gap-2 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Selected Lesson</p>
+            <p className="text-sm font-extrabold text-foreground">
+              {formatSlotRange(slot.startsAt, slot.endsAt)}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Hourly Rate</p>
+            <p className="text-sm font-black text-primary mt-0.5">
+              {formatMoney(tutor.lessonPriceCents, tutor.currency)}
+            </p>
+          </div>
         </div>
       </div>
+
+      {isLoggedIn ? (
+        <div className="rounded-xl bg-primary/5 border border-primary/20 p-3.5 flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+              Booking Account
+            </span>
+            <span className="text-sm font-bold text-foreground">{email}</span>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-200/60 shadow-sm">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Signed In
+          </span>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <label htmlFor="parent-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Parent Email Address
+          </label>
+          <div className="relative">
+            <Input
+              id="parent-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (!e.target.value.includes("@")) {
+                  setAvailableCredits(null);
+                }
+              }}
+              onBlur={(e) => handleCheckCredits(e.target.value)}
+              placeholder="you@family.com"
+              className="h-10 bg-background"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <label htmlFor="student-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Student Name (optional)

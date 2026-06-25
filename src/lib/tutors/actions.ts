@@ -31,6 +31,7 @@ export type OnboardingInput = {
   displayName: string;
   headline?: string;
   bio?: string;
+  currency?: string;
 };
 
 export async function completeOnboarding(input: OnboardingInput) {
@@ -70,6 +71,7 @@ export async function completeOnboarding(input: OnboardingInput) {
       headline: input.headline?.trim() || null,
       bio: input.bio?.trim() || null,
       lesson_price_cents: 4500,
+      currency: input.currency || "gbp",
     })
     .select("*")
     .single();

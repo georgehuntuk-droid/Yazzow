@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Loader2, ArrowRight, ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { TutorProfile, TutorPackage } from "@/lib/types";
+import { detectUserCurrency, convertAmount, subscribeToCurrencyChange } from "@/lib/currency";
 
 type LessonPackagesTabProps = {
   tutor: TutorProfile;
@@ -24,6 +25,17 @@ export function LessonPackagesTab({
   paymentsBlockedMessage,
   isDemo = false,
 }: LessonPackagesTabProps) {
+  const [currency, setCurrency] = useState(tutor.currency);
+  useEffect(() => {
+    setCurrency(detectUserCurrency(tutor.currency));
+    return subscribeToCurrencyChange((newCurr) => setCurrency(newCurr));
+  }, [tutor.currency]);
+
+  const getDisplayPrice = (cents: number, fromCurrency: string = tutor.currency) => {
+    const { amountCents } = convertAmount(cents, fromCurrency, currency);
+    return formatMoney(amountCents, currency);
+  };
+
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -137,8 +149,8 @@ export function LessonPackagesTab({
                         <p className="text-xs text-muted-foreground mt-0.5">{pkg.lessonsCount} lessons bundle</p>
                       </div>
                       <div className="flex items-baseline gap-1 mt-1">
-                        <span className="text-xl font-black text-foreground">{formatMoney(pkg.priceCents, pkg.currency)}</span>
-                        <span className="text-[10px] font-semibold text-muted-foreground">({formatMoney(perLessonRateCents, pkg.currency)}/lesson)</span>
+                        <span className="text-xl font-black text-foreground">{getDisplayPrice(pkg.priceCents, pkg.currency)}</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground">({getDisplayPrice(perLessonRateCents, pkg.currency)}/lesson)</span>
                       </div>
                     </button>
                   );
@@ -159,19 +171,19 @@ export function LessonPackagesTab({
                 <div className="space-y-0.5 text-center sm:text-left">
                   <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Standard Rate</span>
                   <p className="text-base font-medium line-through text-muted-foreground/80">
-                    {formatMoney(totalStandardCents, tutor.currency)}
+                    {getDisplayPrice(totalStandardCents, tutor.currency)}
                   </p>
                 </div>
                 <div className="space-y-0.5 text-center border-y sm:border-y-0 sm:border-x border-border/60 py-2 sm:py-0 sm:px-4">
                   <span className="text-[10px] font-black uppercase tracking-wider text-green-600 font-bold">You Save</span>
                   <p className="text-lg font-bold text-green-600">
-                    {discountPercent}% ({formatMoney(totalSavingsCents, tutor.currency)})
+                    {discountPercent}% ({getDisplayPrice(totalSavingsCents, tutor.currency)})
                   </p>
                 </div>
                 <div className="space-y-0.5 text-center sm:text-right">
                   <span className="text-[10px] font-black uppercase tracking-wider text-primary font-bold">Package Price</span>
                   <p className="text-2xl font-black text-primary">
-                    {formatMoney(packagePriceCents, tutor.currency)}
+                    {getDisplayPrice(packagePriceCents, tutor.currency)}
                   </p>
                 </div>
               </div>
@@ -241,23 +253,30 @@ export function LessonPackagesTab({
                 {paymentsBlockedMessage || "Online block booking is not active right now."}
               </div>
             ) : (
-              <Button
-                className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-                disabled={loading || !email}
-                onClick={handlePackageCheckout}
-              >
-                {loading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" />
-                    Redirecting to Stripe…
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5">
-                    Purchase Bundle for {formatMoney(packagePriceCents, tutor.currency)}
-                    <ArrowRight className="size-4" />
-                  </span>
+              <>
+                <Button
+                  className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+                  disabled={loading || !email}
+                  onClick={handlePackageCheckout}
+                >
+                  {loading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="size-4 animate-spin" />
+                      Redirecting to Stripe…
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      Purchase Bundle for {getDisplayPrice(packagePriceCents, tutor.currency)}
+                      <ArrowRight className="size-4" />
+                    </span>
+                  )}
+                </Button>
+                {currency.toLowerCase() !== tutor.currency.toLowerCase() && (
+                  <p className="text-[10px] text-muted-foreground text-center mt-1.5 leading-normal animate-in fade-in">
+                    Billed in {tutor.currency.toUpperCase()} at checkout ({formatMoney(packagePriceCents, tutor.currency)}).
+                  </p>
                 )}
-              </Button>
+              </>
             )}
           </div>
         </CardContent>

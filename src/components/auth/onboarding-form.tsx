@@ -27,6 +27,7 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
   const [displayName, setDisplayName] = useState(defaultDisplayName);
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
+  const [currency, setCurrency] = useState("gbp");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +61,7 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
       displayName: displayName.trim(),
       headline: headline.trim() || undefined,
       bio: bio.trim() || undefined,
+      currency,
     });
 
     if (!result.ok) {
@@ -163,6 +165,37 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
                 placeholder="Tell parents a little about your tutoring background, qualifications, and teaching style…"
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="currency" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Billing Currency
+            </label>
+            <select
+              id="currency"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="flex h-10 w-full rounded-xl border border-input bg-card/85 px-3 py-2 text-sm outline-none transition-all placeholder:text-muted-foreground focus-visible:border-primary/40 focus-visible:ring-4 focus-visible:ring-primary/15"
+            >
+              <option value="gbp">GBP (£) - British Pound</option>
+              <option value="usd">USD ($) - US Dollar</option>
+              <option value="eur">EUR (€) - Euro</option>
+              <option value="cad">CAD ($) - Canadian Dollar</option>
+              <option value="aud">AUD ($) - Australian Dollar</option>
+              <option value="nzd">NZD ($) - New Zealand Dollar</option>
+              <option value="jpy">JPY (¥) - Japanese Yen</option>
+              <option value="sgd">SGD ($) - Singapore Dollar</option>
+              <option value="hkd">HKD ($) - Hong Kong Dollar</option>
+              <option value="chf">CHF (CHF) - Swiss Franc</option>
+              <option value="inr">INR (₹) - Indian Rupee</option>
+              <option value="zar">ZAR (R) - South African Rand</option>
+              <option value="aed">AED (AED) - UAE Dirham</option>
+              <option value="cny">CNY (¥) - Chinese Yuan</option>
+              <option value="sek">SEK (kr) - Swedish Krona</option>
+            </select>
+            <p className="text-[10px] text-muted-foreground leading-normal mt-0.5">
+              Select the currency to bill parents in. Stripe Connect automatically converts payouts to your local bank currency.
+            </p>
           </div>
 
           {error ? (

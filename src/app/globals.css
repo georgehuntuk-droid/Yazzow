@@ -139,6 +139,23 @@
   .yazz-btn-secondary {
     cursor: pointer !important;
   }
+
+  /* Global input theme overrides for textarea and select elements to match Input component */
+  textarea:not(.no-override),
+  select:not(.no-override) {
+    @apply rounded-xl! border-input! bg-card/80! text-foreground! text-sm! shadow-sm! transition-all! outline-none! px-3! py-2! disabled:pointer-events-none! disabled:cursor-not-allowed! disabled:bg-input/50! disabled:opacity-50! dark:bg-input/30!;
+  }
+
+  select:not(.no-override) {
+    @apply h-9! py-1.5!;
+  }
+
+  textarea:focus-visible,
+  select:focus-visible,
+  textarea:focus,
+  select:focus {
+    @apply border-primary/40! ring-4! ring-primary/15!;
+  }
 }
 
 @layer utilities {

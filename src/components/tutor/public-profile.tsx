@@ -1,7 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/format";
 import type { TutorProfile } from "@/lib/types";
+import { detectUserCurrency, convertAmount, subscribeToCurrencyChange } from "@/lib/currency";
 
 type PublicProfileProps = {
   tutor: TutorProfile;
@@ -18,6 +22,17 @@ function getInitials(name: string) {
 
 export function PublicProfile({ tutor }: PublicProfileProps) {
   const initials = getInitials(tutor.displayName);
+
+  const [currency, setCurrency] = useState(tutor.currency);
+  useEffect(() => {
+    setCurrency(detectUserCurrency(tutor.currency));
+    return subscribeToCurrencyChange((newCurr) => setCurrency(newCurr));
+  }, [tutor.currency]);
+
+  const getDisplayPrice = (cents: number) => {
+    const { amountCents } = convertAmount(cents, tutor.currency, currency);
+    return formatMoney(amountCents, currency);
+  };
 
   // Dynamic JSON-LD Structured Data Schema.org Person/Tutor profile markup
   const jsonLd = {
@@ -88,7 +103,7 @@ export function PublicProfile({ tutor }: PublicProfileProps) {
         ) : null}
         <div className="mt-5 flex flex-wrap gap-2">
           <Badge className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-all duration-200">
-            {formatMoney(tutor.lessonPriceCents, tutor.currency)} per lesson
+            {getDisplayPrice(tutor.lessonPriceCents)} per lesson
           </Badge>
           <Badge variant="secondary" className="border border-border/60 hover:bg-muted transition-all duration-200">
             Paid upfront at booking

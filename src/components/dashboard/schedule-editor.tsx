@@ -231,7 +231,7 @@ export function ScheduleEditor({ slots, profile }: ScheduleEditorProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Slot Addition Form */}
-        <form onSubmit={handleAdd} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 bg-muted/20 p-5 rounded-2xl border border-border/40">
+        <form onSubmit={handleAdd} className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 bg-muted/20 p-5 rounded-2xl border border-border/40">
           <div className="space-y-2">
             <label htmlFor="slot-date" className="text-sm font-semibold text-foreground">
               Date
@@ -241,7 +241,7 @@ export function ScheduleEditor({ slots, profile }: ScheduleEditorProps) {
               type="date"
               required
               value={date}
-              className="rounded-xl border-border/80 bg-background"
+              className="rounded-xl border-border/80 bg-background h-9"
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
@@ -254,7 +254,7 @@ export function ScheduleEditor({ slots, profile }: ScheduleEditorProps) {
               type="time"
               required
               value={startTime}
-              className="rounded-xl border-border/80 bg-background"
+              className="rounded-xl border-border/80 bg-background h-9"
               onChange={(e) => setStartTime(e.target.value)}
             />
           </div>
@@ -267,12 +267,15 @@ export function ScheduleEditor({ slots, profile }: ScheduleEditorProps) {
               type="time"
               required
               value={endTime}
-              className="rounded-xl border-border/80 bg-background"
+              className="rounded-xl border-border/80 bg-background h-9"
               onChange={(e) => setEndTime(e.target.value)}
             />
           </div>
-          <div className="flex items-end">
-            <Button type="submit" className="w-full rounded-xl bg-primary hover:bg-primary/95 text-white shadow-sm" disabled={loading || previewCount === 0}>
+          <div className="space-y-2">
+            <label className="hidden sm:block text-sm font-semibold text-transparent select-none">
+              Action
+            </label>
+            <Button type="submit" className="w-full h-9 rounded-xl bg-primary hover:bg-primary/95 text-white shadow-sm" disabled={loading || previewCount === 0}>
               {loading
                 ? "Adding…"
                 : previewCount > 0
@@ -302,11 +305,11 @@ export function ScheduleEditor({ slots, profile }: ScheduleEditorProps) {
         ) : null}
 
         {/* View Mode Toggle */}
-        <div className="flex items-center justify-between border-b border-border/30 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/30 pb-3">
           <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">
             {viewMode === "calendar" ? "Visual Calendar Grid" : "Upcoming Schedule List"}
           </h3>
-          <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl border border-border/40">
+          <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl border border-border/40 self-end sm:self-auto">
             <button
               type="button"
               className={cn(

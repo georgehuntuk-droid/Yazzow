@@ -38,7 +38,9 @@ export const DIGITAL_PACK_IN_APP_CHECKOUT = false;
 
 export const TUTOR_PUBLIC_PATH = "/tutor" as const;
 
-export const SUPPORTED_CURRENCIES = ["gbp", "usd", "eur"] as const;
+export const SUPPORTED_CURRENCIES = [
+  "gbp", "usd", "eur", "cad", "aud", "nzd", "jpy", "sgd", "hkd", "chf", "inr", "zar", "aed", "cny", "sek"
+] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const LESSON_PRICE_LIMITS = {

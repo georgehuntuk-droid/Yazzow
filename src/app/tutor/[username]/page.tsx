@@ -14,6 +14,7 @@ import { PortalThemeWrapper } from "@/components/tutor/portal-theme-wrapper";
 import { PublicProfile } from "@/components/tutor/public-profile";
 import { ResourceShelf } from "@/components/tutor/resource-shelf";
 import { LessonPackagesTab } from "@/components/tutor/lesson-packages-tab";
+import { CurrencySelector } from "@/components/brand/currency-selector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DEMO_OPEN_SLOTS,
@@ -153,45 +154,48 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
           <Logo size="header" href="/" />
-          {isSamplePortal ? (
-            <>
-              <p className="hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground md:block">
-                Sample portal · preview only
-              </p>
-              <nav className="flex shrink-0 items-center gap-2">
-                <Link
-                  href="/auth/login?next=/tutor/demo"
-                  className={buttonVariants({ variant: "ghost", size: "sm" })}
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className={buttonVariants({ variant: "default", size: "sm" })}
-                >
-                  Get started
-                </Link>
+          <div className="flex items-center gap-3">
+            <CurrencySelector tutorCurrency={tutor.currency} />
+            {isSamplePortal ? (
+              <>
+                <p className="hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs text-muted-foreground md:block">
+                  Sample portal · preview only
+                </p>
+                <nav className="flex shrink-0 items-center gap-2">
+                  <Link
+                    href="/auth/login?next=/tutor/demo"
+                    className={buttonVariants({ variant: "ghost", size: "sm" })}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className={buttonVariants({ variant: "default", size: "sm" })}
+                  >
+                    Get started
+                  </Link>
+                </nav>
+              </>
+            ) : (
+              <nav className="flex items-center gap-2">
+                {user ? (
+                  <Link
+                    href={`/tutor/${username}/workspace`}
+                    className={buttonVariants({ variant: "default", size: "sm" }) + " font-bold text-xs rounded-xl shadow-sm"}
+                  >
+                    Open Workspace
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/auth/login?next=/tutor/${username}/workspace`}
+                    className={buttonVariants({ variant: "outline", size: "sm" }) + " font-bold text-xs rounded-xl hover:bg-muted transition-colors"}
+                  >
+                    Parent Login
+                  </Link>
+                )}
               </nav>
-            </>
-          ) : (
-            <nav className="flex items-center gap-2">
-              {user ? (
-                <Link
-                  href={`/tutor/${username}/workspace`}
-                  className={buttonVariants({ variant: "default", size: "sm" }) + " font-bold text-xs rounded-xl shadow-sm"}
-                >
-                  Open Workspace
-                </Link>
-              ) : (
-                <Link
-                  href={`/auth/login?next=/tutor/${username}/workspace`}
-                  className={buttonVariants({ variant: "outline", size: "sm" }) + " font-bold text-xs rounded-xl hover:bg-muted transition-colors"}
-                >
-                  Parent Login
-                </Link>
-              )}
-            </nav>
-          )}
+            )}
+          </div>
         </div>
       </header>
 

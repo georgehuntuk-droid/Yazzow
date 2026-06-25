@@ -9,6 +9,7 @@ import { formatMoney, formatSlotRange } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 import type { OpenSlot, TutorProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { detectUserCurrency, convertAmount, subscribeToCurrencyChange } from "@/lib/currency";
 
 type LessonCheckoutButtonProps = {
   tutor: TutorProfile;
@@ -23,6 +24,16 @@ export function LessonCheckoutButton({
   isDemo = false,
   paymentsEnabled = true,
 }: LessonCheckoutButtonProps) {
+  const [currency, setCurrency] = useState(tutor.currency);
+  useEffect(() => {
+    setCurrency(detectUserCurrency(tutor.currency));
+    return subscribeToCurrencyChange((newCurr) => setCurrency(newCurr));
+  }, [tutor.currency]);
+
+  const getDisplayPrice = (cents: number, fromCurrency: string = tutor.currency) => {
+    const { amountCents } = convertAmount(cents, fromCurrency, currency);
+    return formatMoney(amountCents, currency);
+  };
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -194,7 +205,7 @@ export function LessonCheckoutButton({
           <div className="text-right shrink-0">
             <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Hourly Rate</p>
             <p className="text-sm font-black text-primary mt-0.5">
-              {formatMoney(tutor.lessonPriceCents, tutor.currency)}
+              {getDisplayPrice(tutor.lessonPriceCents)}
             </p>
           </div>
         </div>
@@ -400,13 +411,18 @@ export function LessonCheckoutButton({
                 </>
               ) : (
                 <>
-                  Book & Pay {formatMoney(tutor.lessonPriceCents, tutor.currency)}
+                  Book & Pay {getDisplayPrice(tutor.lessonPriceCents)}
                 </>
               )}
               <ArrowRight className="size-4" />
             </span>
           )}
         </Button>
+      )}
+      {paymentMethod === "card" && currency.toLowerCase() !== tutor.currency.toLowerCase() && (
+        <p className="text-[10px] text-muted-foreground text-center mt-1.5 leading-normal animate-in fade-in">
+          Billed in {tutor.currency.toUpperCase()} at checkout ({formatMoney(tutor.lessonPriceCents, tutor.currency)}).
+        </p>
       )}
 
       {/* Trust & Security Badge */}

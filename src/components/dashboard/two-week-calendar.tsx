@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatMoney, formatSlotRange } from "@/lib/format";
+import { detectUserCurrency, convertAmount, subscribeToCurrencyChange } from "@/lib/currency";
 import { 
   deleteAvailabilitySlot, 
   bookSlotManually, 
@@ -93,6 +94,17 @@ export function TwoWeekCalendar({
   const [, startTransition] = useTransition();
   const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2">("week1");
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
+
+  const [currency, setCurrency] = useState(tutor.currency);
+  useEffect(() => {
+    setCurrency(detectUserCurrency(tutor.currency));
+    return subscribeToCurrencyChange((newCurr) => setCurrency(newCurr));
+  }, [tutor.currency]);
+
+  const getDisplayPrice = (cents: number) => {
+    const { amountCents } = convertAmount(cents, tutor.currency, currency);
+    return formatMoney(amountCents, currency);
+  };
 
   // Form states for Modal
   const [manualParentEmail, setManualParentEmail] = useState("");
@@ -188,10 +200,10 @@ export function TwoWeekCalendar({
     setActionLoading(false);
     if (res.ok) {
       setSuccessMsg("Slot deleted successfully.");
+      router.refresh();
       setTimeout(() => {
         setSelectedSlot(null);
-        router.refresh();
-      }, 1000);
+      }, 300);
     } else {
       setErrorMsg(res.error);
     }
@@ -212,10 +224,10 @@ export function TwoWeekCalendar({
     setActionLoading(false);
     if (res.ok) {
       setSuccessMsg("Slot booked successfully!");
+      router.refresh();
       setTimeout(() => {
         setSelectedSlot(null);
-        router.refresh();
-      }, 1000);
+      }, 300);
     } else {
       setErrorMsg(res.error);
     }
@@ -229,10 +241,10 @@ export function TwoWeekCalendar({
     setActionLoading(false);
     if (res.ok) {
       setSuccessMsg("Booking cancelled. Slot is open.");
+      router.refresh();
       setTimeout(() => {
         setSelectedSlot(null);
-        router.refresh();
-      }, 1000);
+      }, 300);
     } else {
       setErrorMsg(res.error);
     }
@@ -245,10 +257,10 @@ export function TwoWeekCalendar({
     setActionLoading(false);
     if (res.ok) {
       setSuccessMsg(res.message ?? "Late notice sent!");
+      router.refresh();
       setTimeout(() => {
         setSelectedSlot(null);
-        router.refresh();
-      }, 1200);
+      }, 300);
     } else {
       setErrorMsg(res.error);
     }
@@ -261,10 +273,10 @@ export function TwoWeekCalendar({
     setActionLoading(false);
     if (res.ok) {
       setSuccessMsg("Reminder email sent!");
+      router.refresh();
       setTimeout(() => {
         setSelectedSlot(null);
-        router.refresh();
-      }, 1000);
+      }, 300);
     } else {
       setErrorMsg(res.error);
     }
@@ -293,10 +305,10 @@ export function TwoWeekCalendar({
           return;
         }
         setSuccessMsg("Lesson booked successfully!");
+        router.refresh();
         setTimeout(() => {
           setSelectedSlot(null);
-          router.refresh();
-        }, 1500);
+        }, 300);
       } else if (paymentMethod === "cash") {
         const response = await fetch("/api/tutor/book-direct", {
           method: "POST",
@@ -315,10 +327,10 @@ export function TwoWeekCalendar({
           return;
         }
         setSuccessMsg("Lesson booked successfully!");
+        router.refresh();
         setTimeout(() => {
           setSelectedSlot(null);
-          router.refresh();
-        }, 1500);
+        }, 300);
       } else {
         // Stripe checkout
         const response = await fetch("/api/stripe/checkout/lesson", {
@@ -353,10 +365,10 @@ export function TwoWeekCalendar({
     setActionLoading(false);
     if (res.ok) {
       setSuccessMsg("Your lesson has been cancelled successfully.");
+      router.refresh();
       setTimeout(() => {
         setSelectedSlot(null);
-        router.refresh();
-      }, 1500);
+      }, 300);
     } else {
       setErrorMsg(res.error);
     }
@@ -539,7 +551,7 @@ export function TwoWeekCalendar({
                           <span className="truncate block font-semibold text-[9px] mt-0.5 opacity-90">
                             {isBooked 
                               ? (role === "student" && !mine ? "Unavailable" : (slot.booking?.studentName || "Lesson")) 
-                              : `Open Slot (£${formatMoney(tutor.lessonPriceCents)})`}
+                              : `Open Slot (${getDisplayPrice(tutor.lessonPriceCents)})`}
                           </span>
                         </button>
                       );
@@ -825,7 +837,7 @@ export function TwoWeekCalendar({
                         <p className="font-bold text-foreground flex items-center justify-between">
                           <span>Lesson Price:</span>
                           <strong className="text-primary text-sm font-black">
-                            £{formatMoney(tutor.lessonPriceCents)}
+                            {getDisplayPrice(tutor.lessonPriceCents)}
                           </strong>
                         </p>
                         <p className="text-muted-foreground">

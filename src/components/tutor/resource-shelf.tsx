@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -7,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
+import { detectUserCurrency, convertAmount, subscribeToCurrencyChange } from "@/lib/currency";
 import type { DigitalResource } from "@/lib/types";
 import { FileText, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +20,19 @@ type ResourceShelfProps = {
 };
 
 export function ResourceShelf({ resources }: ResourceShelfProps) {
+  const firstResCurrency = resources[0]?.currency || "gbp";
+  const [currency, setCurrency] = useState(firstResCurrency);
+
+  useEffect(() => {
+    setCurrency(detectUserCurrency(firstResCurrency));
+    return subscribeToCurrencyChange((newCurr) => setCurrency(newCurr));
+  }, [firstResCurrency]);
+
+  const getDisplayPrice = (cents: number, fromCurrency: string) => {
+    const { amountCents } = convertAmount(cents, fromCurrency, currency);
+    return formatMoney(amountCents, currency);
+  };
+
   if (resources.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border px-6 py-12 text-center text-muted-foreground">
@@ -65,7 +82,7 @@ export function ResourceShelf({ resources }: ResourceShelfProps) {
           <CardFooter className="flex flex-col gap-2.5 border-t border-border/40 pt-4 px-6 pb-6">
             <div className="w-full flex items-center justify-between">
               <span className="text-xl font-black text-primary font-heading tracking-tight">
-                {resource.priceCents === 0 ? "Free" : formatMoney(resource.priceCents, resource.currency)}
+                {resource.priceCents === 0 ? "Free" : getDisplayPrice(resource.priceCents, resource.currency)}
               </span>
               {resource.priceCents > 0 && (
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted px-2 py-0.5 rounded">

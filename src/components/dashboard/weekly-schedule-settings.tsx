@@ -184,7 +184,7 @@ export function WeeklyScheduleSettings() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Add Rule Form */}
-            <form onSubmit={handleAddRule} className="grid gap-4 sm:grid-cols-4 bg-muted/20 p-4 rounded-xl border border-border/40 items-end">
+            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-muted/20 p-4 rounded-xl border border-border/40">
               <div className="space-y-1.5">
                 <label htmlFor="rule-day" className="text-xs font-semibold text-foreground">
                   Day
@@ -193,7 +193,7 @@ export function WeeklyScheduleSettings() {
                   id="rule-day"
                   value={dayOfWeek}
                   onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-                  className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 >
                   {WEEKDAYS.map((d) => (
                     <option key={d.value} value={d.value}>
@@ -212,7 +212,7 @@ export function WeeklyScheduleSettings() {
                   required
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="h-10 bg-background"
+                  className="h-9 bg-background"
                 />
               </div>
               <div className="space-y-1.5">
@@ -225,14 +225,17 @@ export function WeeklyScheduleSettings() {
                   required
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="h-10 bg-background"
+                  className="h-9 bg-background"
                 />
               </div>
-              <div>
+              <div className="space-y-1.5">
+                <label className="hidden sm:block text-xs font-semibold text-transparent select-none">
+                  Action
+                </label>
                 <Button
                   type="submit"
                   disabled={actionLoading === "add"}
-                  className="w-full h-10 rounded-lg bg-primary text-white font-bold"
+                  className="w-full h-9 rounded-xl bg-primary text-white font-bold"
                 >
                   {actionLoading === "add" ? (
                     <Loader2 className="size-4 animate-spin" />

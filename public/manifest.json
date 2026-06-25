@@ -21,11 +21,5 @@
       "purpose": "any maskable"
     }
   ],
-  "prefer_related_applications": true,
-  "related_applications": [
-    {
-      "platform": "webapp",
-      "url": "https://yazzow.com/manifest.json"
-    }
-  ]
+  "prefer_related_applications": false
 }

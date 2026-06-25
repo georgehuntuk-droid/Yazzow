@@ -381,6 +381,21 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
             </div>
           </div>
 
+          {/* Mobile App download banner */}
+          <div className="sm:hidden">
+            <Card className="yazz-surface border-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-sm">
+              <CardContent className="p-4 flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="font-bold text-xs text-foreground">📱 Use Yazzow as a mobile app</h4>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Install Yazzow on your phone to get homework alerts, chat instantly, and manage your schedules directly from your home screen.
+                  </p>
+                </div>
+                <InstallAppButton size="sm" variant="default" className="text-[11px] px-3.5 h-8 font-bold shrink-0 shadow-sm" />
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Stats matrix / info card */}
           <div className="grid gap-6 sm:grid-cols-3">
             <Card className="yazz-surface">

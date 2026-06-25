@@ -25,6 +25,7 @@ export type TutorProfile = {
   portalSideBannerLink?: string;
   portalSideWidgetTitle?: string;
   portalSideWidgetContent?: string;
+  automatedLessonReminders?: boolean;
 };
 
 export type OpenSlot = {

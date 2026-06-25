@@ -68,6 +68,7 @@ export async function updatePortalProfile(input: {
   paymentInstructions?: string;
   paymentReminderAmountThresholdCents?: number;
   paymentReminderDaysAfter?: number;
+  automatedLessonReminders?: boolean;
 }) {
   const { profile } = await requireTutorProfile();
 
@@ -111,6 +112,7 @@ export async function updatePortalProfile(input: {
     payment_instructions: paymentInstructions,
     payment_reminder_amount_threshold_cents: input.paymentReminderAmountThresholdCents ?? 0,
     payment_reminder_days_after: input.paymentReminderDaysAfter ?? 0,
+    automated_lesson_reminders: input.automatedLessonReminders ?? false,
   };
 
   const supabase = await createClient();
@@ -119,9 +121,10 @@ export async function updatePortalProfile(input: {
     .update(updatePayload)
     .eq("id", profile.id);
 
-  if (error && (error.code === "42703" || error.message.includes("payment_reminder"))) {
+  if (error && (error.code === "42703" || error.message.includes("payment_reminder") || error.message.includes("automated_lesson_reminders"))) {
     delete updatePayload.payment_reminder_amount_threshold_cents;
     delete updatePayload.payment_reminder_days_after;
+    delete updatePayload.automated_lesson_reminders;
     const retryRes = await supabase
       .from("tutor_profiles")
       .update(updatePayload)

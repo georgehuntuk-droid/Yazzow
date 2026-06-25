@@ -57,6 +57,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
   const [blockLessonsCount, setBlockLessonsCount] = useState(profile.blockPackageLessonsCount ?? 10);
   const [blockDiscountPercent, setBlockDiscountPercent] = useState(profile.blockPackageDiscountPercent ?? 10);
   const [allowPublicJoining, setAllowPublicJoining] = useState(profile.allowPublicJoining ?? true);
+  const [automatedLessonReminders, setAutomatedLessonReminders] = useState(profile.automatedLessonReminders ?? false);
 
   // States for new / editing package forms
   const [newPkgName, setNewPkgName] = useState("");
@@ -139,6 +140,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       paymentInstructions,
       paymentReminderAmountThresholdCents: reminderAmountThreshold ? Math.round(parseFloat(reminderAmountThreshold) * 100) : 0,
       paymentReminderDaysAfter: reminderDaysAfter ? parseInt(reminderDaysAfter, 10) : 0,
+      automatedLessonReminders,
     }),
     [
       profile,
@@ -164,6 +166,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       paymentInstructions,
       reminderAmountThreshold,
       reminderDaysAfter,
+      automatedLessonReminders,
     ],
   );
 
@@ -257,6 +260,9 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       allowPublicJoining,
       allowCashPayments,
       paymentInstructions,
+      paymentReminderAmountThresholdCents: reminderAmountThreshold ? Math.round(parseFloat(reminderAmountThreshold) * 100) : 0,
+      paymentReminderDaysAfter: reminderDaysAfter ? parseInt(reminderDaysAfter, 10) : 0,
+      automatedLessonReminders,
     });
 
     if (!result.ok) {
@@ -1005,6 +1011,24 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   <p className="text-xs text-muted-foreground leading-normal">
                     When enabled, the &ldquo;Join Family&rdquo; form is shown on your public booking page. 
                     Disable this to make your portal invite-only and prevent unauthorized self-signups.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5 pt-2 pb-2 border-t border-border/50">
+                <input
+                  id="automated-lesson-reminders"
+                  type="checkbox"
+                  checked={automatedLessonReminders}
+                  onChange={(e) => setAutomatedLessonReminders(e.target.checked)}
+                  className="mt-0.5 h-4.5 w-4.5 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                />
+                <div className="space-y-0.5">
+                  <label htmlFor="automated-lesson-reminders" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Automated 24h Lesson Reminders
+                  </label>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    Automatically send email and in-app chat reminders to parents 24 hours before each scheduled appointment.
                   </p>
                 </div>
               </div>

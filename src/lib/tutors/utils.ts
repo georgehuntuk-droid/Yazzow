@@ -29,6 +29,7 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     portalSideBannerLink: row.portal_side_banner_link ?? undefined,
     portalSideWidgetTitle: row.portal_side_widget_title ?? undefined,
     portalSideWidgetContent: row.portal_side_widget_content ?? undefined,
+    automatedLessonReminders: (row as any).automated_lesson_reminders === true,
   };
 }
 

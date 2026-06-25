@@ -5,7 +5,6 @@ import { getSlotsForTutorOwner } from "@/lib/tutors/portal-data";
 import { ScheduleEditor } from "@/components/dashboard/schedule-editor";
 import { WeeklyScheduleSettings } from "@/components/dashboard/weekly-schedule-settings";
 import { DashboardShell } from "@/components/layout/page-header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BRAND_NAME } from "@/lib/constants";
 
 export const metadata = {
@@ -36,27 +35,26 @@ export default async function SchedulePage() {
           </div>
         </div>
 
-        {/* Tabbed view for calendar / standard hours */}
-        <Tabs defaultValue="calendar" className="w-full">
-          <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto mb-6">
-            <TabsTrigger value="calendar" className="rounded-lg px-4 gap-1.5 text-xs sm:text-sm">
-              <Calendar className="size-4 text-primary" />
-              Interactive Calendar
-            </TabsTrigger>
-            <TabsTrigger value="standard" className="rounded-lg px-4 gap-1.5 text-xs sm:text-sm">
-              <Settings className="size-4 text-primary" />
-              Weekly Standard Hours
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="calendar" className="mt-0">
+        {/* Combined Side-by-Side Schedule Builder Grid */}
+        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] items-start">
+          {/* Left Column: Interactive Calendar */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
+              <Calendar className="size-4.5 text-primary" />
+              1. Interactive Calendar (Slots)
+            </h2>
             <ScheduleEditor slots={slots} />
-          </TabsContent>
-          
-          <TabsContent value="standard" className="mt-0">
+          </div>
+
+          {/* Right Column: Weekly Standard Hours & Bulk generation */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
+              <Settings className="size-4.5 text-primary" />
+              2. Standard Hours Rules
+            </h2>
             <WeeklyScheduleSettings />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </DashboardShell>
   );

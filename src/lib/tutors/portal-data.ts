@@ -85,7 +85,10 @@ export async function getResourcesForTutorOwner(
 
 export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[]> {
   const supabase = await createClient();
-  const now = new Date().toISOString();
+  // Fetch slots from 24 hours ago so today's slots remain visible to the tutor
+  const twentyFourHoursAgo = new Date();
+  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+  const queryStart = twentyFourHoursAgo.toISOString();
 
   const { data, error } = await supabase
     .from("availability_slots")
@@ -107,7 +110,7 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
       )
     `)
     .eq("tutor_id", tutorId)
-    .gte("starts_at", now)
+    .gte("starts_at", queryStart)
     .order("starts_at", { ascending: true });
 
   if (error || !data) return [];

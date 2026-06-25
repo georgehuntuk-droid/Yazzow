@@ -32,12 +32,23 @@ export function AuthForm({ mode }: AuthFormProps) {
   const searchParams = useSearchParams();
   
   const [role, setRole] = useState<"tutor" | "parent">("tutor");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam === "parent" || roleParam === "student") {
+      setRole("parent");
+    }
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [searchParams]);
+
   const defaultNext = role === "parent" 
     ? "/onboarding?role=parent" 
     : (mode === "signup" ? "/onboarding" : "/dashboard");
   const next = searchParams.get("next") ?? defaultNext;
-
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);

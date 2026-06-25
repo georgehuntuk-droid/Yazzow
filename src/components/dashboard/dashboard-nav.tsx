@@ -41,6 +41,27 @@ type DashboardNavProps = {
 
 export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
   const pathname = usePathname();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    async function checkUnread() {
+      try {
+        const res = await fetch("/api/messages");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.threads)) {
+          const count = data.threads.reduce((sum: number, t: any) => sum + (t.unreadCount || 0), 0);
+          setUnreadMessages(count);
+        }
+      } catch (err) {
+        console.error("Failed to fetch unread messages count:", err);
+      }
+    }
+
+    void checkUnread();
+    const interval = setInterval(checkUnread, 10000); // poll every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <aside className="flex w-full flex-col border-b border-sidebar-border bg-sidebar/50 lg:min-h-full lg:w-64 lg:border-b-0 lg:border-r">
@@ -60,14 +81,26 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
+                "inline-flex items-center justify-between w-full rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
                 active
                   ? "bg-primary text-primary-foreground shadow-[0_4px_16px_oklch(0.55_0.18_250/0.25)] ring-1 ring-primary/10"
                   : "text-muted-foreground hover:bg-primary/5 hover:text-primary",
               )}
             >
-              <item.icon className="size-4.5 shrink-0" />
-              {item.label}
+              <div className="flex items-center gap-3">
+                <item.icon className="size-4.5 shrink-0" />
+                {item.label}
+              </div>
+              {item.label === "Messages" && unreadMessages > 0 && (
+                <span className={cn(
+                  "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black shrink-0",
+                  active 
+                    ? "bg-background text-primary" 
+                    : "bg-primary text-primary-foreground"
+                )}>
+                  {unreadMessages}
+                </span>
+              )}
             </Link>
           );
         })}

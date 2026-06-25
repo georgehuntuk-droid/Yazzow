@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles, ChevronDown, HelpCircle } from "lucide-react";
+import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles, ChevronDown, HelpCircle, Clock } from "lucide-react";
 import type { Metadata } from "next";
 import { BRAND_NAME } from "@/lib/constants";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
@@ -90,6 +90,63 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
   }
 
   if (!studentRecords || studentRecords.length === 0) {
+    // Check for any pending workspace applications
+    const { data: pendingRecords } = await admin
+      .from("students")
+      .select("student_name")
+      .eq("tutor_id", tutor.id)
+      .ilike("parent_email", user.email || "")
+      .eq("status", "pending");
+
+    if (pendingRecords && pendingRecords.length > 0) {
+      return (
+        <PortalThemeWrapper tutor={tutor}>
+          <div className="min-h-screen flex flex-col bg-background">
+            <header className="border-b border-border/60 bg-background/80 backdrop-blur-md">
+              <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
+                <Logo size="header" href="/" />
+                <Link
+                  href={`/tutor/${username}`}
+                  className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="size-4" /> Back to Portal
+                </Link>
+              </div>
+            </header>
+            <main className="flex-1 flex items-center justify-center p-6">
+              <div className="max-w-md w-full text-center space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 mx-auto">
+                  <Clock className="size-6 animate-pulse" />
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-xl font-bold tracking-tight text-foreground">Application Pending</h1>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Your application to join <strong className="text-foreground">{tutor.displayName}</strong>&apos;s workspace is under review.
+                  </p>
+                  <div className="bg-muted/40 p-4 rounded-xl text-left border border-border/30 mt-2 space-y-1.5">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Applying Students:</span>
+                    {pendingRecords.map((r, i) => (
+                      <span key={i} className="block text-sm font-bold text-foreground">• {r.student_name}</span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed pt-2">
+                    Once the tutor reviews and approves your request, you will receive an invitation email to set up your password and access your dashboard.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <form action="/auth/signout" method="post" className="w-full">
+                    <button type="submit" className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors py-2 cursor-pointer">
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </main>
+          </div>
+        </PortalThemeWrapper>
+      );
+    }
+
     if (tutor.allowPublicJoining !== false) {
       return (
         <PortalThemeWrapper tutor={tutor}>

@@ -411,26 +411,9 @@ export async function addStudent(input: {
 
       if (!existingUser) {
         isNewUser = true;
-        const tempPassword = Math.random().toString(36).substring(2, 12) + "Temp123!";
-        await admin.auth.admin.createUser({
-          email: parentEmail,
-          password: tempPassword,
-          email_confirm: true,
-        });
-
-        const { data: linkData } = await admin.auth.admin.generateLink({
-          type: "recovery",
-          email: parentEmail,
-          options: {
-            redirectTo: `${PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(
-              `/auth/reset-password`
-            )}`,
-          },
-        });
-
-        if (linkData?.properties?.action_link) {
-          workspaceUrl = linkData.properties.action_link;
-        }
+        workspaceUrl = `${PUBLIC_SITE_URL}/auth/signup?role=parent&email=${encodeURIComponent(parentEmail)}&next=${encodeURIComponent(
+          `/tutor/${profile.username}/workspace`
+        )}`;
       }
     } catch (err) {
       console.error("Failed to pre-create student auth account:", err);
@@ -871,26 +854,9 @@ export async function resendStudentInvitation(studentId: string) {
 
       if (!existingUser) {
         isNewUser = true;
-        const tempPassword = Math.random().toString(36).substring(2, 12) + "Temp123!";
-        await admin.auth.admin.createUser({
-          email: parentEmail,
-          password: tempPassword,
-          email_confirm: true,
-        });
-
-        const { data: linkData } = await admin.auth.admin.generateLink({
-          type: "recovery",
-          email: parentEmail,
-          options: {
-            redirectTo: `${PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(
-              `/auth/reset-password`
-            )}`,
-          },
-        });
-
-        if (linkData?.properties?.action_link) {
-          workspaceUrl = linkData.properties.action_link;
-        }
+        workspaceUrl = `${PUBLIC_SITE_URL}/auth/signup?role=parent&email=${encodeURIComponent(parentEmail)}&next=${encodeURIComponent(
+          `/tutor/${profile.username}/workspace`
+        )}`;
       }
     } catch (err) {
       console.error("Failed to pre-create student auth account on resend:", err);
@@ -904,7 +870,7 @@ export async function resendStudentInvitation(studentId: string) {
       isNewUser,
     });
     return { ok: true as const };
-  } catch (err) {
+  } catch {
     return { ok: false as const, error: "Failed to send invitation email." };
   }
 }
@@ -1343,5 +1309,90 @@ export async function generateSlotsFromRulesAction(weeksAhead = 4) {
     skipped: totalSkipped,
     message: `Successfully generated ${totalGenerated} slots for the next ${weeksAhead} weeks (${totalSkipped} skipped as duplicates).`,
   };
+}
+
+export async function approveStudentApplication(studentId: string) {
+  const { profile } = await requireTutorProfile();
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { data: student, error: fetchError } = await admin
+    .from("students")
+    .select("student_name, parent_email")
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (fetchError || !student) {
+    return { ok: false as const, error: "Application not found." };
+  }
+
+  const { error: updateError } = await admin
+    .from("students")
+    .update({ status: "active" })
+    .eq("id", studentId);
+
+  if (updateError) {
+    return { ok: false as const, error: formatSupabaseError(updateError.message) };
+  }
+
+  // Send the invitation email
+  try {
+    const parentEmail = student.parent_email.trim().toLowerCase();
+    const { sendStudentInvitationEmail } = await import("@/lib/notifications/auth-email");
+    const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+
+    let workspaceUrl = `${PUBLIC_SITE_URL}/auth/signup?role=parent&email=${encodeURIComponent(parentEmail)}&next=${encodeURIComponent(`/tutor/${profile.username}/workspace`)}`;
+    let isNewUser = true;
+
+    try {
+      const { data: usersData } = await admin.auth.admin.listUsers();
+      const existingUser = usersData?.users?.find(
+        (u) => u.email?.toLowerCase() === parentEmail
+      );
+      if (existingUser) {
+        isNewUser = false;
+        workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${profile.username}/workspace`;
+      }
+    } catch (err) {
+      console.error("Failed to check if user exists on approval:", err);
+    }
+
+    await sendStudentInvitationEmail({
+      to: parentEmail,
+      tutorName: profile.displayName,
+      studentName: student.student_name,
+      workspaceUrl,
+      isNewUser,
+    });
+  } catch (err) {
+    console.error("Failed to send student invitation email on approval:", err);
+  }
+
+  revalidatePath("/dashboard/students");
+  await revalidateTutor(profile.username);
+  return { ok: true as const };
+}
+
+export async function rejectStudentApplication(studentId: string) {
+  const { profile } = await requireTutorProfile();
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { error } = await admin
+    .from("students")
+    .delete()
+    .eq("id", studentId)
+    .eq("tutor_id", profile.id)
+    .eq("status", "pending");
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard/students");
+  await revalidateTutor(profile.username);
+  return { ok: true as const };
 }
 

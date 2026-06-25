@@ -78,11 +78,22 @@ export async function joinTutorFamily(input: {
     needsVerification = true;
   }
 
+  const { data: existingStudent } = await admin
+    .from("students")
+    .select("status")
+    .eq("tutor_id", input.tutorId)
+    .ilike("parent_email", parentEmail)
+    .ilike("student_name", studentName)
+    .maybeSingle();
+
+  const status = existingStudent?.status || "pending";
+
   const { error: studentError } = await admin.from("students").upsert(
     {
       tutor_id: input.tutorId,
       parent_email: parentEmail,
       student_name: studentName,
+      status,
     },
     { onConflict: "tutor_id,parent_email,student_name" },
   );

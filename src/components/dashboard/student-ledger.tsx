@@ -23,13 +23,19 @@ import {
   resendStudentInvitation,
   toggleBookingPaidStatus,
   sendManualPaymentReminder,
+  approveStudentApplication,
+  rejectStudentApplication,
 } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { StudentWithLessons } from "@/lib/tutors/student-lessons";
 import { cn } from "@/lib/utils";
 
 type StudentLedgerProps = {
-  students: { active: StudentWithLessons[]; archived: StudentWithLessons[] };
+  students: {
+    active: StudentWithLessons[];
+    archived: StudentWithLessons[];
+    pending: StudentWithLessons[];
+  };
   currency: string;
 };
 
@@ -41,8 +47,34 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   const [parentEmail, setParentEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  async function handleApprove(studentId: string) {
+    setProcessingId(studentId);
+    setError(null);
+    const result = await approveStudentApplication(studentId);
+    setProcessingId(null);
+    if (!result.ok) {
+      alert(result.error || "Failed to approve application.");
+    } else {
+      router.refresh();
+    }
+  }
+
+  async function handleReject(studentId: string) {
+    if (!confirm("Are you sure you want to decline and remove this student application?")) return;
+    setProcessingId(studentId);
+    setError(null);
+    const result = await rejectStudentApplication(studentId);
+    setProcessingId(null);
+    if (!result.ok) {
+      alert(result.error || "Failed to reject application.");
+    } else {
+      router.refresh();
+    }
+  }
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [editingNames, setEditingNames] = useState<Record<string, string>>({});
@@ -324,8 +356,14 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="active">
+      <Tabs defaultValue={students.pending && students.pending.length > 0 ? "pending" : "active"}>
         <TabsList>
+          {students.pending && students.pending.length > 0 && (
+            <TabsTrigger value="pending" className="relative">
+              Applications ({students.pending.length})
+              <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-primary" />
+            </TabsTrigger>
+          )}
           <TabsTrigger value="active">
             Active ({students.active.length})
           </TabsTrigger>
@@ -333,6 +371,67 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             Archived ({students.archived.length})
           </TabsTrigger>
         </TabsList>
+        {students.pending && students.pending.length > 0 && (
+          <TabsContent value="pending" className="mt-4 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              These parents have applied to join your classroom workspace. Review details and approve to grant access.
+            </p>
+            <div className="space-y-3.5">
+              {students.pending.map((student) => {
+                const isProcessing = processingId === student.id;
+                return (
+                  <div
+                    key={student.id}
+                    className={cn(
+                      "rounded-2xl border border-border/80 bg-card p-5 hover:border-primary/20 shadow-sm transition-all duration-200",
+                      isProcessing && "opacity-60"
+                    )}
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <h4 className="font-heading font-black text-foreground text-sm flex items-center gap-2">
+                          👤 {student.studentName}
+                        </h4>
+                        <p className="text-xs text-muted-foreground font-semibold">
+                          Parent Email: <span className="text-foreground">{student.parentEmail}</span>
+                        </p>
+                        {student.notes && (
+                          <div className="bg-muted/40 p-3 rounded-xl border border-border/30 mt-2 text-xs italic text-muted-foreground max-w-xl">
+                            &ldquo;{student.notes}&rdquo;
+                          </div>
+                        )}
+                        <p className="text-[10px] text-muted-foreground font-semibold pt-1">
+                          Applied: {new Date(student.createdAt).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          disabled={isProcessing}
+                          onClick={() => handleApprove(student.id)}
+                          className="bg-primary text-primary-foreground font-bold text-xs px-4 py-2 h-9 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                        >
+                          {isProcessing ? "Processing…" : "Approve"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={isProcessing}
+                          onClick={() => handleReject(student.id)}
+                          className="border-destructive/30 hover:bg-destructive/5 hover:border-destructive/50 text-destructive font-bold text-xs px-4 py-2 h-9 rounded-xl transition-all cursor-pointer"
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        )}
         <TabsContent value="active" className="mt-4 space-y-3">
           <StudentList
             list={students.active}

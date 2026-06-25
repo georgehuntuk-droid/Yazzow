@@ -32,7 +32,7 @@ export type StudentWithLessons = {
   notes: string | null;
   lessonCredits: number;
   creditLimit: number;
-  status: "active" | "archived";
+  status: "active" | "archived" | "pending";
   archivedAt: string | null;
   createdAt: string;
   lessons: StudentLessonRecord[];
@@ -70,7 +70,7 @@ const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 export async function getStudentsWithLessonsForTutor(
   tutorId: string,
-): Promise<{ active: StudentWithLessons[]; archived: StudentWithLessons[] }> {
+): Promise<{ active: StudentWithLessons[]; archived: StudentWithLessons[]; pending: StudentWithLessons[] }> {
   // Trigger automated payment reminders passively in the background
   const { runAutomatedPaymentReminders } = await import("@/lib/bookings/payment-reminders");
   void runAutomatedPaymentReminders(tutorId).catch((err) => {
@@ -198,8 +198,11 @@ export async function getStudentsWithLessonsForTutor(
         completedAt: t.completed_at,
       }));
 
-    const status =
-      features.studentStatus && row.status === "archived" ? "archived" : "active";
+    let status: "active" | "archived" | "pending" = "active";
+    if (features.studentStatus) {
+      if (row.status === "archived") status = "archived";
+      else if (row.status === "pending") status = "pending";
+    }
 
     const owedAmountCents = lessons
       .filter((l) => l.status === "confirmed" && !l.isPaid)
@@ -212,7 +215,7 @@ export async function getStudentsWithLessonsForTutor(
       notes: student.notes,
       lessonCredits: (student as any).lesson_credits ?? 0,
       creditLimit: (student as any).credit_limit ?? 0,
-      status: status as "active" | "archived",
+      status,
       archivedAt: features.studentStatus ? (row.archived_at ?? null) : null,
       createdAt: student.created_at,
       lessons,
@@ -225,5 +228,6 @@ export async function getStudentsWithLessonsForTutor(
   return {
     active: mapped.filter((s) => s.status === "active"),
     archived: mapped.filter((s) => s.status === "archived"),
+    pending: mapped.filter((s) => s.status === "pending"),
   };
 }

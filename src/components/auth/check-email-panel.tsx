@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Mail, ArrowRight } from "lucide-react";
 
 import { resendConfirmationEmailAction } from "@/lib/auth/auth-actions";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardContent,
@@ -18,9 +19,22 @@ import { Input } from "@/components/ui/input";
 
 export function CheckEmailPanel() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialEmail = searchParams.get("email") ?? "";
+  const next = searchParams.get("next") ?? "/onboarding";
 
   const [email, setEmail] = useState(initialEmail);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        router.push(next);
+        router.refresh();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [router, next]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

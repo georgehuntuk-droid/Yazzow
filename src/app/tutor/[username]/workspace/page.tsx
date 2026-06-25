@@ -285,7 +285,6 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
       .from("availability_slots")
       .select("id, starts_at, ends_at, is_booked")
       .eq("tutor_id", tutor.id)
-      .eq("is_booked", false)
       .gte("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: true }),
     getPortalBookingStatus(tutor.id)
@@ -309,41 +308,68 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
   const now = new Date();
   const upcomingLessons = bookings.filter((b) => b.status === "confirmed" && new Date(b.startsAt) > now);
   const pastLessons = bookings.filter((b) => new Date(b.startsAt) <= now || b.status === "cancelled");
-  const calendarSlots = [
-    ...(rawOpenSlots ?? []).map((s) => ({
+  const bookedIds = new Set((rawBookings ?? []).map(b => {
+    const slot = Array.isArray(b.availability_slots) ? b.availability_slots[0] : b.availability_slots;
+    return slot?.id;
+  }).filter(Boolean));
+
+  const calendarSlots = (rawOpenSlots ?? []).map((s) => {
+    if (!s.is_booked) {
+      return {
+        id: s.id,
+        startsAt: s.starts_at,
+        endsAt: s.ends_at,
+        isBooked: false,
+        booking: null,
+      };
+    }
+
+    if (bookedIds.has(s.id)) {
+      const b = (rawBookings ?? []).find(booking => {
+        const slot = Array.isArray(booking.availability_slots) 
+          ? booking.availability_slots[0] 
+          : booking.availability_slots;
+        return slot?.id === s.id;
+      });
+      if (!b) return null;
+      return {
+        id: s.id,
+        startsAt: s.starts_at,
+        endsAt: s.ends_at,
+        isBooked: true,
+        booking: {
+          id: b.id,
+          parentEmail: user.email!,
+          studentName: studentRecord.student_name,
+          status: b.status,
+          runningLateNote: b.running_late_note,
+          runningLateSentAt: null,
+          studentRunningLateSentAt: null,
+          studentRunningLateNote: null,
+          lessonReminderSentAt: null,
+        }
+      };
+    }
+
+    // Booked by someone else
+    return {
       id: s.id,
       startsAt: s.starts_at,
       endsAt: s.ends_at,
-      isBooked: false,
-      booking: null,
-    })),
-    ...(rawBookings ?? [])
-      .filter((b) => b.availability_slots)
-      .map((b) => {
-        const slot = Array.isArray(b.availability_slots) 
-          ? b.availability_slots[0] 
-          : b.availability_slots;
-        if (!slot) return null;
-        return {
-          id: slot.id,
-          startsAt: slot.starts_at,
-          endsAt: slot.ends_at,
-          isBooked: true,
-          booking: {
-            id: b.id,
-            parentEmail: user.email!,
-            studentName: studentRecord.student_name,
-            status: b.status,
-            runningLateNote: b.running_late_note,
-            runningLateSentAt: null,
-            studentRunningLateSentAt: null,
-            studentRunningLateNote: null,
-            lessonReminderSentAt: null,
-          }
-        };
-      })
-      .filter(Boolean) as any[]
-  ];
+      isBooked: true,
+      booking: {
+        id: "",
+        parentEmail: "other@example.com",
+        studentName: "Unavailable",
+        status: "confirmed",
+        runningLateNote: null,
+        runningLateSentAt: null,
+        studentRunningLateSentAt: null,
+        studentRunningLateNote: null,
+        lessonReminderSentAt: null,
+      }
+    };
+  }).filter(Boolean) as any[];
 
   const tasks = (rawTasks ?? []).map((t) => ({
     id: t.id,

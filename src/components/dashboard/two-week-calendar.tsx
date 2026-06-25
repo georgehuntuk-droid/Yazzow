@@ -476,8 +476,7 @@ export function TwoWeekCalendar({
                           if (mine) {
                             blockStyle = "bg-indigo-600 border border-indigo-700 text-white shadow-sm shadow-indigo-600/10 hover:bg-indigo-700 active:scale-[0.99] cursor-pointer";
                           } else {
-                            // Slot booked by someone else is hidden on student portal (blank space)
-                            return null;
+                            blockStyle = "bg-muted border border-border text-muted-foreground cursor-not-allowed opacity-60";
                           }
                         } else {
                           blockStyle = "bg-blue-600 border border-blue-700 text-white shadow-sm shadow-blue-600/10 hover:bg-blue-700 active:scale-[0.99] cursor-pointer";
@@ -492,7 +491,8 @@ export function TwoWeekCalendar({
                           key={slot.id}
                           type="button"
                           onClick={() => {
-                            if (role === "student" && isPast) return; // ignore past slots for student
+                            if (role === "student" && isPast) return;
+                            if (role === "student" && isBooked && !mine) return;
                             handleOpenSlotClick(slot);
                           }}
                           style={{
@@ -514,6 +514,11 @@ export function TwoWeekCalendar({
                                 Mine
                               </Badge>
                             )}
+                            {role === "student" && isBooked && !mine && (
+                              <Badge className="bg-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/30 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
+                                Booked
+                              </Badge>
+                            )}
                             {role === "tutor" && isBooked && (
                               <Badge className="bg-blue-800 text-white hover:bg-blue-800 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
                                 Booked
@@ -522,7 +527,7 @@ export function TwoWeekCalendar({
                           </div>
                           <span className="truncate block font-semibold text-[9px] mt-0.5 opacity-90">
                             {isBooked 
-                              ? (slot.booking?.studentName || "Lesson") 
+                              ? (role === "student" && !mine ? "Unavailable" : (slot.booking?.studentName || "Lesson")) 
                               : `Open Slot (£${formatMoney(tutor.lessonPriceCents)})`}
                           </span>
                         </button>

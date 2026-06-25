@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Calendar, 
@@ -86,6 +86,10 @@ export function TwoWeekCalendar({
   paymentsEnabled = true
 }: TwoWeekCalendarProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [, startTransition] = useTransition();
   const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2">("week1");
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
@@ -550,6 +554,15 @@ export function TwoWeekCalendar({
     );
   };
 
+  if (!mounted) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-6 w-48 bg-muted rounded-xl" />
+        <div className="h-[400px] w-full bg-card border border-border/80 rounded-2xl" />
+      </div>
+    );
+  }
+
   const currentWeekDays = selectedWeek === "week1" ? week1Days : week2Days;
   const currentWeekLabel = selectedWeek === "week1" ? "This Week" : "Next Week";
 
@@ -603,8 +616,8 @@ export function TwoWeekCalendar({
                   "font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5",
                   selectedSlot.isBooked
                     ? (role === "student" && isMyBooking(selectedSlot)
-                        ? "bg-indigo-105 text-indigo-700 border-indigo-200 dark:bg-indigo-950/20"
-                        : "bg-blue-105 text-blue-700 border-blue-200 dark:bg-blue-950/20")
+                        ? "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-950/20"
+                        : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/20")
                     : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20"
                 )}
               >

@@ -68,7 +68,7 @@ export async function getBookingForManage(
   if (!bookingId) return null;
 
   const admin = createAdminClient();
-  let res = await admin
+  let res: any = await admin
     .from("bookings")
     .select(
       `
@@ -94,7 +94,7 @@ export async function getBookingForManage(
     .eq("id", bookingId)
     .maybeSingle();
 
-  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid"))) {
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid") || res.error.message.includes("lesson_reminder_sent_at"))) {
     res = await admin
       .from("bookings")
       .select(
@@ -111,7 +111,6 @@ export async function getBookingForManage(
         running_late_note,
         student_running_late_sent_at,
         student_running_late_note,
-        lesson_reminder_sent_at,
         stripe_payment_intent_id,
         tutor_profiles (display_name, username, currency, payment_instructions),
         availability_slots (starts_at, ends_at)

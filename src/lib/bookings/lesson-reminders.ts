@@ -12,7 +12,7 @@ export async function sendLessonReminder(
   const admin = createAdminClient();
 
   // 1. Fetch booking details and join tutor profiles / slots
-  const { data: booking, error: fetchError } = await admin
+  let res = await admin
     .from("bookings")
     .select(`
       id,
@@ -34,15 +34,42 @@ export async function sendLessonReminder(
     .eq("tutor_id", tutorId)
     .maybeSingle();
 
-  if (fetchError || !booking) {
+  let hasLessonReminderSentAtColumn = true;
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("lesson_reminder_sent_at"))) {
+    hasLessonReminderSentAtColumn = false;
+    res = await admin
+      .from("bookings")
+      .select(`
+        id,
+        parent_email,
+        student_name,
+        status,
+        slot_id,
+        tutor_profiles!inner (
+          display_name,
+          username
+        ),
+        availability_slots!inner (
+          starts_at,
+          ends_at
+        )
+      `)
+      .eq("id", bookingId)
+      .eq("tutor_id", tutorId)
+      .maybeSingle();
+  }
+
+  if (res.error || !res.data) {
     return { ok: false, error: "Booking not found." };
   }
+
+  const booking = res.data;
 
   if (booking.status !== "confirmed") {
     return { ok: false, error: "Only confirmed lessons can be reminded." };
   }
 
-  if (booking.lesson_reminder_sent_at) {
+  if (hasLessonReminderSentAtColumn && (booking as any).lesson_reminder_sent_at) {
     return { ok: false, error: "Lesson reminder has already been sent." };
   }
 
@@ -64,16 +91,18 @@ export async function sendLessonReminder(
   }
 
   // 2. Mark booking as reminded in the DB
-  const now = new Date().toISOString();
-  const { error: updateErr } = await admin
-    .from("bookings")
-    .update({
-      lesson_reminder_sent_at: now,
-    })
-    .eq("id", bookingId);
+  if (hasLessonReminderSentAtColumn) {
+    const now = new Date().toISOString();
+    const { error: updateErr } = await admin
+      .from("bookings")
+      .update({
+        lesson_reminder_sent_at: now,
+      })
+      .eq("id", bookingId);
 
-  if (updateErr) {
-    return { ok: false, error: "Failed to save reminder timestamp." };
+    if (updateErr) {
+      return { ok: false, error: "Failed to save reminder timestamp." };
+    }
   }
 
   const slotLabel = formatSlotRange(slot.starts_at, slot.ends_at);

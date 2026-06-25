@@ -90,7 +90,7 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
   const queryStart = twentyFourHoursAgo.toISOString();
 
-  const { data, error } = await supabase
+  let res: any = await supabase
     .from("availability_slots")
     .select(`
       id,
@@ -113,7 +113,32 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
     .gte("starts_at", queryStart)
     .order("starts_at", { ascending: true });
 
-  if (error || !data) return [];
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("lesson_reminder_sent_at"))) {
+    res = await supabase
+      .from("availability_slots")
+      .select(`
+        id,
+        starts_at,
+        ends_at,
+        is_booked,
+        bookings (
+          id,
+          parent_email,
+          student_name,
+          status,
+          running_late_sent_at,
+          running_late_note,
+          student_running_late_sent_at,
+          student_running_late_note
+        )
+      `)
+      .eq("tutor_id", tutorId)
+      .gte("starts_at", queryStart)
+      .order("starts_at", { ascending: true });
+  }
+
+  const data = res.data;
+  if (res.error || !data) return [];
 
   return data.map((row: any) => {
     const rawBooking = Array.isArray(row.bookings) ? row.bookings[0] : row.bookings;
@@ -126,7 +151,7 @@ export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[
       runningLateNote: rawBooking.running_late_note,
       studentRunningLateSentAt: rawBooking.student_running_late_sent_at,
       studentRunningLateNote: rawBooking.student_running_late_note,
-      lessonReminderSentAt: rawBooking.lesson_reminder_sent_at,
+      lessonReminderSentAt: rawBooking.lesson_reminder_sent_at ?? null,
     } : null;
 
     return {
@@ -170,7 +195,7 @@ export async function getRecentBookingsForTutor(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid"))) {
+  if (res.error && (res.error.code === "42703" || res.error.message.includes("is_paid") || res.error.message.includes("lesson_reminder_sent_at"))) {
     selectQuery = `
       id,
       slot_id,
@@ -182,7 +207,6 @@ export async function getRecentBookingsForTutor(
       running_late_note,
       student_running_late_sent_at,
       student_running_late_note,
-      lesson_reminder_sent_at,
       created_at,
       stripe_payment_intent_id,
       availability_slots (starts_at, ends_at)

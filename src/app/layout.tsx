@@ -25,7 +25,7 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
-  manifest: "/manifest.json",
+  manifest: "/manifest.json?v=3",
   icons: {
     icon: "/icon.png?v=3",
     apple: "/icon.png?v=3",

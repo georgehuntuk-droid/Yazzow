@@ -763,14 +763,15 @@ export async function deleteStudentTask(taskId: string) {
 export async function toggleTaskStatus(taskId: string, status: "pending" | "completed") {
   const supabase = await createClient();
   
-  let authorized = false;
-  
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { ok: false as const, error: "Unauthorized." };
   }
 
-  const { data: task } = await supabase
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { data: task } = await admin
     .from("student_tasks")
     .select("tutor_id, student_id")
     .eq("id", taskId)
@@ -780,10 +781,12 @@ export async function toggleTaskStatus(taskId: string, status: "pending" | "comp
     return { ok: false as const, error: "Task not found." };
   }
 
+  let authorized = false;
+
   if (task.tutor_id === user.id) {
     authorized = true;
   } else {
-    const { data: student } = await supabase
+    const { data: student } = await admin
       .from("students")
       .select("parent_email")
       .eq("id", task.student_id)
@@ -800,7 +803,7 @@ export async function toggleTaskStatus(taskId: string, status: "pending" | "comp
 
   const completedAt = status === "completed" ? new Date().toISOString() : null;
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("student_tasks")
     .update({
       status,

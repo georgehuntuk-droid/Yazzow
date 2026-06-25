@@ -1396,3 +1396,53 @@ export async function rejectStudentApplication(studentId: string) {
   return { ok: true as const };
 }
 
+export async function cancelBookingByStudent(bookingId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !user.email) {
+    return { ok: false as const, error: "Unauthorized. Please sign in." };
+  }
+
+  const email = user.email.toLowerCase();
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { data: booking, error: fetchError } = await admin
+    .from("bookings")
+    .select("id, status, tutor_id, parent_email")
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (fetchError || !booking) {
+    return { ok: false as const, error: "Booking not found." };
+  }
+
+  if (booking.parent_email.toLowerCase() !== email) {
+    return { ok: false as const, error: "You do not have permission to cancel this booking." };
+  }
+
+  const result = await cancelLessonBooking({
+    bookingId: booking.id,
+    tutorId: booking.tutor_id,
+    cancelledBy: "parent",
+  });
+
+  if (!result.ok) {
+    return { ok: false as const, error: result.error };
+  }
+
+  const { data: tutor } = await admin
+    .from("tutor_profiles")
+    .select("username")
+    .eq("id", booking.tutor_id)
+    .maybeSingle();
+
+  if (tutor) {
+    await revalidateTutor(tutor.username);
+    revalidatePath(`/tutor/${tutor.username}/workspace`);
+  }
+
+  return { ok: true as const };
+}
+
+

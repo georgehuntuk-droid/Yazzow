@@ -43,7 +43,7 @@ export default async function SchedulePage() {
               <Calendar className="size-4.5 text-primary" />
               1. Interactive Calendar (Slots)
             </h2>
-            <ScheduleEditor slots={slots} />
+            <ScheduleEditor slots={slots} profile={profile} />
           </div>
 
           {/* Right Column: Weekly Standard Hours & Bulk generation */}

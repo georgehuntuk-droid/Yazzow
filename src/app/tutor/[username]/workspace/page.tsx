@@ -18,6 +18,8 @@ import { PushSubscriptionToggle } from "@/components/pwa/push-subscription-toggl
 import { CreateWorkspaceForm } from "./create-workspace-form";
 import { WorkspaceChat } from "@/components/booking/workspace-chat";
 import { formatMoney, formatSlotRange } from "@/lib/format";
+import { TwoWeekCalendar } from "@/components/dashboard/two-week-calendar";
+import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 
 type WorkspacePageProps = {
   params: Promise<{ username: string }>;
@@ -257,11 +259,20 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     studentRecord = studentRecords[0];
   }
 
-  // 3. Fetch lessons and tasks for this student
-  const [{ data: rawBookings }, { data: rawTasks }] = await Promise.all([
+  // 3. Fetch lessons, tasks, open slots and booking/payment status
+  const [{ data: rawBookings }, { data: rawTasks }, { data: rawOpenSlots }, portalBooking] = await Promise.all([
     admin
       .from("bookings")
-      .select("id, status, amount_cents, created_at, tutor_lesson_feedback, lesson_rating, availability_slots (starts_at, ends_at)")
+      .select(`
+        id, 
+        status, 
+        amount_cents, 
+        created_at, 
+        tutor_lesson_feedback, 
+        lesson_rating, 
+        running_late_note, 
+        availability_slots (id, starts_at, ends_at)
+      `)
       .eq("tutor_id", tutor.id)
       .ilike("parent_email", user.email)
       .order("created_at", { ascending: false }),
@@ -270,7 +281,17 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
       .select("*")
       .eq("student_id", studentRecord.id)
       .order("created_at", { ascending: false }),
+    admin
+      .from("availability_slots")
+      .select("id, starts_at, ends_at, is_booked")
+      .eq("tutor_id", tutor.id)
+      .eq("is_booked", false)
+      .gte("starts_at", new Date().toISOString())
+      .order("starts_at", { ascending: true }),
+    getPortalBookingStatus(tutor.id)
   ]);
+
+  const paymentsEnabled = portalBooking.canAcceptBookings;
 
   const bookings = (rawBookings ?? []).map((b) => {
     const slot = Array.isArray(b.availability_slots) ? b.availability_slots[0] : b.availability_slots;
@@ -288,6 +309,41 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
   const now = new Date();
   const upcomingLessons = bookings.filter((b) => b.status === "confirmed" && new Date(b.startsAt) > now);
   const pastLessons = bookings.filter((b) => new Date(b.startsAt) <= now || b.status === "cancelled");
+  const calendarSlots = [
+    ...(rawOpenSlots ?? []).map((s) => ({
+      id: s.id,
+      startsAt: s.starts_at,
+      endsAt: s.ends_at,
+      isBooked: false,
+      booking: null,
+    })),
+    ...(rawBookings ?? [])
+      .filter((b) => b.availability_slots)
+      .map((b) => {
+        const slot = Array.isArray(b.availability_slots) 
+          ? b.availability_slots[0] 
+          : b.availability_slots;
+        if (!slot) return null;
+        return {
+          id: slot.id,
+          startsAt: slot.starts_at,
+          endsAt: slot.ends_at,
+          isBooked: true,
+          booking: {
+            id: b.id,
+            parentEmail: user.email!,
+            studentName: studentRecord.student_name,
+            status: b.status,
+            runningLateNote: b.running_late_note,
+            runningLateSentAt: null,
+            studentRunningLateSentAt: null,
+            studentRunningLateNote: null,
+            lessonReminderSentAt: null,
+          }
+        };
+      })
+      .filter(Boolean) as any[]
+  ];
 
   const tasks = (rawTasks ?? []).map((t) => ({
     id: t.id,
@@ -436,6 +492,37 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
               </CardContent>
             </Card>
           </div>
+
+          {/* Calendar View */}
+          <section className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/30 pb-3">
+              <div>
+                <h2 className="font-heading text-lg font-black tracking-tight text-foreground">
+                  Lesson Calendar & Availability
+                </h2>
+                <p className="text-xs font-semibold text-muted-foreground mt-0.5">
+                  Click any open slot to book, or click your booked lessons to cancel
+                </p>
+              </div>
+            </div>
+            <TwoWeekCalendar
+              role="student"
+              slots={calendarSlots}
+              tutor={{
+                id: tutor.id,
+                username: username,
+                displayName: tutor.displayName,
+                lessonPriceCents: tutor.lessonPriceCents,
+                currency: tutor.currency,
+                allowCashPayments: tutor.allowCashPayments,
+              }}
+              parentEmail={user.email!}
+              studentName={studentRecord.student_name}
+              studentCredits={studentRecord.lesson_credits}
+              creditLimit={studentRecord.credit_limit}
+              paymentsEnabled={paymentsEnabled}
+            />
+          </section>
 
           {/* Layout Grid */}
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">

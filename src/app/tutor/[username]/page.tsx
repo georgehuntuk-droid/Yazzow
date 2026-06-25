@@ -15,7 +15,6 @@ import { PublicProfile } from "@/components/tutor/public-profile";
 import { ResourceShelf } from "@/components/tutor/resource-shelf";
 import { LessonPackagesTab } from "@/components/tutor/lesson-packages-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BRAND_NAME } from "@/lib/constants";
 import {
   DEMO_OPEN_SLOTS,
   DEMO_RESOURCES,
@@ -174,7 +173,25 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 </Link>
               </nav>
             </>
-          ) : null}
+          ) : (
+            <nav className="flex items-center gap-2">
+              {user ? (
+                <Link
+                  href={`/tutor/${username}/workspace`}
+                  className={buttonVariants({ variant: "default", size: "sm" }) + " font-bold text-xs rounded-xl shadow-sm"}
+                >
+                  Open Workspace
+                </Link>
+              ) : (
+                <Link
+                  href={`/auth/login?next=/tutor/${username}/workspace`}
+                  className={buttonVariants({ variant: "outline", size: "sm" }) + " font-bold text-xs rounded-xl hover:bg-muted transition-colors"}
+                >
+                  Parent Login
+                </Link>
+              )}
+            </nav>
+          )}
         </div>
       </header>
 
@@ -187,6 +204,18 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
           {/* Main Area */}
           <div className="space-y-8">
             <PublicProfile tutor={tutor} />
+
+            {/* Mobile/Tablet Placement: Join Group / Portal Signup (Hidden on desktop) */}
+            {liveTutor && tutor.allowPublicJoining !== false ? (
+              <div className="lg:hidden">
+                <JoinTutorFamily
+                  tutor={tutor}
+                  tutorUsername={username}
+                  currentUserEmail={user?.email}
+                  connectedStudents={connectedStudents}
+                />
+              </div>
+            ) : null}
 
             <Tabs defaultValue="book">
               <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">
@@ -242,6 +271,18 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
 
           {/* Sidebar Area */}
           <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            {/* Desktop Placement: Join Group / Portal Signup (Hidden on mobile/tablet) */}
+            {liveTutor && tutor.allowPublicJoining !== false ? (
+              <div className="hidden lg:block">
+                <JoinTutorFamily
+                  tutor={tutor}
+                  tutorUsername={username}
+                  currentUserEmail={user?.email}
+                  connectedStudents={connectedStudents}
+                />
+              </div>
+            ) : null}
+
             {/* Custom Side Banner (Image upload with click link) */}
             {tutor.portalSideBannerUrl && (
               <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:scale-[1.01] transition-transform duration-200">
@@ -250,7 +291,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                     <img src={tutor.portalSideBannerUrl} alt="Side Banner" className="w-full h-auto object-cover" />
                   </a>
                 ) : (
-                  <img src={tutor.portalSideBannerUrl} alt="Side Banner" className="w-full h-auto object-cover" />
+                  <img src={tutor.coverUrl || tutor.portalSideBannerUrl} alt="Side Banner" className="w-full h-auto object-cover" />
                 )}
               </div>
             )}
@@ -266,15 +307,6 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 </p>
               </div>
             )}
-
-            {liveTutor && tutor.allowPublicJoining !== false ? (
-              <JoinTutorFamily
-                tutor={tutor}
-                tutorUsername={username}
-                currentUserEmail={user?.email}
-                connectedStudents={connectedStudents}
-              />
-            ) : null}
           </div>
         </div>
       </main>

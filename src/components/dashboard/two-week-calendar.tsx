@@ -31,6 +31,13 @@ import {
 } from "@/lib/dashboard/actions";
 import { cancelBookingByStudent } from "@/lib/dashboard/actions";
 
+const getDateKey = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
 export type CalendarSlot = {
   id: string;
   startsAt: string;
@@ -133,7 +140,7 @@ export function TwoWeekCalendar({
     const groups: Record<string, CalendarSlot[]> = {};
     slots.forEach((slot) => {
       const d = new Date(slot.startsAt);
-      const dateKey = d.toISOString().split("T")[0];
+      const dateKey = getDateKey(d);
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(slot);
     });
@@ -414,7 +421,7 @@ export function TwoWeekCalendar({
 
               {/* 7 Columns */}
               {weekDays.map((day) => {
-                const dateKey = day.toISOString().split("T")[0];
+                const dateKey = getDateKey(day);
                 const daySlots = slotsByDate[dateKey] ?? [];
                 const isToday = new Date().toDateString() === day.toDateString();
 

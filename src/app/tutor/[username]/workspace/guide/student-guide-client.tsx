@@ -8,33 +8,54 @@ import {
   CreditCard, 
   Sparkles, 
   GraduationCap, 
-  MessageSquare, 
-  CheckCircle2, 
   HelpCircle, 
   Smartphone, 
   Plus, 
-  Play
+  Play,
+  Calendar,
+  DollarSign,
+  Star,
+  Info,
+  X
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type StudentGuideClientProps = {
   tutorUsername: string;
   tutorDisplayName: string;
 };
 
+type TabId = "lessons" | "credits" | "cash" | "tasks" | "pwa";
+
 export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentGuideClientProps) {
-  const [activeTab, setActiveTab] = useState<"credits" | "tasks" | "cash" | "pwa">("credits");
+  const [activeTab, setActiveTab] = useState<TabId>("lessons");
+
+  // Lessons Simulator State
+  const [demoLessons, setDemoLessons] = useState([
+    { id: "1", title: "GCSE Maths Practice", startsAt: "Tomorrow, 17:00", status: "confirmed", feedback: null, rating: 0 },
+    { id: "2", title: "Algebra Basics", startsAt: "Yesterday, 16:00", status: "completed", feedback: "Excellent progress today. Focus on quadratics!", rating: 5 }
+  ]);
+  const [ratingMessage, setRatingMessage] = useState("");
+
+  function handleRateLesson(lessonId: string, rating: number) {
+    setDemoLessons(prev => 
+      prev.map(l => l.id === lessonId ? { ...l, rating } : l)
+    );
+    setRatingMessage(`Rated ${rating} stars! Thank you for your feedback.`);
+    setTimeout(() => setRatingMessage(""), 3000);
+  }
 
   // Credits Simulator State
   const [credits, setCredits] = useState(2);
   const [creditsLogs, setCreditsLogs] = useState<string[]>([
     "Oliver's father purchased a 10x lesson bundle. Credits credited: +10.",
-    " Oliver booked a GCSE Maths lesson. Credits deducted: -1.",
-    " Oliver booked a second lesson. Credits deducted: -1."
+    "Oliver booked a GCSE Maths lesson. Credits deducted: -1.",
+    "Oliver booked a second lesson. Credits deducted: -1."
   ]);
-  const creditLimit = 1; // simulator uses 1 credit limit (allows down to -1)
+  const creditLimit = 1;
 
   function logCredit(msg: string) {
     setCreditsLogs((prev) => [msg, ...prev.slice(0, 4)]);
@@ -58,6 +79,7 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
   // Tasks Simulator State
   const [taskStatus, setTaskStatus] = useState<"pending" | "completed">("pending");
   const [taskLogs, setTaskLogs] = useState<string[]>(["Tutor assigned task: 'Solve Page 4 GCSE Algebra'."]);
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
 
   function submitTask() {
     setTaskStatus("completed");
@@ -73,8 +95,7 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
     setTaskLogs(["Tutor assigned task: 'Solve Page 4 GCSE Algebra'."]);
   }
 
-  // Cash Pay Simulator State
-  const [cashBalance, setCashBalance] = useState(25);
+  // Cash Pay / Owed Simulator State
   const [cashStatus, setCashStatus] = useState<"unpaid" | "verifying" | "paid">("unpaid");
   const [cashLogs, setCashLogs] = useState<string[]>([
     "Oliver booked a 1h slot under 'Cash / Direct Bank Transfer'. Outstanding balance: £25.00."
@@ -104,11 +125,11 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
           <div className="flex items-center gap-2">
             <HelpCircle className="size-6 text-primary animate-pulse" />
             <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground">
-              Student Workspace Guide & Playground
+              Workspace Guide & Simulator
             </h1>
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
-            Learn how prepaying credits, submitting homework, direct transfers, and phone alerts work on your portal.
+            Learn how bookings, prepaid credits, outstanding balances, homework, and phone alerts work on your portal.
           </p>
         </div>
         <Link 
@@ -120,12 +141,13 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-border pb-px overflow-x-auto">
+      <div className="flex gap-2 border-b border-border pb-px overflow-x-auto scrollbar-none">
         {([
+          { id: "lessons", label: "Schedule & Lessons", icon: Calendar },
           { id: "credits", label: "Prepaid Credits", icon: GraduationCap },
+          { id: "cash", label: "Outstanding Balance", icon: CreditCard },
           { id: "tasks", label: "Homework & Tasks", icon: BookOpen },
-          { id: "cash", label: "Direct/Cash Pay", icon: CreditCard },
-          { id: "pwa", label: "Phone alerts & PWA", icon: Smartphone }
+          { id: "pwa", label: "Mobile App & Notifications", icon: Smartphone }
         ] as const).map((tab) => (
           <button
             key={tab.id}
@@ -142,29 +164,117 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
         ))}
       </div>
 
-      {/* Credits Tab */}
+      {/* 1. Schedule & Lessons Tab */}
+      {activeTab === "lessons" && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold">Booking Calendars & Lesson Schedule</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                Your portal serves as a direct booking scheduler between you and <strong className="text-foreground">{tutorDisplayName}</strong>.
+              </p>
+              <ul className="list-disc pl-5 mt-3 space-y-2.5 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">Booking Calendar:</strong> Head to the tutor&apos;s main portal tab to book 1-on-1 slots. If you prepay, slots are booked instantly using credits. If you pay via card, checkouts are processed securely.
+                </li>
+                <li>
+                  <strong className="text-foreground">Upcoming Schedule:</strong> When a lesson is booked, it immediately appears in your workspace under the **Upcoming Schedule** list. This gives you a clear visual timetable of your upcoming study slots.
+                </li>
+                <li>
+                  <strong className="text-foreground">Tutor Lesson Notes & Feedback:</strong> After a lesson completes, your tutor can write summary feedback logs. You can open past lessons in your workspace ledger to read lesson hints, study focus areas, and view tutor feedback.
+                </li>
+                <li>
+                  <strong className="text-foreground">Lesson Ratings:</strong> Tutors value your feedback! You can rate completed lessons out of 5 stars directly in your past schedule ledger.
+                </li>
+              </ul>
+            </div>
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal flex items-start gap-2">
+              <Info className="size-4 text-primary shrink-0 mt-0.5" />
+              <span>
+                <strong>Multiple Children?</strong> If you have more than one child registered under the same parent email with this tutor, Yazzow will show a <strong>&ldquo;Switch Student&rdquo;</strong> dropdown at the top of the workspace to easily toggle between their individual schedules and homework sheets.
+              </span>
+            </div>
+          </div>
+
+          {/* Lessons Simulator */}
+          <Card className="yazz-surface border-primary/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm uppercase tracking-wider text-primary">Lessons & Feedback Simulator</CardTitle>
+              <CardDescription>Simulate reading lesson feedback and rating past lessons.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {ratingMessage && (
+                <p className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-lg border border-emerald-200">
+                  {ratingMessage}
+                </p>
+              )}
+              <div className="space-y-3">
+                {demoLessons.map((l) => (
+                  <div key={l.id} className="p-3 bg-muted/30 border border-border/60 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-foreground">{l.title}</h4>
+                      <Badge variant={l.status === "confirmed" ? "default" : "outline"} className="text-[10px] uppercase font-bold px-1.5 py-0">
+                        {l.status}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Time: {l.startsAt}</p>
+                    
+                    {l.status === "completed" && (
+                      <div className="border-t border-border/40 pt-2 space-y-1.5">
+                        <span className="text-[10px] font-bold text-primary block">Tutor Lesson Feedback:</span>
+                        <p className="text-xs text-foreground italic bg-background p-2 rounded border border-border/30">
+                          &ldquo;{l.feedback}&rdquo;
+                        </p>
+                        
+                        {/* Rating stars */}
+                        <div className="flex items-center gap-1 pt-1">
+                          <span className="text-[10px] text-muted-foreground font-semibold mr-1">Rate lesson:</span>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onClick={() => handleRateLesson(l.id, star)}
+                              className="text-amber-400 hover:scale-110 transition-transform cursor-pointer"
+                            >
+                              <Star className={cn("size-3.5", star <= l.rating ? "fill-amber-400" : "text-muted-foreground/30")} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 2. Prepaid Credits Tab */}
       {activeTab === "credits" && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
           <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-bold">How prepaid credits work</h2>
+              <h2 className="text-xl font-bold">How Prepaid Credits Work</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                Your tutor, <strong className="text-foreground">{tutorDisplayName}</strong>, operates on a credit-ledger system.
+                Your tutor operates on a clean credit-ledger system, making scheduling bundles friction-free.
               </p>
-              <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-muted-foreground">
+              <ul className="list-disc pl-5 mt-3 space-y-2.5 text-sm text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">Prepay bundles:</strong> Purchase lesson packs (e.g. 10 lessons) under the &ldquo;Lesson packages&rdquo; tab to get credits in your account.
+                  <strong className="text-foreground">Prepay Bundles:</strong> Purchase lesson packs (e.g. 5x, 10x, or 20x lesson packages) under the &ldquo;Lesson Packages&rdquo; tab. This instantly adds credits to your child&apos;s workspace.
                 </li>
                 <li>
-                  <strong className="text-foreground">Booking lessons:</strong> Booking a lesson slot automatically subtracts 1 credit. You do not need to enter card details each time you schedule!
+                  <strong className="text-foreground">Frictionless Bookings:</strong> Booking a lesson automatically deducts 1 credit. There is no need to enter credit card details or checkout every time you schedule a lesson!
                 </li>
                 <li>
-                  <strong className="text-foreground">Credit Limits (Overdraft):</strong> Tutors can set a credit limit (e.g. -2). This allows you to book lessons in advance even when your balance runs out. Once this limit is exceeded, further bookings are blocked until you buy a package.
+                  <strong className="text-foreground">Credit Limits (Overdraft):</strong> Tutors can set a credit limit (e.g., -1 or -2 credits). This allows you to book upcoming lessons on credit in advance if you run out. Once your balance crosses below this overdraft threshold, further bookings are locked until you buy a package.
                 </li>
               </ul>
             </div>
-            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal">
-              💡 <strong>Tip:</strong> Prepaying in bulk rewards you with custom discounts set by your tutor, helping you secure lower lesson rates.
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal flex items-start gap-2">
+              <Sparkles className="size-4 text-primary shrink-0 mt-0.5" />
+              <span>
+                <strong>Save Money:</strong> Tutors typically configure discount bundles, rewarding prepay purchases with discounted rates (e.g., £22/hr instead of £25/hr).
+              </span>
             </div>
           </div>
 
@@ -209,105 +319,42 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
         </div>
       )}
 
-      {/* Tasks Tab */}
-      {activeTab === "tasks" && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold">Homework & Task Board</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                Keep track of school prep, exam worksheets, and homework assigned by your tutor.
-              </p>
-              <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <strong className="text-foreground">Task Details:</strong> Click on any task in your workspace to expand the description and instructions.
-                </li>
-                <li>
-                  <strong className="text-foreground">Submit Completion:</strong> Toggle tasks as finished when homework is complete. This alerts your tutor to review it.
-                </li>
-                <li>
-                  <strong className="text-foreground">Tutor Review & Feedback:</strong> Your tutor can leave notes directly on the task board, giving you immediate grading and guidance.
-                </li>
-              </ul>
-            </div>
-            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal">
-              💡 <strong>Tip:</strong> The status matrix displays your completion progress so you never miss a deadline before your next session.
-            </div>
-          </div>
-
-          {/* Tasks Simulator */}
-          <Card className="yazz-surface border-primary/20">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-sm uppercase tracking-wider text-primary">Homework Simulator</CardTitle>
-              <CardDescription>Simulate task assignment, submission, and tutor grading.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-background border border-border rounded-xl flex items-center justify-between shadow-sm">
-                <div>
-                  <h4 className="font-bold text-sm text-foreground">Solve Page 4 GCSE Algebra</h4>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Assigned by {tutorDisplayName}</p>
-                </div>
-                <Badge variant={taskStatus === "completed" ? "outline" : "default"} className={taskStatus === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-primary/10 text-primary"}>
-                  {taskStatus === "completed" ? "Completed" : "Pending"}
-                </Badge>
-              </div>
-
-              <div className="flex gap-2">
-                <Button onClick={submitTask} disabled={taskStatus === "completed"} className="flex-1 text-xs" size="sm">
-                  ✓ Submit Completion
-                </Button>
-                {taskStatus === "completed" && (
-                  <Button onClick={resetTask} variant="ghost" className="text-xs" size="sm">
-                    Reset
-                  </Button>
-                )}
-              </div>
-
-              <div className="space-y-2 border-t border-border/60 pt-4">
-                <p className="text-xs font-bold text-foreground">Simulation timeline:</p>
-                <div className="space-y-1.5 font-mono text-[11px] bg-muted/30 p-3 rounded-lg border border-border/40 max-h-36 overflow-y-auto">
-                  {taskLogs.map((log, idx) => (
-                    <div key={idx} className={log.includes("✍️") ? "text-amber-600 font-semibold" : log.includes("✓") ? "text-primary" : "text-muted-foreground"}>
-                      {log}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Cash / Direct Pay Tab */}
+      {/* 3. Outstanding Balances & Cash Tab */}
       {activeTab === "cash" && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
           <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-bold">Direct Payments & Cash Bookings</h2>
+              <h2 className="text-xl font-bold">Outstanding Balances & Cash Payments</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                If enabled by your tutor, you can choose to make payments offline (e.g. Cash or Direct Bank Transfer).
+                Understand how the system tracks money owed and how to pay offline.
               </p>
-              <ul className="list-disc pl-5 mt-3 space-y-2 text-sm text-muted-foreground">
+              <ul className="list-disc pl-5 mt-3 space-y-2.5 text-sm text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">Bank Transfer Instructions:</strong> Upon choosing cash booking, the tutor&apos;s bank detail instructions (Sort code, Account number, reference code) are displayed on-screen.
+                  <strong className="text-foreground">What is Outstanding Balance?</strong> This is the total amount you currently owe the tutor. Outstanding balance accumulates when you book a lesson on credit (overdraft) or choose an offline checkout payment method.
                 </li>
                 <li>
-                  <strong className="text-foreground">Send Transfer:</strong> Once you transfer the funds via your mobile banking app, let the tutor know.
+                  <strong className="text-foreground">Direct/Cash Payments:</strong> If your tutor supports offline payments (e.g. Bank Transfer or Cash), you can book lessons without inputting card details on screen.
                 </li>
                 <li>
-                  <strong className="text-foreground">Payment Verification:</strong> The tutor will review their bank statements and mark the booking as paid. This resets your owed balance.
+                  <strong className="text-foreground">Tutor Bank Details:</strong> Upon booking under cash/direct transfer, the tutor&apos;s specific sort code, account number, and invoice instructions will display on your screen.
+                </li>
+                <li>
+                  <strong className="text-foreground">Marking Paid:</strong> Once you transfer the bank funds (e.g., via your mobile banking app), click **Send Transfer** to notify the tutor. The tutor will check their bank statement and mark the invoice as PAID in their ledger, resetting your outstanding balance to zero.
                 </li>
               </ul>
             </div>
-            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal">
-              ⚠️ <strong>Note:</strong> Card checkout bookings via Stripe are credited automatically instantly, but Direct Transfer bookings require the tutor to manually confirm receipt of funds.
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal flex items-start gap-2">
+              <DollarSign className="size-4 text-primary shrink-0 mt-0.5" />
+              <span>
+                <strong>Where is my balance shown?</strong> You can view your current outstanding balance in real-time on your student workspace home screen inside the **Outstanding Balance** status tile.
+              </span>
             </div>
           </div>
 
           {/* Cash Simulator */}
           <Card className="yazz-surface border-primary/20">
             <CardHeader className="pb-4">
-              <CardTitle className="text-sm uppercase tracking-wider text-primary">Direct Pay Simulator</CardTitle>
+              <CardTitle className="text-sm uppercase tracking-wider text-primary">Direct Pay & Balance Simulator</CardTitle>
               <CardDescription>Simulate offline transfer and tutor verification.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -349,13 +396,74 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
         </div>
       )}
 
-      {/* Phone alerts & PWA Tab */}
+      {/* 4. Homework & Tasks Tab */}
+      {activeTab === "tasks" && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-bold">Homework & Task Board</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                Keep track of study sheets, practice assignments, and exam checklists assigned by your tutor.
+              </p>
+              <ul className="list-disc pl-5 mt-3 space-y-2.5 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">Open Details Modal:</strong> Click on any task card on your board to **open the detailed dialog modal**. This reveals the full task description, instructions, resources, and tutor hint feedback.
+                </li>
+                <li>
+                  <strong className="text-foreground">Ticking Completion:</strong> Click the checkbox circle on the task board (or click the action button inside the details modal) to submit the task as completed. This triggers an automated alert to your tutor.
+                </li>
+                <li>
+                  <strong className="text-foreground">Tutor hint/grading notes:</strong> Your tutor can leave hints, links, or review notes directly on each task. You can view these anytime by opening the task details.
+                </li>
+              </ul>
+            </div>
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal">
+              💡 <strong>Tip:</strong> Ticking homework as completed keeps your tutor updated on your progress before your next session, making 1-on-1 tutoring time more efficient.
+            </div>
+          </div>
+
+          {/* Tasks Simulator */}
+          <Card className="yazz-surface border-primary/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm uppercase tracking-wider text-primary">Homework Simulator</CardTitle>
+              <CardDescription>Simulate task detail modals and submissions.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div 
+                onClick={() => setShowTaskDetails(true)}
+                className="p-4 bg-background border border-border rounded-xl flex items-center justify-between shadow-sm cursor-pointer hover:border-primary/40 hover:scale-[1.01] transition-all group"
+              >
+                <div>
+                  <h4 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">Solve Page 4 GCSE Algebra</h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Assigned by {tutorDisplayName} • Click to open details</p>
+                </div>
+                <Badge variant={taskStatus === "completed" ? "outline" : "default"} className={taskStatus === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-primary/10 text-primary"}>
+                  {taskStatus === "completed" ? "Completed" : "Pending"}
+                </Badge>
+              </div>
+
+              <div className="space-y-2 border-t border-border/60 pt-4">
+                <p className="text-xs font-bold text-foreground">Simulation timeline:</p>
+                <div className="space-y-1.5 font-mono text-[11px] bg-muted/30 p-3 rounded-lg border border-border/40 max-h-36 overflow-y-auto">
+                  {taskLogs.map((log, idx) => (
+                    <div key={idx} className={log.includes("✍️") ? "text-amber-600 font-semibold" : log.includes("✓") ? "text-primary" : "text-muted-foreground"}>
+                      {log}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 5. Mobile App & Notifications Tab */}
       {activeTab === "pwa" && (
         <div className="space-y-6">
           <div className="max-w-3xl">
-            <h2 className="text-xl font-bold">Install Yazzow App & Set Up Phone Notifications</h2>
+            <h2 className="text-xl font-bold">Install Yazzow Mobile App & Notifications</h2>
             <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-              Yazzow is a Progressive Web App (PWA). You can pin the student workspace directly to your mobile phone or desktop home screen to receive real-time notifications for new chat messages, new availability slots, and lesson cancellations.
+              Yazzow is built as a Progressive Web App (PWA). You can download and pin the workspace directly to your mobile home screen to get instant push alerts for tutor chat messages, slot reminders, and calendar changes.
             </p>
           </div>
 
@@ -364,7 +472,7 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-1.5">
                   <span className="inline-flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-black">1</span>
-                  iOS / Apple Safari
+                  iOS / Safari (iPhone)
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground leading-relaxed space-y-2">
@@ -385,10 +493,9 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground leading-relaxed space-y-2">
                 <p>1. Open Chrome and log into your workspace.</p>
-                <p>2. Click the <strong>&ldquo;Install App&rdquo;</strong> banner at the bottom or top of the page (or click Chrome Options menu and choose &ldquo;Install App&rdquo;).</p>
-                <p>3. Confirm installation. The app will be pinned to your apps drawer.</p>
-                <p>4. Open the installed app.</p>
-                <p>5. Go to the workspace navbar, click the <strong>Notification Toggle</strong>, and grant permissions.</p>
+                <p>2. Tap the **&ldquo;Download App&rdquo;** banner at the top of the workspace home screen.</p>
+                <p>3. A native Chrome installation dialog will pop up immediately. Confirm by clicking **&ldquo;Install&rdquo;**.</p>
+                <p>4. Launch the app from your home screen, navigate to the sidebar menu, click the **Notification Toggle**, and grant permissions.</p>
               </CardContent>
             </Card>
 
@@ -406,6 +513,56 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
                 <p>4. Enable notification permissions inside the app to receive native system toast popups whenever you get a message.</p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Simulator Modal for Tasks */}
+      {showTaskDetails && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowTaskDetails(false)} />
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/40">
+              <Badge variant={taskStatus === "completed" ? "outline" : "default"} className={taskStatus === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-primary/10 text-primary"}>
+                {taskStatus === "completed" ? "✓ Completed" : "⚡ To Do"}
+              </Badge>
+              <button onClick={() => setShowTaskDetails(false)} className="rounded-lg p-1 text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
+                <X className="size-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="font-heading text-lg font-bold text-foreground">Solve Page 4 GCSE Algebra</h3>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Instructions:</span>
+                <p className="bg-muted/40 p-3.5 rounded-xl border border-border/40 text-xs text-foreground/90 leading-relaxed">
+                  Solve exercises 1 to 10 on linear quadratic equations and simplify all expressions. Show your full working sheets.
+                </p>
+              </div>
+              {taskStatus === "completed" && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">Tutor hint/grading notes:</span>
+                  <p className="bg-primary/5 p-3 rounded-xl border border-primary/15 text-xs italic text-foreground/90">
+                    &ldquo;Superb workings! You got 10/10.&rdquo;
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-border/40 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowTaskDetails(false)} size="sm" className="text-xs">Close</Button>
+              <Button 
+                onClick={() => {
+                  if (taskStatus === "pending") submitTask();
+                  else resetTask();
+                  setShowTaskDetails(false);
+                }} 
+                size="sm" 
+                className="text-xs font-bold"
+              >
+                {taskStatus === "completed" ? "Reset to To-Do" : "Mark as Complete"}
+              </Button>
+            </div>
           </div>
         </div>
       )}

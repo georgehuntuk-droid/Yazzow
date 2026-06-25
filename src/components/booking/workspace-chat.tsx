@@ -14,6 +14,29 @@ type Message = {
   created_at: string;
 };
 
+function formatChatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const msgDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  if (msgDate.getTime() === today.getTime()) return "Today";
+  if (msgDate.getTime() === yesterday.getTime()) return "Yesterday";
+
+  const month = d.toLocaleDateString("en-US", { month: "short" });
+  const day = d.getDate();
+  let suffix = "th";
+  if (day === 1 || day === 21 || day === 31) suffix = "st";
+  else if (day === 2 || day === 22) suffix = "nd";
+  else if (day === 3 || day === 23) suffix = "rd";
+
+  if (d.getFullYear() !== now.getFullYear()) {
+    return `${month} ${day}${suffix}, ${d.getFullYear()}`;
+  }
+  return `${month} ${day}${suffix}`;
+}
+
 type WorkspaceChatProps = {
   tutorId: string;
   tutorDisplayName: string;
@@ -146,28 +169,40 @@ export function WorkspaceChat({ tutorId, tutorDisplayName }: WorkspaceChatProps)
                   </p>
                 </div>
               ) : (
-                messages.map((msg) => {
+                messages.map((msg, index) => {
                   const isParent = msg.sender === "parent";
+                  const showSeparator =
+                    index === 0 ||
+                    new Date(messages[index - 1].created_at).toDateString() !==
+                      new Date(msg.created_at).toDateString();
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col ${isParent ? "items-end" : "items-start"}`}
-                    >
+                    <div key={msg.id} className="space-y-3.5">
+                      {showSeparator && (
+                        <div className="flex justify-center my-4">
+                          <span className="bg-muted/80 backdrop-blur-xs px-3 py-1 rounded-full text-[10px] font-black text-muted-foreground uppercase tracking-wider border border-border/30">
+                            {formatChatDate(msg.created_at)}
+                          </span>
+                        </div>
+                      )}
                       <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm font-medium shadow-sm leading-normal whitespace-pre-wrap ${
-                          isParent
-                            ? "bg-primary text-primary-foreground rounded-tr-none"
-                            : "bg-muted/70 text-foreground rounded-tl-none border border-border/40"
-                        }`}
+                        className={`flex flex-col ${isParent ? "items-end" : "items-start"}`}
                       >
-                        {msg.content}
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm font-medium shadow-sm leading-normal whitespace-pre-wrap ${
+                            isParent
+                              ? "bg-primary text-primary-foreground rounded-tr-none"
+                              : "bg-muted/70 text-foreground rounded-tl-none border border-border/40"
+                          }`}
+                        >
+                          {msg.content}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-semibold mt-1 px-1">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground font-semibold mt-1 px-1">
-                        {new Date(msg.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
                     </div>
                   );
                 })

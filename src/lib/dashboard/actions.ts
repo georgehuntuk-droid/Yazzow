@@ -1177,3 +1177,168 @@ export async function deletePushSubscription(endpoint: string) {
   return { ok: true as const };
 }
 
+export async function getScheduleRules() {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("schedule_rules")
+    .select("*")
+    .eq("tutor_id", profile.id)
+    .order("day_of_week", { ascending: true })
+    .order("start_time", { ascending: true });
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+  return { ok: true as const, rules: data ?? [] };
+}
+
+export async function createScheduleRule(input: {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  if (input.endTime <= input.startTime) {
+    return { ok: false as const, error: "End time must be after start time." };
+  }
+
+  const { data, error } = await supabase
+    .from("schedule_rules")
+    .insert({
+      tutor_id: profile.id,
+      day_of_week: input.dayOfWeek,
+      start_time: input.startTime + ":00",
+      end_time: input.endTime + ":00",
+      is_active: true
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false as const, error: "You already have a recurring rule for this day and time range." };
+    }
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  return { ok: true as const, rule: data };
+}
+
+export async function deleteScheduleRule(ruleId: string) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("schedule_rules")
+    .delete()
+    .eq("id", ruleId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  return { ok: true as const };
+}
+
+export async function generateSlotsFromRulesAction(weeksAhead = 4) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { data: rules, error: rulesError } = await supabase
+    .from("schedule_rules")
+    .select("*")
+    .eq("tutor_id", profile.id)
+    .eq("is_active", true);
+
+  if (rulesError) {
+    return { ok: false as const, error: formatSupabaseError(rulesError.message) };
+  }
+
+  if (!rules || rules.length === 0) {
+    return { ok: false as const, error: "No recurring schedule rules found. Add some rules first." };
+  }
+
+  const { data: existingSlots } = await supabase
+    .from("availability_slots")
+    .select("starts_at, ends_at")
+    .eq("tutor_id", profile.id)
+    .gte("ends_at", new Date().toISOString());
+
+  const now = new Date();
+  const toInsert: { tutor_id: string; starts_at: string; ends_at: string }[] = [];
+  let totalGenerated = 0;
+  let totalSkipped = 0;
+
+  for (const rule of rules) {
+    for (let d = 0; d < weeksAhead * 7; d++) {
+      const currentDay = new Date(now);
+      currentDay.setDate(now.getDate() + d);
+      if (currentDay.getDay() === rule.day_of_week) {
+        const [startH, startM] = rule.start_time.split(":");
+        const [endH, endM] = rule.end_time.split(":");
+
+        const startsAt = new Date(currentDay);
+        startsAt.setHours(parseInt(startH, 10), parseInt(startM, 10), 0, 0);
+
+        const endsAt = new Date(currentDay);
+        endsAt.setHours(parseInt(endH, 10), parseInt(endM, 10), 0, 0);
+
+        if (startsAt > now) {
+          const hourlyWindows = splitAvailabilityIntoHourlySlots(startsAt, endsAt);
+          
+          for (const window of hourlyWindows) {
+            const hasClash = (existingSlots ?? []).some((row) =>
+              rangesOverlap(
+                window.startsAt,
+                window.endsAt,
+                new Date(row.starts_at),
+                new Date(row.ends_at),
+              )
+            );
+
+            if (hasClash) {
+              totalSkipped += 1;
+            } else {
+              toInsert.push({
+                tutor_id: profile.id,
+                starts_at: window.startsAt.toISOString(),
+                ends_at: window.endsAt.toISOString(),
+              });
+              totalGenerated += 1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (toInsert.length === 0) {
+    return {
+      ok: false as const,
+      error: `All of the recurring slots already exist on your calendar for the next ${weeksAhead} weeks.`,
+    };
+  }
+
+  const { error: insertError } = await supabase
+    .from("availability_slots")
+    .insert(toInsert);
+
+  if (insertError) {
+    return { ok: false as const, error: formatSupabaseError(insertError.message) };
+  }
+
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard/schedule");
+
+  return {
+    ok: true as const,
+    generated: totalGenerated,
+    skipped: totalSkipped,
+    message: `Successfully generated ${totalGenerated} slots for the next ${weeksAhead} weeks (${totalSkipped} skipped as duplicates).`,
+  };
+}
+

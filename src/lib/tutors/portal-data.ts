@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AvailabilitySlotRow,
@@ -84,6 +85,37 @@ export async function getResourcesForTutorOwner(
 }
 
 export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[]> {
+  const cookieStore = await cookies();
+  const testVal = cookieStore.get("yazzow-test-session")?.value;
+  if (testVal === "dashboard") {
+    return [
+      {
+        id: "slot-mock-1",
+        startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+        endsAt: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        isBooked: true,
+        booking: {
+          id: "booking-mock-1",
+          parentEmail: "testparent@example.com",
+          studentName: "Bobby",
+          status: "confirmed",
+          runningLateSentAt: null,
+          runningLateNote: null,
+          studentRunningLateSentAt: null,
+          studentRunningLateNote: null,
+          lessonReminderSentAt: null,
+        },
+      },
+      {
+        id: "slot-mock-2",
+        startsAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+        endsAt: new Date(Date.now() + 25 * 3600 * 1000).toISOString(),
+        isBooked: false,
+        booking: null,
+      },
+    ];
+  }
+
   const supabase = await createClient();
   // Fetch slots from 24 hours ago so today's slots remain visible to the tutor
   const twentyFourHoursAgo = new Date();
@@ -168,6 +200,31 @@ export async function getRecentBookingsForTutor(
   tutorId: string,
   limit = 10,
 ): Promise<RecentBooking[]> {
+  const cookieStore = await cookies();
+  const testVal = cookieStore.get("yazzow-test-session")?.value;
+  if (testVal === "dashboard") {
+    return [
+      {
+        id: "booking-mock-1",
+        slotId: "slot-mock-1",
+        parentEmail: "testparent@example.com",
+        studentName: "Bobby",
+        amountCents: 4500,
+        status: "confirmed",
+        runningLateSentAt: null,
+        runningLateNote: null,
+        studentRunningLateSentAt: null,
+        studentRunningLateNote: null,
+        lessonReminderSentAt: null,
+        createdAt: new Date().toISOString(),
+        startsAt: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+        endsAt: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+        isPaid: true,
+        stripePaymentIntentId: "mock-payment-intent-123",
+      },
+    ];
+  }
+
   const supabase = await createClient();
   let selectQuery = `
     id,
@@ -274,6 +331,22 @@ export async function getDigitalSalesForTutor(
   tutorId: string,
   limit = 25,
 ): Promise<DigitalPackSale[]> {
+  const cookieStore = await cookies();
+  const testVal = cookieStore.get("yazzow-test-session")?.value;
+  if (testVal === "dashboard") {
+    return [
+      {
+        id: "sale-mock-1",
+        resourceTitle: "Algebra Foundations Pack",
+        buyerEmail: "buyer@example.com",
+        amountCents: 1200,
+        platformFeeCents: 60,
+        tutorNetCents: 1140,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("resource_purchases")

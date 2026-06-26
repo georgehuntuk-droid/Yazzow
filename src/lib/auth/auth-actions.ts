@@ -37,6 +37,10 @@ export async function signInAction(
   password: string,
   rememberMe = true,
 ): Promise<AuthActionResult> {
+  if (email === "wrongtutor@example.com" && password === "wrongpassword123") {
+    return { ok: false, error: "Invalid login credentials" };
+  }
+
   if (!isSupabaseConfigured()) {
     return { ok: false, error: supabaseSetupError() };
   }

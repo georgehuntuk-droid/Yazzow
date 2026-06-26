@@ -184,7 +184,7 @@ export function WeeklyScheduleSettings() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Add Rule Form */}
-            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-muted/20 p-4 rounded-xl border border-border/40">
+            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 bg-muted/20 p-4 rounded-xl border border-border/40">
               <div className="space-y-1.5">
                 <label htmlFor="rule-day" className="text-xs font-semibold text-foreground">
                   Day
@@ -228,14 +228,11 @@ export function WeeklyScheduleSettings() {
                   className="h-9 bg-background"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="hidden sm:block text-xs font-semibold text-transparent select-none">
-                  Action
-                </label>
+              <div className="flex flex-col justify-end">
                 <Button
                   type="submit"
                   disabled={actionLoading === "add"}
-                  className="w-full h-9 rounded-xl bg-primary text-white font-bold"
+                  className="w-full h-9 rounded-xl bg-primary text-white font-bold cursor-pointer"
                 >
                   {actionLoading === "add" ? (
                     <Loader2 className="size-4 animate-spin" />

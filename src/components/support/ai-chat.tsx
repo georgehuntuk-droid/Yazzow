@@ -92,7 +92,7 @@ export function AiChat({ onEscalate }: AiChatProps) {
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && messages.length > 1) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping]);

@@ -383,6 +383,29 @@ export function TwoWeekCalendar({
             <Calendar className="size-4.5 text-primary" />
             {weekLabel} ({weekDays[0].getDate()} {weekDays[0].toLocaleDateString("en-GB", { month: "short" })} – {weekDays[6].getDate()} {weekDays[6].toLocaleDateString("en-GB", { month: "short" })})
           </h4>
+          
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-8 rounded-xl border-border/80 hover:bg-muted text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              disabled={selectedWeek === "week1"}
+              onClick={() => setSelectedWeek("week1")}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-8 rounded-xl border-border/80 hover:bg-muted text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              disabled={selectedWeek === "week2"}
+              onClick={() => setSelectedWeek("week2")}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto border border-border/80 rounded-2xl bg-card shadow-sm">
@@ -579,37 +602,8 @@ export function TwoWeekCalendar({
   const currentWeekLabel = selectedWeek === "week1" ? "This Week" : "Next Week";
 
   return (
-    <div className="space-y-6">
-      {/* Week Selector tabs (Mobile View toggle, Desktop View stacked) */}
-      <div className="flex md:hidden items-center justify-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className={cn("rounded-xl text-xs font-bold gap-1", selectedWeek === "week1" && "bg-primary text-white border-primary")}
-          onClick={() => setSelectedWeek("week1")}
-        >
-          <ChevronLeft className="size-4" /> This Week
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className={cn("rounded-xl text-xs font-bold gap-1", selectedWeek === "week2" && "bg-primary text-white border-primary")}
-          onClick={() => setSelectedWeek("week2")}
-        >
-          Next Week <ChevronRight className="size-4" />
-        </Button>
-      </div>
-
-      {/* Grid container: Stacked on desktop, single toggle on mobile */}
-      <div className="hidden md:block space-y-8">
-        {renderWeekGrid(week1Days, "This Week")}
-        {renderWeekGrid(week2Days, "Next Week")}
-      </div>
-      <div className="block md:hidden">
-        {renderWeekGrid(currentWeekDays, currentWeekLabel)}
-      </div>
+    <div className="space-y-4">
+      {renderWeekGrid(currentWeekDays, currentWeekLabel)}
 
       {/* SLOT DIALOG MODAL */}
       {selectedSlot && (

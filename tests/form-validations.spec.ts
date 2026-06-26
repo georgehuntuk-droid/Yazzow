@@ -6,6 +6,9 @@ test.describe('Form Validations & Error Triggers', () => {
     
     // Switch to Submit Ticket tab
     await page.click('text=Submit Ticket');
+    
+    // Wait for the ticket form to be visible/hydrated
+    await page.waitForSelector('#ticket-name', { state: 'visible', timeout: 5000 });
 
     // Click submit without filling required fields
     await page.click('button[type="submit"]');

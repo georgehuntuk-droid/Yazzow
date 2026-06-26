@@ -186,6 +186,9 @@ export function StudentGuideClient({ tutorUsername, tutorDisplayName }: StudentG
                 <li>
                   <strong className="text-foreground">Lesson Ratings:</strong> Tutors value your feedback! You can rate completed lessons out of 5 stars directly in your past schedule ledger.
                 </li>
+                <li>
+                  <strong className="text-foreground">Automated 24h Lesson Reminders:</strong> You will receive an automated email and in-app chat notification exactly 24 hours before every scheduled appointment to help you prepare and avoid missing slots.
+                </li>
               </ul>
             </div>
             <div className="p-4 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground leading-normal flex items-start gap-2">

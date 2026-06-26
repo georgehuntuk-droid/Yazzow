@@ -397,7 +397,7 @@ export function DemoGuideClient() {
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
           <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-semibold">Automated & Manual Chat Reminders</h2>
+              <h2 className="text-xl font-semibold">Reminders & Notifications</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mt-2">
                 Reminders are delivered directly inside the Yazzow in-app chat inbox to keep communications professional:
               </p>
@@ -409,14 +409,17 @@ export function DemoGuideClient() {
                   <strong className="text-foreground">Manual reminders:</strong> Tutors can click **&quot;Send Reminder&quot;** next to any student owing money in the student ledger.
                 </li>
                 <li>
-                  <strong className="text-foreground">Automated reminders:</strong> Tutors can configure automatic reminders in **Settings** triggered by:
+                  <strong className="text-foreground">Automated balance reminders:</strong> Tutors can configure automatic reminders in **Settings** triggered by:
                   <ul className="list-circle pl-5 mt-1 space-y-1">
                     <li>*Owed Balance threshold* (e.g. £50.00 outstanding balance).</li>
                     <li>*Completion time threshold* (e.g. 7 days post-lesson if still unpaid).</li>
                   </ul>
                 </li>
                 <li>
-                  <strong className="text-foreground">Anti-Spam Filter:</strong> The engine checks and ensures only 1 reminder is allowed every 7 days to prevent cluttering chat history.
+                  <strong className="text-foreground">Automated 24h Lesson Reminders:</strong> Tutors can toggle 24-hour reminders in **Settings**. When active, the system automatically sweeps your upcoming slots daily and sends parents an email and in-app chat reminder exactly 24 hours before each scheduled lesson.
+                </li>
+                <li>
+                  <strong className="text-foreground">Anti-Spam Filter:</strong> The engine checks and ensures only 1 balance reminder is allowed every 7 days to prevent cluttering chat history.
                 </li>
               </ul>
             </div>

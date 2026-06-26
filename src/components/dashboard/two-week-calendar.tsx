@@ -97,21 +97,21 @@ export function TwoWeekCalendar({
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
 
-  const handleMoveSlot = async (slotId: string, targetDateKey: string, targetHour: number) => {
-    setActionLoading(true);
-    setErrorMsg(null);
-    setSuccessMsg(null);
+  const [localSlots, setLocalSlots] = useState<CalendarSlot[]>(slots);
 
-    const slot = slots.find(s => s.id === slotId);
+  useEffect(() => {
+    setLocalSlots(slots);
+  }, [slots]);
+
+  const handleMoveSlot = async (slotId: string, targetDateKey: string, targetHour: number) => {
+    const slot = localSlots.find(s => s.id === slotId);
     if (!slot) {
       setErrorMsg("Slot not found.");
-      setActionLoading(false);
       return;
     }
 
     if (targetHour < minHour || targetHour > maxHour) {
       setErrorMsg("Invalid hour selection.");
-      setActionLoading(false);
       return;
     }
 
@@ -124,11 +124,29 @@ export function TwoWeekCalendar({
     
     if (Number.isNaN(targetStartsAt.getTime())) {
       setErrorMsg("Invalid date or hour format.");
-      setActionLoading(false);
       return;
     }
 
     const targetEndsAt = new Date(targetStartsAt.getTime() + durationMs);
+
+    // Save the previous slots state to revert back to on failure
+    const previousSlots = [...localSlots];
+
+    // Optimistically update the slot in the local state
+    setLocalSlots(prev => prev.map(s => {
+      if (s.id === slotId) {
+        return {
+          ...s,
+          startsAt: targetStartsAt.toISOString(),
+          endsAt: targetEndsAt.toISOString()
+        };
+      }
+      return s;
+    }));
+
+    setActionLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
     const res = await moveAvailabilitySlotAction({
       slotId,
@@ -142,6 +160,8 @@ export function TwoWeekCalendar({
       setSuccessMsg("Slot rescheduled successfully.");
       router.refresh();
     } else {
+      // Revert back to the previous state on error
+      setLocalSlots(previousSlots);
       setErrorMsg(res.error);
     }
   };
@@ -190,14 +210,14 @@ export function TwoWeekCalendar({
   const { minHour, maxHour } = useMemo(() => {
     let min = 8;
     let max = 19;
-    slots.forEach((slot) => {
+    localSlots.forEach((slot) => {
       const start = new Date(slot.startsAt).getHours();
       const end = Math.ceil(new Date(slot.endsAt).getHours() + new Date(slot.endsAt).getMinutes() / 60);
       if (start < min) min = start;
       if (end > max) max = end;
     });
     return { minHour: Math.max(0, min - 1), maxHour: Math.min(24, max + 1) };
-  }, [slots]);
+  }, [localSlots]);
 
   const hourHeight = 52; // Height in pixels for one hour
   const calendarHeight = (maxHour - minHour) * hourHeight;
@@ -205,14 +225,14 @@ export function TwoWeekCalendar({
   // Filter and group slots by date label (YYYY-MM-DD)
   const slotsByDate = useMemo(() => {
     const groups: Record<string, CalendarSlot[]> = {};
-    slots.forEach((slot) => {
+    localSlots.forEach((slot) => {
       const d = new Date(slot.startsAt);
       const dateKey = getDateKey(d);
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(slot);
     });
     return groups;
-  }, [slots]);
+  }, [localSlots]);
 
   // Check if a slot is booked by the current student/parent
   const isMyBooking = (slot: CalendarSlot) => {

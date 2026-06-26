@@ -28,7 +28,8 @@ import {
   bookSlotManually, 
   cancelBooking, 
   notifyRunningLate, 
-  sendLessonReminderAction 
+  sendLessonReminderAction,
+  moveAvailabilitySlotAction
 } from "@/lib/dashboard/actions";
 import { cancelBookingByStudent } from "@/lib/dashboard/actions";
 
@@ -94,6 +95,56 @@ export function TwoWeekCalendar({
   const [, startTransition] = useTransition();
   const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2">("week1");
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
+  const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
+
+  const handleMoveSlot = async (slotId: string, targetDateKey: string, targetHour: number) => {
+    setActionLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const slot = slots.find(s => s.id === slotId);
+    if (!slot) {
+      setErrorMsg("Slot not found.");
+      setActionLoading(false);
+      return;
+    }
+
+    if (targetHour < minHour || targetHour > maxHour) {
+      setErrorMsg("Invalid hour selection.");
+      setActionLoading(false);
+      return;
+    }
+
+    const start = new Date(slot.startsAt);
+    const end = new Date(slot.endsAt);
+    const durationMs = end.getTime() - start.getTime();
+
+    // Construct local startsAt date based on targetDateKey (YYYY-MM-DD) and targetHour
+    const targetStartsAt = new Date(`${targetDateKey}T${String(targetHour).padStart(2, "0")}:00:00`);
+    
+    if (Number.isNaN(targetStartsAt.getTime())) {
+      setErrorMsg("Invalid date or hour format.");
+      setActionLoading(false);
+      return;
+    }
+
+    const targetEndsAt = new Date(targetStartsAt.getTime() + durationMs);
+
+    const res = await moveAvailabilitySlotAction({
+      slotId,
+      startsAtIso: targetStartsAt.toISOString(),
+      endsAtIso: targetEndsAt.toISOString(),
+    });
+
+    setActionLoading(false);
+
+    if (res.ok) {
+      setSuccessMsg("Slot rescheduled successfully.");
+      router.refresh();
+    } else {
+      setErrorMsg(res.error);
+    }
+  };
 
   const [currency, setCurrency] = useState(tutor.currency);
   useEffect(() => {
@@ -467,9 +518,39 @@ export function TwoWeekCalendar({
                 return (
                   <div 
                     key={day.toISOString()} 
+                    onDragEnter={(e) => {
+                      if (role === "tutor") {
+                        setDraggedOverDate(dateKey);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (role === "tutor") {
+                        setDraggedOverDate(null);
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      if (role === "tutor") {
+                        e.preventDefault();
+                      }
+                    }}
+                    onDrop={async (e) => {
+                      if (role !== "tutor") return;
+                      e.preventDefault();
+                      setDraggedOverDate(null);
+                      const slotId = e.dataTransfer.getData("slotId");
+                      if (!slotId) return;
+
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const dropY = e.clientY - rect.top;
+                      const hourOffset = Math.round(dropY / hourHeight);
+                      const targetHour = minHour + hourOffset;
+
+                      handleMoveSlot(slotId, dateKey, targetHour);
+                    }}
                     className={cn(
-                      "flex-1 border-r border-border/40 last:border-r-0 relative group",
-                      isToday && "bg-primary/[0.01]"
+                      "flex-1 border-r border-border/40 last:border-r-0 relative group transition-colors duration-200",
+                      isToday && "bg-primary/[0.01]",
+                      draggedOverDate === dateKey && "bg-primary/5 border-dashed border-primary"
                     )}
                     style={{ height: `${calendarHeight}px` }}
                   >
@@ -533,9 +614,19 @@ export function TwoWeekCalendar({
                       }
 
                       return (
-                        <button
+                        <div
                           key={slot.id}
-                          type="button"
+                          draggable={role === "tutor" && !isPast}
+                          onDragStart={(e) => {
+                            if (role === "tutor") {
+                              e.dataTransfer.setData("slotId", slot.id);
+                              e.dataTransfer.effectAllowed = "move";
+                              e.currentTarget.style.opacity = "0.5";
+                            }
+                          }}
+                          onDragEnd={(e) => {
+                            e.currentTarget.style.opacity = "1";
+                          }}
                           onClick={() => {
                             if (role === "student" && isPast) return;
                             if (role === "student" && isBooked && !mine) return;
@@ -546,7 +637,7 @@ export function TwoWeekCalendar({
                             height: `${height}px`,
                           }}
                           className={cn(
-                            "absolute left-1 right-1 rounded-xl p-1.5 text-left flex flex-col justify-between overflow-hidden text-[10px] leading-tight transition-all duration-200 z-10 font-bold",
+                            "absolute left-1 right-1 rounded-xl p-1.5 text-left flex flex-col justify-between overflow-hidden text-[10px] leading-tight transition-all duration-200 z-10 font-bold group/slot",
                             blockStyle
                           )}
                         >
@@ -555,28 +646,62 @@ export function TwoWeekCalendar({
                               <Clock className="size-3 shrink-0 opacity-80" />
                               {start.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
                             </span>
-                            {role === "student" && mine && (
-                              <Badge className="bg-indigo-800 text-white hover:bg-indigo-800 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
-                                Mine
-                              </Badge>
+
+                            {/* Hover Quick Actions (Tutor only) */}
+                            {role === "tutor" && !isPast && (
+                              <div className="hidden group-hover/slot:flex items-center gap-1 scale-90 z-20">
+                                {isBooked ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTutorCancelBooking(slot.booking!.id);
+                                    }}
+                                    className="bg-red-850 text-white hover:bg-red-900 border-none rounded p-0.5 hover:scale-105 transition-all shadow cursor-pointer flex items-center justify-center size-5"
+                                    title="Cancel Booking"
+                                  >
+                                    <X className="size-3" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTutorDeleteSlot(slot.id);
+                                    }}
+                                    className="bg-red-600 text-white hover:bg-red-700 border-none rounded p-0.5 hover:scale-105 transition-all shadow cursor-pointer flex items-center justify-center size-5"
+                                    title="Delete Slot"
+                                  >
+                                    <Trash2 className="size-3" />
+                                  </button>
+                                )}
+                              </div>
                             )}
-                            {role === "student" && isBooked && !mine && (
-                              <Badge className="bg-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/30 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
-                                Booked
-                              </Badge>
-                            )}
-                            {role === "tutor" && isBooked && (
-                              <Badge className="bg-blue-800 text-white hover:bg-blue-800 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
-                                Booked
-                              </Badge>
-                            )}
+
+                            <div className="group-hover/slot:hidden flex gap-1">
+                              {role === "student" && mine && (
+                                <Badge className="bg-indigo-800 text-white hover:bg-indigo-800 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
+                                  Mine
+                                </Badge>
+                              )}
+                              {role === "student" && isBooked && !mine && (
+                                <Badge className="bg-muted-foreground/30 text-muted-foreground hover:bg-muted-foreground/30 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
+                                  Booked
+                                </Badge>
+                              )}
+                              {role === "tutor" && isBooked && (
+                                <Badge className="bg-blue-800 text-white hover:bg-blue-800 border-none scale-90 -mr-1 px-1 h-3.5 text-[8px] font-black uppercase">
+                                  Booked
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <span className="truncate block font-semibold text-[9px] mt-0.5 opacity-90">
                             {isBooked 
                               ? (role === "student" && !mine ? "Unavailable" : (slot.booking?.studentName || "Lesson")) 
                               : `Open Slot (${getDisplayPrice(tutor.lessonPriceCents)})`}
                           </span>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

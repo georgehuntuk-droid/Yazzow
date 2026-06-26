@@ -26,6 +26,10 @@ type SupportTicketFormProps = {
   className?: string;
   initialCategory?: string;
   initialMessage?: string;
+  initialUser?: {
+    email: string;
+    name: string;
+  } | null;
 };
 
 export function SupportTicketForm({
@@ -33,13 +37,23 @@ export function SupportTicketForm({
   className,
   initialCategory = "other",
   initialMessage = "",
+  initialUser = null,
 }: SupportTicketFormProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(initialUser?.name || "");
+  const [email, setEmail] = useState(initialUser?.email || "");
   const [category, setCategory] = useState<string>(initialCategory);
   const [message, setMessage] = useState(initialMessage);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isLoggedIn = !!initialUser;
+
+  useEffect(() => {
+    if (initialUser) {
+      setName(initialUser.name);
+      setEmail(initialUser.email);
+    }
+  }, [initialUser]);
 
   useEffect(() => {
     if (initialCategory) {
@@ -111,6 +125,8 @@ export function SupportTicketForm({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isLoggedIn}
+                className={cn(isLoggedIn && "bg-muted/50 cursor-not-allowed")}
               />
             </div>
             <div className="space-y-2">
@@ -123,6 +139,8 @@ export function SupportTicketForm({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoggedIn}
+                className={cn(isLoggedIn && "bg-muted/50 cursor-not-allowed")}
               />
             </div>
           </div>

@@ -37,5 +37,17 @@ test.describe('Capture Screenshots for Ergonomic Review', () => {
     // 6. Tutor Dashboard Schedule
     await page.goto('/dashboard/schedule');
     await page.screenshot({ path: path.join(screenshotDir, 'tutor-dashboard-schedule.png'), fullPage: true });
+
+    // 7. Student Workspace Page - Tasks View (with dashboard cookie)
+    await context.addCookies([
+      { name: 'yazzow-test-session', value: 'dashboard', domain: 'localhost', path: '/' }
+    ]);
+    await page.goto('/tutor/maya-chen/workspace');
+    await page.screenshot({ path: path.join(screenshotDir, 'student-workspace.png'), fullPage: true });
+
+    // 8. Student Workspace Page - Worksheets View
+    await page.click('button:has-text("Worksheets")');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(screenshotDir, 'student-workspace-worksheets.png'), fullPage: true });
   });
 });

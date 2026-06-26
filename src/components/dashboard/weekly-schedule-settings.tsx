@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   createScheduleRule,
   deleteScheduleRule,
-  generateSlotsFromRulesAction,
+  saveGeneratedSlotsAction,
   getScheduleRules,
 } from "@/lib/dashboard/actions";
 
@@ -133,7 +133,48 @@ export function WeeklyScheduleSettings() {
     setSuccess(null);
 
     try {
-      const result = await generateSlotsFromRulesAction(weeksAhead);
+      const now = new Date();
+      const candidateSlots: { startsAt: string; endsAt: string }[] = [];
+      
+      for (const rule of rules) {
+        // Use <= to query exactly weeksAhead * 7 days inclusive of boundary
+        for (let d = 0; d <= weeksAhead * 7; d++) {
+          const currentDay = new Date(now);
+          currentDay.setDate(now.getDate() + d);
+          if (currentDay.getDay() === rule.day_of_week) {
+            const [startH, startM] = rule.start_time.split(":");
+            const [endH, endM] = rule.end_time.split(":");
+
+            const startsAt = new Date(currentDay);
+            startsAt.setHours(parseInt(startH, 10), parseInt(startM, 10), 0, 0);
+
+            const endsAt = new Date(currentDay);
+            endsAt.setHours(parseInt(endH, 10), parseInt(endM, 10), 0, 0);
+
+            if (startsAt > now) {
+              let cursor = startsAt.getTime();
+              const endMs = endsAt.getTime();
+              const durationMs = 60 * 60 * 1000; // 1 hour
+              
+              while (cursor + durationMs <= endMs) {
+                candidateSlots.push({
+                  startsAt: new Date(cursor).toISOString(),
+                  endsAt: new Date(cursor + durationMs).toISOString(),
+                });
+                cursor += durationMs;
+              }
+            }
+          }
+        }
+      }
+
+      if (candidateSlots.length === 0) {
+        setError("No upcoming time slots match your recurring weekly rules.");
+        setActionLoading(null);
+        return;
+      }
+
+      const result = await saveGeneratedSlotsAction(candidateSlots, weeksAhead);
       if (!result.ok) {
         setError(result.error);
         return;

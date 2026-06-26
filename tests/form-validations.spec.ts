@@ -6,10 +6,17 @@ test.describe('Form Validations & Error Triggers', () => {
     await page.waitForTimeout(1000); // Wait for hydration
     
     // Switch to Submit Ticket tab
-    await page.click('text=Submit Ticket');
+    const ticketTab = page.locator('button:has-text("Submit Ticket")');
+    await ticketTab.click();
     
-    // Wait for the ticket form to be visible/hydrated
-    await page.waitForSelector('#ticket-name', { state: 'visible', timeout: 5000 });
+    // Handle hydration race condition by retrying click if the form doesn't appear
+    try {
+      await page.waitForSelector('#ticket-name', { state: 'visible', timeout: 2000 });
+    } catch {
+      await page.waitForTimeout(500);
+      await ticketTab.click();
+      await page.waitForSelector('#ticket-name', { state: 'visible', timeout: 3000 });
+    }
 
     // Click submit without filling required fields
     const submitBtn = page.locator('button:has-text("Send message")');
@@ -21,12 +28,14 @@ test.describe('Form Validations & Error Triggers', () => {
 
     // Fill only name, click submit again, email should be invalid
     await page.fill('#ticket-name', 'John Doe');
+    await expect(page.locator('#ticket-name')).toHaveValue('John Doe');
     await submitBtn.click();
     const isEmailInvalid = await page.$eval('#ticket-email', (el: HTMLInputElement) => !el.validity.valid);
     expect(isEmailInvalid).toBe(true);
 
     // Fill invalid email format
     await page.fill('#ticket-email', 'invalid-email-format');
+    await expect(page.locator('#ticket-email')).toHaveValue('invalid-email-format');
     await submitBtn.click();
     const isEmailStillInvalid = await page.$eval('#ticket-email', (el: HTMLInputElement) => !el.validity.valid);
     expect(isEmailStillInvalid).toBe(true);

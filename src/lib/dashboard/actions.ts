@@ -1476,4 +1476,132 @@ export async function cancelBookingByStudent(bookingId: string) {
   return { ok: true as const };
 }
 
+export async function saveGeneratedSlotsAction(
+  candidateSlots: { startsAt: string; endsAt: string }[],
+  weeksAhead: number
+) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { data: existingSlots } = await supabase
+    .from("availability_slots")
+    .select("starts_at, ends_at")
+    .eq("tutor_id", profile.id)
+    .gte("ends_at", new Date().toISOString());
+
+  const toInsert: { tutor_id: string; starts_at: string; ends_at: string }[] = [];
+  let totalGenerated = 0;
+  let totalSkipped = 0;
+
+  for (const slot of candidateSlots) {
+    const slotStart = new Date(slot.startsAt);
+    const slotEnd = new Date(slot.endsAt);
+
+    const hasClash = (existingSlots ?? []).some((row) =>
+      rangesOverlap(
+        slotStart,
+        slotEnd,
+        new Date(row.starts_at),
+        new Date(row.ends_at),
+      )
+    );
+
+    if (hasClash) {
+      totalSkipped += 1;
+    } else {
+      toInsert.push({
+        tutor_id: profile.id,
+        starts_at: slot.startsAt,
+        ends_at: slot.endsAt,
+      });
+      totalGenerated += 1;
+    }
+  }
+
+  if (toInsert.length === 0) {
+    return {
+      ok: false as const,
+      error: `All of the recurring slots already exist on your calendar for the next ${weeksAhead} weeks.`,
+    };
+  }
+
+  const { error: insertError } = await supabase
+    .from("availability_slots")
+    .insert(toInsert);
+
+  if (insertError) {
+    return { ok: false as const, error: formatSupabaseError(insertError.message) };
+  }
+
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard/schedule");
+
+  return {
+    ok: true as const,
+    message: `Successfully generated ${totalGenerated} slots (skipped ${totalSkipped} existing).`,
+  };
+}
+
+export async function moveAvailabilitySlotAction(input: {
+  slotId: string;
+  startsAtIso: string;
+  endsAtIso: string;
+}) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  // 1. Verify slot ownership
+  const { data: slot, error: fetchError } = await supabase
+    .from("availability_slots")
+    .select("*")
+    .eq("id", input.slotId)
+    .eq("tutor_id", profile.id)
+    .single();
+
+  if (fetchError || !slot) {
+    return { ok: false as const, error: "Slot not found or access denied." };
+  }
+
+  // 2. Check for overlaps/clashes with OTHER slots
+  const { data: existingSlots } = await supabase
+    .from("availability_slots")
+    .select("id, starts_at, ends_at")
+    .eq("tutor_id", profile.id)
+    .neq("id", input.slotId);
+
+  const newStart = new Date(input.startsAtIso);
+  const newEnd = new Date(input.endsAtIso);
+
+  const hasClash = (existingSlots ?? []).some((row) =>
+    rangesOverlap(
+      newStart,
+      newEnd,
+      new Date(row.starts_at),
+      new Date(row.ends_at),
+    )
+  );
+
+  if (hasClash) {
+    return { ok: false as const, error: "This time slot overlaps with another scheduled slot." };
+  }
+
+  // 3. Update the slot
+  const { error: updateError } = await supabase
+    .from("availability_slots")
+    .update({
+      starts_at: input.startsAtIso,
+      ends_at: input.endsAtIso,
+    })
+    .eq("id", input.slotId);
+
+  if (updateError) {
+    return { ok: false as const, error: formatSupabaseError(updateError.message) };
+  }
+
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard/schedule");
+
+  return { ok: true as const };
+}
+
 

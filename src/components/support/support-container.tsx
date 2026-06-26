@@ -5,7 +5,14 @@ import { AiChat } from "./ai-chat";
 import { SupportTicketForm } from "./ticket-form";
 import { MessageSquareShare, MessageSquareText } from "lucide-react";
 
-export function SupportContainer() {
+type SupportContainerProps = {
+  initialUser?: {
+    email: string;
+    name: string;
+  } | null;
+};
+
+export function SupportContainer({ initialUser }: SupportContainerProps) {
   const [activeTab, setActiveTab] = useState<"chat" | "ticket">("chat");
   const [escalatedMessage, setEscalatedMessage] = useState("");
   const [escalatedCategory, setEscalatedCategory] = useState("other");
@@ -97,6 +104,7 @@ export function SupportContainer() {
           <SupportTicketForm
             initialMessage={escalatedMessage}
             initialCategory={escalatedCategory}
+            initialUser={initialUser}
           />
         )}
       </div>

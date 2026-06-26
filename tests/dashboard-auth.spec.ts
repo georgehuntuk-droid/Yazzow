@@ -21,7 +21,10 @@ test.describe('Dashboard & Authentication Flow', () => {
 
     // Fill form with dummy incorrect credentials
     await page.fill('#email', 'wrongtutor@example.com');
+    await expect(page.locator('#email')).toHaveValue('wrongtutor@example.com');
+
     await page.fill('#password', 'wrongpassword123');
+    await expect(page.locator('#password')).toHaveValue('wrongpassword123');
 
     // Click submit
     await page.click('button[type="submit"]');

@@ -1,4 +1,4 @@
-const CACHE_NAME = "yazzow-cache-v7";
+const CACHE_NAME = "yazzow-cache-v9";
 const OFFLINE_URL = "/offline.html";
 
 const ASSETS_TO_CACHE = [
@@ -38,12 +38,18 @@ self.addEventListener("fetch", (event) => {
 
   // Network-only for HTML/page requests to prevent caching dynamic authorized pages
   if (event.request.mode === "navigate" || event.request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      fetch(event.request)
-        .catch(() => {
-          return caches.match(OFFLINE_URL);
+    // Only intercept and serve offline page if we are actually offline
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      event.respondWith(
+        caches.match(OFFLINE_URL).then((response) => {
+          return response || new Response("Offline", {
+            headers: { "Content-Type": "text/html" }
+          });
         })
-    );
+      );
+      return;
+    }
+    // Let the browser load the page naturally
     return;
   }
 
@@ -55,7 +61,7 @@ self.addEventListener("fetch", (event) => {
       }
 
       return fetch(event.request).catch(() => {
-        return null;
+        return new Response("Service unavailable offline", { status: 503 });
       });
     })
   );

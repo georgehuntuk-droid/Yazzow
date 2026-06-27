@@ -884,15 +884,6 @@ export function TwoWeekCalendar({
     );
   };
 
-  if (!mounted) {
-    return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-6 w-48 bg-muted rounded-xl" />
-        <div className="h-[400px] w-full bg-card border border-border/80 rounded-2xl" />
-      </div>
-    );
-  }
-
   const currentWeekDays = useMemo(() => {
     if (selectedWeek === "week1") return week1Days;
     if (selectedWeek === "week2") return week2Days;
@@ -906,6 +897,15 @@ export function TwoWeekCalendar({
     if (selectedWeek === "week3") return "Week 3";
     return "Week 4";
   }, [selectedWeek]);
+
+  if (!mounted) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-6 w-48 bg-muted rounded-xl" />
+        <div className="h-[400px] w-full bg-card border border-border/80 rounded-2xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

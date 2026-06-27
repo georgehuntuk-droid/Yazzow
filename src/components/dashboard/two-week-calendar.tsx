@@ -285,6 +285,23 @@ export function TwoWeekCalendar({
     const endsAt = new Date(`${dateKey}T${String(endHour).padStart(2, "0")}:00:00`);
     
     if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) return;
+
+    // Optimistically paint temporary slot blocks to screen instantly
+    const tempSlots: CalendarSlot[] = [];
+    for (let hr = startHour; hr < endHour; hr++) {
+      const slotStart = new Date(`${dateKey}T${String(hr).padStart(2, "0")}:00:00`);
+      const slotEnd = new Date(`${dateKey}T${String(hr + 1).padStart(2, "0")}:00:00`);
+      tempSlots.push({
+        id: `temp-${Date.now()}-${hr}`,
+        startsAt: slotStart.toISOString(),
+        endsAt: slotEnd.toISOString(),
+        isBooked: false,
+        booking: null,
+      });
+    }
+
+    const previousSlots = [...localSlots];
+    setLocalSlots(prev => [...prev, ...tempSlots]);
     
     try {
       const result = await createAvailabilitySlot({
@@ -292,12 +309,16 @@ export function TwoWeekCalendar({
         endsAtIso: endsAt.toISOString(),
       });
       if (result.ok) {
+        // Silently sync server state in the background
         router.refresh();
       } else {
+        // Revert on failure
+        setLocalSlots(previousSlots);
         alert(result.error || "Failed to create slot.");
       }
     } catch (err) {
-      console.error("Error creating slot via drag:", err);
+      setLocalSlots(previousSlots);
+      alert("Failed to create slot due to network error.");
     }
   };
 
@@ -343,19 +364,30 @@ export function TwoWeekCalendar({
 
   // Tutor Actions
   const handleTutorDeleteSlot = async (slotId: string, skipConfirm = false) => {
+    if (slotId.startsWith("temp-")) return;
     if (!skipConfirm && !confirm("Delete this open slot?")) return;
-    setActionLoading(true);
+    
+    const previousSlots = [...localSlots];
+    
+    // Optimistically remove the slot immediately from local state
+    setLocalSlots(prev => prev.filter(s => s.id !== slotId));
+    setSelectedSlot(null);
     setErrorMsg(null);
-    const res = await deleteAvailabilitySlot(slotId);
-    setActionLoading(false);
-    if (res.ok) {
-      setSuccessMsg("Slot deleted successfully.");
-      router.refresh();
-      setTimeout(() => {
-        setSelectedSlot(null);
-      }, 300);
-    } else {
-      setErrorMsg(res.error);
+    setSuccessMsg(null);
+    
+    try {
+      const res = await deleteAvailabilitySlot(slotId);
+      if (res.ok) {
+        // Silently sync server state in the background
+        router.refresh();
+      } else {
+        // Revert on failure
+        setLocalSlots(previousSlots);
+        alert(res.error || "Failed to delete slot.");
+      }
+    } catch (err) {
+      setLocalSlots(previousSlots);
+      alert("Failed to delete slot due to network error.");
     }
   };
 

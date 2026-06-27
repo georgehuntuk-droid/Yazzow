@@ -1618,7 +1618,7 @@ export async function moveAvailabilitySlotAction(input: {
       const { sendBookingMovedEmail } = await import("@/lib/notifications/booking-update");
       await sendBookingMovedEmail({
         to: bookingToNotify.parent_email,
-        tutorName: profile.display_name,
+        tutorName: profile.displayName,
         studentName: bookingToNotify.student_name,
         oldSlotLabel,
         newSlotLabel,

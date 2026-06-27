@@ -661,7 +661,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
             )}
           </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-3">
+          <CardContent className="grid gap-6 md:grid-cols-3">
             {/* 1. Profile photo */}
             <div className="space-y-3 flex flex-col items-start">
               <p className="text-sm font-medium">Profile photo</p>
@@ -673,7 +673,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <label className="cursor-pointer">
                   <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3.5 text-xs font-bold hover:bg-muted whitespace-nowrap transition-colors">
                     {avatarLoading ? "Uploading…" : "Upload photo"}
@@ -706,7 +706,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   <ImageIcon className="size-6 text-muted-foreground" aria-hidden />
                 ) : null}
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <label className="cursor-pointer">
                   <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3.5 text-xs font-bold hover:bg-muted whitespace-nowrap transition-colors">
                     {coverLoading ? "Uploading…" : "Upload cover"}
@@ -739,7 +739,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   <ImageIcon className="size-6 text-muted-foreground" aria-hidden />
                 ) : null}
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <label className="cursor-pointer">
                   <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3.5 text-xs font-bold hover:bg-muted whitespace-nowrap transition-colors">
                     {sideBannerLoading ? "Uploading…" : "Upload banner"}

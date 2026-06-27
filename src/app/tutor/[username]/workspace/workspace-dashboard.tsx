@@ -98,42 +98,52 @@ export function WorkspaceDashboard({
 
   // Real-time Postgres listener to refresh workspace details instantly
   useEffect(() => {
-    const supabase = createClient();
-    
-    const channel = supabase
-      .channel("workspace-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "bookings" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "availability_slots" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "students" },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe();
+    let supabase: any = null;
+    let channel: any = null;
+
+    try {
+      supabase = createClient();
+      if (supabase) {
+        channel = supabase
+          .channel("workspace-realtime")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "bookings" },
+            () => {
+              router.refresh();
+            }
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "tasks" },
+            () => {
+              router.refresh();
+            }
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "availability_slots" },
+            () => {
+              router.refresh();
+            }
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "students" },
+            () => {
+              router.refresh();
+            }
+          )
+          .subscribe();
+      }
+    } catch (err) {
+      console.warn("Failed to subscribe to workspace realtime updates:", err);
+    }
 
     return () => {
-      void supabase.removeChannel(channel);
+      if (supabase && channel) {
+        void supabase.removeChannel(channel);
+      }
     };
   }, [router]);
 

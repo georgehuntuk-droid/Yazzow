@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { BookOpen, CalendarRange, CheckCircle2, Circle, GraduationCap, ArrowLeft, LogOut, Sparkles, ChevronDown, HelpCircle, Clock } from "lucide-react";
@@ -556,32 +557,34 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
             </div>
           </div>
 
-          <WorkspaceDashboard
-            tutor={{
-              id: tutor.id,
-              username: username,
-              displayName: tutor.displayName,
-              lessonPriceCents: tutor.lessonPriceCents,
-              currency: tutor.currency,
-              allowCashPayments: tutor.allowCashPayments,
-            }}
-            studentRecord={{
-              id: studentRecord.id,
-              student_name: studentRecord.student_name,
-              lesson_credits: studentRecord.lesson_credits,
-              credit_limit: studentRecord.credit_limit,
-            }}
-            otherTutors={otherTutors}
-            studentRecords={studentRecords}
-            upcomingLessons={upcomingLessons}
-            pastLessons={pastLessons}
-            tasks={tasks}
-            worksheets={worksheets}
-            calendarSlots={calendarSlots}
-            paymentsEnabled={paymentsEnabled}
-            parentEmail={user.email!}
-            username={username}
-          />
+          <Suspense fallback={null}>
+            <WorkspaceDashboard
+              tutor={{
+                id: tutor.id,
+                username: username,
+                displayName: tutor.displayName,
+                lessonPriceCents: tutor.lessonPriceCents,
+                currency: tutor.currency,
+                allowCashPayments: tutor.allowCashPayments,
+              }}
+              studentRecord={{
+                id: studentRecord.id,
+                student_name: studentRecord.student_name,
+                lesson_credits: studentRecord.lesson_credits,
+                credit_limit: studentRecord.credit_limit,
+              }}
+              otherTutors={otherTutors}
+              studentRecords={studentRecords}
+              upcomingLessons={upcomingLessons}
+              pastLessons={pastLessons}
+              tasks={tasks}
+              worksheets={worksheets}
+              calendarSlots={calendarSlots}
+              paymentsEnabled={paymentsEnabled}
+              parentEmail={user.email!}
+              username={username}
+            />
+          </Suspense>
         </main>
       </div>
     </PortalThemeWrapper>

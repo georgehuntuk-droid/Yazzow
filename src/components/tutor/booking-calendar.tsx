@@ -102,12 +102,16 @@ export function BookingCalendar({
         ) : (
           <div className="grid gap-6 md:grid-cols-[220px_1fr] lg:grid-cols-[260px_1fr]">
             {/* Left Panel: Calendar Date Timeline Selector */}
-            <div className="space-y-3">
+            <div className="space-y-3 min-w-0 w-full">
               <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 flex items-center gap-1.5">
                 <CalendarDays className="size-3.5 text-primary" />
                 1. Select Date
               </span>
-              <div className="flex flex-row overflow-x-auto gap-2 pb-2 md:flex-col md:overflow-visible md:pb-0 scrollbar-none">
+              {/* Mobile swipe hint */}
+              <div className="md:hidden flex items-center justify-center gap-1 text-[10px] font-bold text-primary/75 bg-primary/5 py-1 px-2.5 rounded-lg w-max mb-1 select-none">
+                <span>⇄ Swipe horizontally for dates</span>
+              </div>
+              <div className="flex flex-row overflow-x-auto gap-2 pb-2 md:flex-col md:overflow-visible md:pb-0 scrollbar-none w-full">
                 {dateKeys.map((dateKey) => {
                   const isDateSelected = selectedDateKey === dateKey;
                   const dateObj = new Date(dateKey + "T00:00:00");
@@ -143,7 +147,7 @@ export function BookingCalendar({
             </div>
 
             {/* Right Panel: Time Slots & Checkout Panel */}
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0 w-full">
               <span className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 flex items-center gap-1.5">
                 <Clock className="size-3.5 text-primary" />
                 2. Pick Time

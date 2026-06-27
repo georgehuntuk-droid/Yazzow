@@ -145,16 +145,16 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
       {tutor.portalAnnouncementActive && tutor.portalAnnouncement ? (
-        <div className="bg-primary px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-primary-foreground select-none relative animate-in slide-in-from-top-full duration-300">
-          <span className="inline-flex items-center gap-1.5">
+        <div className="bg-primary px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-primary-foreground select-none relative animate-in slide-in-from-top-full duration-300 whitespace-normal break-words">
+          <div className="max-w-5xl mx-auto w-full px-2 sm:px-4 break-words whitespace-normal leading-normal">
             📢 {tutor.portalAnnouncement}
-          </span>
+          </div>
         </div>
       ) : null}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
-          <Logo size="header" href="/" />
-          <div className="flex items-center gap-3">
+        <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-2 sm:gap-4">
+          <Logo size="header" href="/" className="shrink-0" />
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <CurrencySelector tutorCurrency={tutor.currency} />
             {isSamplePortal ? (
               <>
@@ -177,18 +177,18 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 </nav>
               </>
             ) : (
-              <nav className="flex items-center gap-2">
+              <nav className="flex items-center gap-1 sm:gap-2">
                 {user ? (
                   <Link
                     href={`/tutor/${username}/workspace`}
-                    className={buttonVariants({ variant: "default", size: "sm" }) + " font-bold text-xs rounded-xl shadow-sm"}
+                    className={buttonVariants({ variant: "default", size: "sm" }) + " font-bold text-[10px] sm:text-xs rounded-xl shadow-sm px-2.5 sm:px-3 h-8 sm:h-9 shrink-0"}
                   >
                     Open Workspace
                   </Link>
                 ) : (
                   <Link
                     href={`/auth/login?next=/tutor/${username}/workspace`}
-                    className={buttonVariants({ variant: "outline", size: "sm" }) + " font-bold text-xs rounded-xl hover:bg-muted transition-colors"}
+                    className={buttonVariants({ variant: "outline", size: "sm" }) + " font-bold text-[10px] sm:text-xs rounded-xl hover:bg-muted transition-colors px-2.5 sm:px-3 h-8 sm:h-9 shrink-0"}
                   >
                     Parent Login
                   </Link>
@@ -222,7 +222,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
             ) : null}
 
             <Tabs defaultValue="book">
-              <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto">
+              <TabsList className="h-11 w-full justify-start rounded-xl bg-muted/60 p-1 sm:w-auto overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-none">
                 <TabsTrigger value="book" className="rounded-lg px-4">
                   Book a lesson
                 </TabsTrigger>

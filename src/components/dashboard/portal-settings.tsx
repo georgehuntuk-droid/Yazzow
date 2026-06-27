@@ -662,51 +662,53 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
           </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 sm:grid-cols-3">
-            <div className="space-y-3">
+            {/* 1. Profile photo */}
+            <div className="space-y-3 flex flex-col items-start">
               <p className="text-sm font-medium">Profile photo</p>
-              <div className="flex items-center gap-4">
-                <Avatar className="size-20 border-2 border-border">
+              <div className="flex h-20 items-center">
+                <Avatar className="size-20 border-2 border-border shadow-sm">
                   {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
                   <AvatarFallback className="bg-primary/10 font-heading text-lg text-primary">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col gap-2">
-                  <label className="cursor-pointer">
-                    <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted">
-                      {avatarLoading ? "Uploading…" : "Upload photo"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="sr-only"
-                      disabled={avatarLoading}
-                      onChange={handleAvatarUpload}
-                    />
-                  </label>
-                  {avatarUrl ? (
-                    <Button type="button" variant="ghost" size="sm" onClick={handleRemoveAvatar}>
-                      <Trash2 className="size-3.5" data-icon="inline-start" />
-                      Remove
-                    </Button>
-                  ) : null}
-                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <label className="cursor-pointer">
+                  <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3.5 text-xs font-bold hover:bg-muted whitespace-nowrap transition-colors">
+                    {avatarLoading ? "Uploading…" : "Upload photo"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    disabled={avatarLoading}
+                    onChange={handleAvatarUpload}
+                  />
+                </label>
+                {avatarUrl ? (
+                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoveAvatar} className="h-8 text-xs font-semibold whitespace-nowrap hover:bg-red-50 hover:text-red-600 transition-colors">
+                    <Trash2 className="size-3 text-muted-foreground mr-1 group-hover:text-red-500" />
+                    Remove
+                  </Button>
+                ) : null}
               </div>
             </div>
 
-            <div className="space-y-3">
+            {/* 2. Cover banner */}
+            <div className="space-y-3 flex flex-col items-start">
               <p className="text-sm font-medium">Cover banner</p>
               <div
-                className="flex h-20 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 bg-cover bg-center"
+                className="w-full flex h-20 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 bg-cover bg-center shadow-sm"
                 style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
               >
                 {!coverUrl ? (
                   <ImageIcon className="size-6 text-muted-foreground" aria-hidden />
                 ) : null}
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 <label className="cursor-pointer">
-                  <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted">
+                  <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3.5 text-xs font-bold hover:bg-muted whitespace-nowrap transition-colors">
                     {coverLoading ? "Uploading…" : "Upload cover"}
                   </span>
                   <input
@@ -718,26 +720,28 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   />
                 </label>
                 {coverUrl ? (
-                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoveCover}>
+                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoveCover} className="h-8 text-xs font-semibold whitespace-nowrap hover:bg-red-50 hover:text-red-600 transition-colors">
+                    <Trash2 className="size-3 text-muted-foreground mr-1" />
                     Remove
                   </Button>
                 ) : null}
               </div>
             </div>
 
-            <div className="space-y-3">
+            {/* 3. Side banner image */}
+            <div className="space-y-3 flex flex-col items-start">
               <p className="text-sm font-medium">Side banner image</p>
               <div
-                className="flex h-20 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 bg-cover bg-center"
+                className="w-full flex h-20 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 bg-cover bg-center shadow-sm"
                 style={sideBannerUrl ? { backgroundImage: `url(${sideBannerUrl})` } : undefined}
               >
                 {!sideBannerUrl ? (
                   <ImageIcon className="size-6 text-muted-foreground" aria-hidden />
                 ) : null}
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 <label className="cursor-pointer">
-                  <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium hover:bg-muted">
+                  <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3.5 text-xs font-bold hover:bg-muted whitespace-nowrap transition-colors">
                     {sideBannerLoading ? "Uploading…" : "Upload banner"}
                   </span>
                   <input
@@ -749,7 +753,8 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   />
                 </label>
                 {sideBannerUrl ? (
-                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoveSideBanner}>
+                  <Button type="button" variant="ghost" size="sm" onClick={handleRemoveSideBanner} className="h-8 text-xs font-semibold whitespace-nowrap hover:bg-red-50 hover:text-red-600 transition-colors">
+                    <Trash2 className="size-3 text-muted-foreground mr-1" />
                     Remove
                   </Button>
                 ) : null}

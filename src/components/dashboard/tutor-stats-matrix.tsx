@@ -19,6 +19,9 @@ type TutorStatsMatrixProps = {
   owedEarningsCents?: number;
   recentBookings?: any[];
   digitalSales?: any[];
+  hasStudents?: boolean;
+  averageRating?: number | null;
+  ratingCount?: number;
 };
 
 export function TutorStatsMatrix({
@@ -30,6 +33,9 @@ export function TutorStatsMatrix({
   owedEarningsCents,
   recentBookings = [],
   digitalSales = [],
+  hasStudents = false,
+  averageRating = null,
+  ratingCount = 0,
 }: TutorStatsMatrixProps) {
   const months: string[] = [];
   const barHeights: number[] = [0, 0, 0, 0, 0, 0];
@@ -69,14 +75,14 @@ export function TutorStatsMatrix({
         barHeights[idx] += (s.amountCents || 0) / 100;
       }
     });
-  } else {
-    // Fallback: distribute total earnings across months if there's total but no arrays passed
+  } else if (!hasStudents) {
+    // Fallback: distribute total earnings across months if there's total but no arrays passed (only if no students yet)
     const baseValue = totalEarningsCents > 0 ? (totalEarningsCents / 100) / 4.8 : 850;
     barHeights[0] = Math.round(baseValue * 0.75);
     barHeights[1] = Math.round(baseValue * 0.9);
     barHeights[2] = Math.round(baseValue * 1.25);
     barHeights[3] = Math.round(baseValue * 0.8);
-    barHeights[4] = Math.round(baseValue * 1.1);
+    barHeights[4] = Math.round(baseValue * 1.15);
     barHeights[5] = Math.round(baseValue * 1.15);
   }
   
@@ -142,13 +148,13 @@ export function TutorStatsMatrix({
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Earnings</span>
             <span className="text-2xl sm:text-3xl font-black text-foreground mt-1 selection:bg-blue-100">
-              {formatMoney(totalEarningsCents || 425000, currency)}
+              {formatMoney(hasStudents ? totalEarningsCents : (totalEarningsCents || 425000), currency)}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Completed Sessions</span>
             <span className="text-2xl sm:text-3xl font-black text-foreground mt-1">
-              {completedSessions || 42}
+              {hasStudents ? completedSessions : (completedSessions || 42)}
             </span>
           </div>
           {owedEarningsCents !== undefined && owedEarningsCents > 0 && (
@@ -206,10 +212,18 @@ export function TutorStatsMatrix({
           <div className="flex-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Average Rating</p>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-black text-foreground">4.9</span>
+              <span className="text-2xl font-black text-foreground">
+                {hasStudents 
+                  ? (averageRating !== null ? averageRating.toFixed(1) : "—") 
+                  : "4.9"}
+              </span>
               <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                 <Sparkles className="size-2.5 animate-pulse" />
-                Excellent
+                {hasStudents 
+                  ? (ratingCount > 0 
+                      ? (averageRating && averageRating >= 4.5 ? "Excellent" : averageRating && averageRating >= 3.5 ? "Good" : "Average") 
+                      : "No ratings") 
+                  : "Excellent"}
               </span>
             </div>
           </div>

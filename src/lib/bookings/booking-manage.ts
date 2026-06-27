@@ -34,6 +34,10 @@ export type BookingManageView = {
   isPaid: boolean;
   stripePaymentIntentId: string | null;
   tutorPaymentInstructions: string | null;
+  tutorCountry: string | null;
+  tutorBankName: string | null;
+  tutorBankSortCode: string | null;
+  tutorBankAccountNumber: string | null;
 };
 
 type BookingManageRow = {
@@ -47,8 +51,8 @@ type BookingManageRow = {
   stripe_payment_intent_id?: string | null;
   is_paid?: boolean;
   tutor_profiles:
-    | { display_name: string; username: string; currency: string; payment_instructions: string | null }
-    | { display_name: string; username: string; currency: string; payment_instructions: string | null }[]
+    | { display_name: string; username: string; currency: string; payment_instructions: string | null; country?: string | null; bank_name?: string | null; bank_sort_code?: string | null; bank_account_number?: string | null }
+    | { display_name: string; username: string; currency: string; payment_instructions: string | null; country?: string | null; bank_name?: string | null; bank_sort_code?: string | null; bank_account_number?: string | null }[]
     | null;
   availability_slots:
     | { starts_at: string; ends_at: string }
@@ -87,7 +91,7 @@ export async function getBookingForManage(
       lesson_reminder_sent_at,
       is_paid,
       stripe_payment_intent_id,
-      tutor_profiles (display_name, username, currency, payment_instructions),
+      tutor_profiles (display_name, username, currency, payment_instructions, country, bank_name, bank_sort_code, bank_account_number),
       availability_slots (starts_at, ends_at)
     `,
     )
@@ -112,7 +116,7 @@ export async function getBookingForManage(
         student_running_late_sent_at,
         student_running_late_note,
         stripe_payment_intent_id,
-        tutor_profiles (display_name, username, currency, payment_instructions),
+        tutor_profiles (display_name, username, currency, payment_instructions, country, bank_name, bank_sort_code, bank_account_number),
         availability_slots (starts_at, ends_at)
       `,
       )
@@ -167,6 +171,10 @@ export async function getBookingForManage(
     isPaid,
     stripePaymentIntentId: row.stripe_payment_intent_id ?? null,
     tutorPaymentInstructions: tutor.payment_instructions,
+    tutorCountry: tutor.country ?? null,
+    tutorBankName: tutor.bank_name ?? null,
+    tutorBankSortCode: tutor.bank_sort_code ?? null,
+    tutorBankAccountNumber: tutor.bank_account_number ?? null,
   };
 }
 

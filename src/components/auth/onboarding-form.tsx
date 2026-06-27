@@ -27,7 +27,7 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
   const [displayName, setDisplayName] = useState(defaultDisplayName);
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
-  const [currency, setCurrency] = useState("gbp");
+  const [country, setCountry] = useState("GB");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +64,25 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
       return;
     }
 
+    const countryCurrencies: Record<string, string> = {
+      GB: "gbp",
+      US: "usd",
+      EU: "eur",
+      CA: "cad",
+      AU: "aud",
+      NZ: "nzd",
+      JP: "jpy",
+      SG: "sgd",
+      HK: "hkd",
+      CH: "chf",
+      IN: "inr",
+      ZA: "zar",
+      AE: "aed",
+      CN: "cny",
+      SE: "sek",
+    };
+    const deducedCurrency = countryCurrencies[country] || "gbp";
+
     let result;
     try {
       result = await completeOnboarding({
@@ -71,7 +90,8 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
         displayName: displayName.trim(),
         headline: headline.trim() || undefined,
         bio: bio.trim() || undefined,
-        currency,
+        currency: deducedCurrency,
+        country,
       });
     } catch (err) {
       console.warn("[OnboardingForm] completeOnboarding server action failed/aborted:", err);
@@ -182,33 +202,33 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="currency" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Billing Currency
+            <label htmlFor="country" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Country / Region
             </label>
             <select
-              id="currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
+              id="country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
               className="flex h-10 w-full rounded-xl border border-input bg-card/85 px-3 py-2 text-sm outline-none transition-all placeholder:text-muted-foreground focus-visible:border-primary/40 focus-visible:ring-4 focus-visible:ring-primary/15"
             >
-              <option value="gbp">GBP (£) - British Pound</option>
-              <option value="usd">USD ($) - US Dollar</option>
-              <option value="eur">EUR (€) - Euro</option>
-              <option value="cad">CAD ($) - Canadian Dollar</option>
-              <option value="aud">AUD ($) - Australian Dollar</option>
-              <option value="nzd">NZD ($) - New Zealand Dollar</option>
-              <option value="jpy">JPY (¥) - Japanese Yen</option>
-              <option value="sgd">SGD ($) - Singapore Dollar</option>
-              <option value="hkd">HKD ($) - Hong Kong Dollar</option>
-              <option value="chf">CHF (CHF) - Swiss Franc</option>
-              <option value="inr">INR (₹) - Indian Rupee</option>
-              <option value="zar">ZAR (R) - South African Rand</option>
-              <option value="aed">AED (AED) - UAE Dirham</option>
-              <option value="cny">CNY (¥) - Chinese Yuan</option>
-              <option value="sek">SEK (kr) - Swedish Krona</option>
+              <option value="GB">United Kingdom (GBP £)</option>
+              <option value="US">United States (USD $)</option>
+              <option value="EU">Eurozone (EUR €)</option>
+              <option value="CA">Canada (CAD $)</option>
+              <option value="AU">Australia (AUD $)</option>
+              <option value="NZ">New Zealand (NZD $)</option>
+              <option value="JP">Japan (JPY ¥)</option>
+              <option value="SG">Singapore (SGD $)</option>
+              <option value="HK">Hong Kong (HKD $)</option>
+              <option value="CH">Switzerland (CHF CHF)</option>
+              <option value="IN">India (INR ₹)</option>
+              <option value="ZA">South Africa (ZAR R)</option>
+              <option value="AE">UAE (AED AED)</option>
+              <option value="CN">China (CNY ¥)</option>
+              <option value="SE">Sweden (SEK kr)</option>
             </select>
             <p className="text-[10px] text-muted-foreground leading-normal mt-0.5">
-              Select the currency to bill parents in. Stripe Connect automatically converts payouts to your local bank currency.
+              Select your operating country. We automatically deduce currency and banking requirements.
             </p>
           </div>
 

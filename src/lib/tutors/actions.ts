@@ -42,6 +42,7 @@ export type OnboardingInput = {
   headline?: string;
   bio?: string;
   currency?: string;
+  country?: string;
 };
 
 export async function completeOnboarding(input: OnboardingInput) {
@@ -58,6 +59,7 @@ export async function completeOnboarding(input: OnboardingInput) {
         bio: input.bio,
         lessonPriceCents: 4500,
         currency: input.currency || "gbp",
+        country: input.country || "GB",
       },
     };
   }
@@ -99,6 +101,7 @@ export async function completeOnboarding(input: OnboardingInput) {
       bio: input.bio?.trim() || null,
       lesson_price_cents: 4500,
       currency: input.currency || "gbp",
+      country: input.country || null,
     })
     .select("*")
     .single();

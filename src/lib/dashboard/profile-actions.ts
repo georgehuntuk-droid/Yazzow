@@ -70,6 +70,10 @@ export async function updatePortalProfile(input: {
   paymentReminderAmountThresholdCents?: number;
   paymentReminderDaysAfter?: number;
   automatedLessonReminders?: boolean;
+  country?: string;
+  bankName?: string;
+  bankSortCode?: string;
+  bankAccountNumber?: string;
 }) {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
@@ -120,6 +124,10 @@ export async function updatePortalProfile(input: {
     payment_reminder_amount_threshold_cents: input.paymentReminderAmountThresholdCents ?? 0,
     payment_reminder_days_after: input.paymentReminderDaysAfter ?? 0,
     automated_lesson_reminders: input.automatedLessonReminders ?? false,
+    country: input.country || null,
+    bank_name: input.bankName || null,
+    bank_sort_code: input.bankSortCode || null,
+    bank_account_number: input.bankAccountNumber || null,
   };
 
   const supabase = await createClient();

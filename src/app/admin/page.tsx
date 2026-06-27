@@ -122,13 +122,14 @@ export default async function AdminDashboardPage() {
   const admin = createAdminClient();
 
   // 3. Fetch all raw data in parallel using service role
-  const [profilesRes, usersRes, stats, bookingsRes, purchasesRes, ticketsRes] = await Promise.all([
+  const [profilesRes, usersRes, stats, bookingsRes, purchasesRes, ticketsRes, noticesRes] = await Promise.all([
     admin.from("tutor_profiles").select("*").order("created_at", { ascending: false }),
     admin.auth.admin.listUsers(),
     getPlatformRevenueStats(),
     admin.from("bookings").select("tutor_id, amount_cents, status"),
     admin.from("resource_purchases").select("tutor_id, amount_cents"),
     admin.from("support_tickets").select("*").order("created_at", { ascending: false }),
+    admin.from("admin_notices").select("*").order("created_at", { ascending: false }),
   ]);
 
   if (profilesRes.error) {
@@ -140,6 +141,7 @@ export default async function AdminDashboardPage() {
   const rawBookings = bookingsRes.data ?? [];
   const rawPurchases = purchasesRes.data ?? [];
   const rawTickets = ticketsRes?.error ? [] : (ticketsRes?.data ?? []);
+  const rawNotices = noticesRes?.error ? [] : (noticesRes?.data ?? []);
 
   // Create helper structures for fast lookups
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email]));
@@ -224,6 +226,7 @@ export default async function AdminDashboardPage() {
             platformStats={stats} 
             isServiceRoleConfigured={serviceRoleConfigured}
             supportTickets={rawTickets}
+            notices={rawNotices}
           />
         </div>
 

@@ -30,6 +30,8 @@ import {
   deleteSupportTicket,
   logoutAsAdmin,
   adminUpdateTutorProfile,
+  createAdminNoticeAction,
+  deleteAdminNoticeAction,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -66,18 +68,31 @@ export type SupportTicket = {
   updated_at: string;
 };
 
+export type AdminNotice = {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+};
+
 type AdminConsoleClientProps = {
   tutors: AdminTutorData[];
   platformStats?: unknown;
   isServiceRoleConfigured?: boolean;
   supportTickets: SupportTicket[];
+  notices: AdminNotice[];
 };
 
-export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, supportTickets = [] }: AdminConsoleClientProps) {
+export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, supportTickets = [], notices = [] }: AdminConsoleClientProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
   const [isPending, startTransition] = useTransition();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Notice board states
+  const [newNoticeTitle, setNewNoticeTitle] = useState("");
+  const [newNoticeContent, setNewNoticeContent] = useState("");
+  const [isCreatingNotice, setIsCreatingNotice] = useState(false);
 
   // Ticket-specific states
   const [ticketSearch, setTicketSearch] = useState("");
@@ -185,6 +200,38 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
         setActionLoadingId(null);
       }
     });
+  };
+
+  const handleCreateNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoticeTitle.trim() || !newNoticeContent.trim()) return;
+
+    setIsCreatingNotice(true);
+    try {
+      const res = await createAdminNoticeAction(newNoticeTitle, newNoticeContent);
+      if (res.ok) {
+        setNewNoticeTitle("");
+        setNewNoticeContent("");
+      } else {
+        alert(`Failed to publish notice: ${res.error}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error creating notice");
+    } finally {
+      setIsCreatingNotice(false);
+    }
+  };
+
+  const handleDeleteNotice = async (noticeId: string) => {
+    if (!confirm("Are you sure you want to delete this notice?")) return;
+    try {
+      const res = await deleteAdminNoticeAction(noticeId);
+      if (!res.ok) {
+        alert(`Failed to delete notice: ${res.error}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting notice");
+    }
   };
 
   // Search and filter logic
@@ -424,6 +471,9 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
           </TabsTrigger>
           <TabsTrigger value="closed_tickets" className="rounded-lg px-4 font-semibold">
             Closed Tickets ({supportTickets.filter(t => t.status === "resolved" || t.status === "closed").length})
+          </TabsTrigger>
+          <TabsTrigger value="notices" className="rounded-lg px-4 font-semibold">
+            Notice Board ({notices.length})
           </TabsTrigger>
         </TabsList>
 
@@ -795,6 +845,92 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
             ) : (
               filteredClosedTickets.map((ticket) => renderTicketCard(ticket))
             )}
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="notices" className="space-y-6 outline-none">
+        <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
+          {/* Create notice form */}
+          <Card className="yazz-surface p-6 self-start bg-card/50">
+            <h3 className="text-base font-black text-foreground mb-4">Post a New Announcement</h3>
+            <form onSubmit={handleCreateNotice} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Title</label>
+                <Input
+                  required
+                  placeholder="e.g. New drag-and-drop schedule features!"
+                  value={newNoticeTitle}
+                  onChange={(e) => setNewNoticeTitle(e.target.value)}
+                  className="rounded-lg text-sm bg-background border-border/80 text-foreground"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Announcement Text</label>
+                <textarea
+                  required
+                  placeholder="Describe the new feature or type a message to all tutors..."
+                  value={newNoticeContent}
+                  onChange={(e) => setNewNoticeContent(e.target.value)}
+                  className="flex min-h-36 w-full resize-y rounded-lg border border-border/80 bg-background px-3 py-2 text-sm outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 text-foreground"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={isCreatingNotice}
+                className="w-full text-white bg-primary hover:bg-primary/90 font-bold rounded-lg"
+              >
+                {isCreatingNotice ? "Publishing..." : "Publish Announcement"}
+              </Button>
+            </form>
+          </Card>
+
+          {/* List existing notices */}
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-black text-foreground">Announcements History</h3>
+              <p className="text-xs text-muted-foreground">These posts are visible to all tutors on their main dashboard page.</p>
+            </div>
+            
+            <div className="space-y-4">
+              {notices.length === 0 ? (
+                <Card className="yazz-surface p-8 text-center text-muted-foreground bg-card/30 border border-dashed">
+                  <p className="text-sm font-semibold">No announcements posted yet</p>
+                  <p className="text-xs mt-1">Use the form on the left to write your first message to tutors.</p>
+                </Card>
+              ) : (
+                notices.map((notice) => (
+                  <Card key={notice.id} className="yazz-surface p-5 relative group overflow-hidden bg-card/60">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                          {new Date(notice.created_at).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })}
+                        </span>
+                        <h4 className="text-base font-black text-foreground mt-1 select-all">{notice.title}</h4>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteNotice(notice.id)}
+                        className="size-8 text-rose-500 hover:bg-rose-50 hover:text-rose-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground/90 whitespace-pre-wrap mt-3 leading-relaxed">
+                      {notice.content}
+                    </p>
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </TabsContent>

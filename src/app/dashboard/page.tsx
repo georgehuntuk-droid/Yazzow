@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Settings, Sparkles, CalendarRange } from "lucide-react";
+import { Globe, Settings, Sparkles, CalendarRange, Megaphone } from "lucide-react";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
 
 import { PortalBookingStatusCard } from "@/components/dashboard/portal-booking-status-card";
@@ -16,6 +16,9 @@ import {
   getDigitalSalesForTutor,
   getRecentBookingsForTutor,
   getSlotsForTutorOwner,
+  getRecentMessagesForTutor,
+  getTutorAverageRating,
+  getLatestAdminNotices,
 } from "@/lib/tutors/portal-data";
 import { getStudentsWithLessonsForTutor } from "@/lib/tutors/student-lessons";
 
@@ -26,14 +29,24 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile } = await requireTutorProfile();
   const publicLink = tutorPublicUrl(profile.username);
-  const [slots, studentGroups, recentBookings, packSales, portalBooking] =
+  const [slots, studentGroups, recentBookings, packSales, portalBooking, recentMessages, tutorRating, notices] =
     await Promise.all([
       getSlotsForTutorOwner(profile.id),
       getStudentsWithLessonsForTutor(profile.id),
       getRecentBookingsForTutor(profile.id),
       getDigitalSalesForTutor(profile.id),
       getPortalBookingStatus(profile.id),
+      getRecentMessagesForTutor(profile.id),
+      getTutorAverageRating(profile.id),
+      getLatestAdminNotices(2),
     ]);
+
+  const allStudents = [
+    ...studentGroups.active,
+    ...studentGroups.archived,
+    ...studentGroups.pending,
+  ];
+  const hasStudents = allStudents.length > 0;
 
   // Calculate actual tutor statistics for our stunning matrix component
   const bookingEarnings = recentBookings.reduce((sum, b) => sum + (b.amountCents || 0), 0);
@@ -90,6 +103,34 @@ export default async function DashboardPage() {
           <CopyLinkButton url={publicLink} variant="outline" size="sm" className="self-start sm:self-auto bg-background text-[11px] font-bold" />
         </div>
 
+        {/* Notice Board Announcements Feed */}
+        {notices && notices.length > 0 && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 relative overflow-hidden space-y-4">
+            <h2 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+              <Megaphone className="size-4 animate-bounce" />
+              Platform Announcements & New Features
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {notices.map((notice) => (
+                <div key={notice.id} className="rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 h-16 w-16 rounded-full bg-primary/5 blur-lg pointer-events-none" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    {new Date(notice.created_at).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric"
+                    })}
+                  </span>
+                  <h3 className="text-sm font-black text-foreground mt-1">{notice.title}</h3>
+                  <p className="text-xs font-medium text-muted-foreground mt-1.5 leading-relaxed whitespace-pre-wrap">
+                    {notice.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 2. Billing subscription card if not active */}
         {!portalBooking.subscriptionActive ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
@@ -115,6 +156,9 @@ export default async function DashboardPage() {
           owedEarningsCents={totalOwedCents}
           recentBookings={recentBookings}
           digitalSales={packSales}
+          hasStudents={hasStudents}
+          averageRating={tutorRating.averageRating}
+          ratingCount={tutorRating.ratingCount}
         />
 
         {/* 4. Bookings & Activities Two-Column Grid */}
@@ -136,7 +180,15 @@ export default async function DashboardPage() {
           <section id="activity" className="scroll-mt-8">
             <DashboardActivityTimeline 
               currency={profile.currency} 
-              lessonPriceCents={profile.lessonPriceCents} 
+              lessonPriceCents={profile.lessonPriceCents}
+              hasStudents={hasStudents}
+              students={allStudents.map(s => ({
+                id: s.id,
+                studentName: s.studentName,
+                parentEmail: s.parentEmail,
+                createdAt: s.createdAt,
+              }))}
+              messages={recentMessages}
             />
           </section>
         </div>

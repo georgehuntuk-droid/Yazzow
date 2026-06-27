@@ -57,6 +57,33 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
   const [bio, setBio] = useState(profile.bio);
   const [lessonPrice, setLessonPrice] = useState(centsToInput(profile.lessonPriceCents));
   const [currency, setCurrency] = useState(profile.currency);
+  const [country, setCountry] = useState(profile.country ?? "GB");
+  const [bankName, setBankName] = useState(profile.bankName ?? "");
+  const [bankSortCode, setBankSortCode] = useState(profile.bankSortCode ?? "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(profile.bankAccountNumber ?? "");
+
+  const handleCountryChange = (newCountry: string) => {
+    setCountry(newCountry);
+    const countryCurrencies: Record<string, string> = {
+      GB: "gbp",
+      US: "usd",
+      EU: "eur",
+      CA: "cad",
+      AU: "aud",
+      NZ: "nzd",
+      JP: "jpy",
+      SG: "sgd",
+      HK: "hkd",
+      CH: "chf",
+      IN: "inr",
+      ZA: "zar",
+      AE: "aed",
+      CN: "cny",
+      SE: "sek",
+    };
+    const newCurrency = countryCurrencies[newCountry] || "gbp";
+    setCurrency(newCurrency);
+  };
   const [username, setUsername] = useState(profile.username);
   const [blockLessonsCount, setBlockLessonsCount] = useState(profile.blockPackageLessonsCount ?? 10);
   const [blockDiscountPercent, setBlockDiscountPercent] = useState(profile.blockPackageDiscountPercent ?? 10);
@@ -145,6 +172,10 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       paymentReminderAmountThresholdCents: reminderAmountThreshold ? Math.round(parseFloat(reminderAmountThreshold) * 100) : 0,
       paymentReminderDaysAfter: reminderDaysAfter ? parseInt(reminderDaysAfter, 10) : 0,
       automatedLessonReminders,
+      country,
+      bankName,
+      bankSortCode,
+      bankAccountNumber,
     }),
     [
       profile,
@@ -171,6 +202,10 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       reminderAmountThreshold,
       reminderDaysAfter,
       automatedLessonReminders,
+      country,
+      bankName,
+      bankSortCode,
+      bankAccountNumber,
     ],
   );
 
@@ -269,6 +304,10 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
         paymentReminderAmountThresholdCents: reminderAmountThreshold ? Math.round(parseFloat(reminderAmountThreshold) * 100) : 0,
         paymentReminderDaysAfter: reminderDaysAfter ? parseInt(reminderDaysAfter, 10) : 0,
         automatedLessonReminders,
+        country,
+        bankName,
+        bankSortCode,
+        bankAccountNumber,
       });
     } catch (err) {
       console.warn("[PortalSettings] updatePortalProfile server action failed/aborted:", err);
@@ -1078,6 +1117,190 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                   <p className="text-xs text-muted-foreground">
                     Shown to parents when booking via Cash/Direct payment, and included in their confirmation email.
                   </p>
+
+                  <div className="space-y-3.5 border-t border-border/50 pt-4 mt-3">
+                    <h4 className="text-sm font-semibold text-foreground">
+                      Direct Payout Bank Account
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-normal">
+                      Provide your banking details to allow parents to pay you directly via bank transfer. Fields adjust based on your country.
+                    </p>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label htmlFor="settings-country" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                          Country / Region
+                        </label>
+                        <select
+                          id="settings-country"
+                          value={country}
+                          onChange={(e) => handleCountryChange(e.target.value)}
+                          className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                        >
+                          <option value="GB">United Kingdom (GBP £)</option>
+                          <option value="US">United States (USD $)</option>
+                          <option value="EU">Eurozone (EUR €)</option>
+                          <option value="CA">Canada (CAD $)</option>
+                          <option value="AU">Australia (AUD $)</option>
+                          <option value="NZ">New Zealand (NZD $)</option>
+                          <option value="JP">Japan (JPY ¥)</option>
+                          <option value="SG">Singapore (SGD $)</option>
+                          <option value="HK">Hong Kong (HKD $)</option>
+                          <option value="CH">Switzerland (CHF CHF)</option>
+                          <option value="IN">India (INR ₹)</option>
+                          <option value="ZA">South Africa (ZAR R)</option>
+                          <option value="AE">UAE (AED AED)</option>
+                          <option value="CN">China (CNY ¥)</option>
+                          <option value="SE">Sweden (SEK kr)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="settings-bank-name" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                          Bank Name
+                        </label>
+                        <Input
+                          id="settings-bank-name"
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          placeholder="e.g. HSBC, Chase"
+                          className="h-10"
+                        />
+                      </div>
+
+                      {/* Dynamic Bank Fields */}
+                      {country === "GB" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-sort-code" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Sort Code
+                            </label>
+                            <Input
+                              id="settings-sort-code"
+                              value={bankSortCode}
+                              onChange={(e) => setBankSortCode(e.target.value)}
+                              placeholder="e.g. 12-34-56"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-account-number" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Account Number
+                            </label>
+                            <Input
+                              id="settings-account-number"
+                              value={bankAccountNumber}
+                              onChange={(e) => setBankAccountNumber(e.target.value)}
+                              placeholder="e.g. 12345678"
+                              className="h-10"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {country === "US" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-routing-number" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Routing Number
+                            </label>
+                            <Input
+                              id="settings-routing-number"
+                              value={bankSortCode}
+                              onChange={(e) => setBankSortCode(e.target.value)}
+                              placeholder="e.g. 021000021"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-account-number" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Account Number
+                            </label>
+                            <Input
+                              id="settings-account-number"
+                              value={bankAccountNumber}
+                              onChange={(e) => setBankAccountNumber(e.target.value)}
+                              placeholder="e.g. 1234567890"
+                              className="h-10"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {country === "CA" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-transit-institution" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Transit / Institution Number
+                            </label>
+                            <Input
+                              id="settings-transit-institution"
+                              value={bankSortCode}
+                              onChange={(e) => setBankSortCode(e.target.value)}
+                              placeholder="e.g. 12345-001"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-account-number" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Account Number
+                            </label>
+                            <Input
+                              id="settings-account-number"
+                              value={bankAccountNumber}
+                              onChange={(e) => setBankAccountNumber(e.target.value)}
+                              placeholder="e.g. 1234567"
+                              className="h-10"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {country === "EU" && (
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label htmlFor="settings-iban" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                            IBAN
+                          </label>
+                          <Input
+                            id="settings-iban"
+                            value={bankAccountNumber}
+                            onChange={(e) => setBankAccountNumber(e.target.value)}
+                            placeholder="e.g. FR76 3000 6000 0112 3456 7890 123"
+                            className="h-10"
+                          />
+                        </div>
+                      )}
+
+                      {country !== "GB" && country !== "US" && country !== "CA" && country !== "EU" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-swift-bic" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              SWIFT / BIC Code
+                            </label>
+                            <Input
+                              id="settings-swift-bic"
+                              value={bankSortCode}
+                              onChange={(e) => setBankSortCode(e.target.value)}
+                              placeholder="e.g. HSBCBGB21"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label htmlFor="settings-account-number" className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Account Number
+                            </label>
+                            <Input
+                              id="settings-account-number"
+                              value={bankAccountNumber}
+                              onChange={(e) => setBankAccountNumber(e.target.value)}
+                              placeholder="e.g. 1234567890"
+                              className="h-10"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="space-y-4 border-t border-border/50 pt-4 mt-3">
                     <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">

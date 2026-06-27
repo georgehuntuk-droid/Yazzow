@@ -26,6 +26,10 @@ export type TutorProfile = {
   portalSideWidgetTitle?: string;
   portalSideWidgetContent?: string;
   automatedLessonReminders?: boolean;
+  country?: string;
+  bankName?: string;
+  bankSortCode?: string;
+  bankAccountNumber?: string;
 };
 
 export type OpenSlot = {

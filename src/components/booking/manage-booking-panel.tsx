@@ -159,7 +159,14 @@ export function ManageBookingPanel({ booking }: ManageBookingPanelProps) {
               Offline Payment Instructions
             </h4>
             <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed whitespace-pre-wrap">
-              {booking.tutorPaymentInstructions || "Please contact the tutor directly to arrange bank transfer or cash payment details."}
+              {booking.tutorPaymentInstructions || (booking.tutorBankAccountNumber ? (
+                `Please transfer the payment of ${booking.amountLabel} directly to the tutor:\n\nBank Name: ${booking.tutorBankName || "Tutor's Bank"}\n${
+                  booking.tutorCountry === "GB" ? "Sort Code" :
+                  booking.tutorCountry === "US" ? "Routing Number" :
+                  booking.tutorCountry === "CA" ? "Transit/Institution" :
+                  booking.tutorCountry === "EU" ? "IBAN" : "SWIFT/BIC"
+                }: ${booking.tutorBankSortCode || ""}\n${booking.tutorCountry === "EU" ? "IBAN" : "Account Number"}: ${booking.tutorBankAccountNumber}\n\nThank you!`
+              ) : "Please contact the tutor directly to arrange bank transfer or cash payment details.")}
             </p>
           </div>
         )}

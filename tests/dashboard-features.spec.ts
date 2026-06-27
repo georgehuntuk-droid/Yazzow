@@ -40,7 +40,7 @@ test.describe('Dashboard Features & Profile Settings', () => {
     // 5. Verify Dashboard Overview (Tutorview main page)
     await page.goto('/dashboard');
     // Verify the stats matrix components loaded properly with our mock data
-    await expect(page.locator('text=Bobby')).toBeVisible(); // Confirmed mock booking student name
+    await expect(page.locator('text=Bobby').first()).toBeVisible(); // Confirmed mock booking student name
     await expect(page.locator('text=testparent@example.com')).toBeVisible(); // Mock booking parent email
   });
 });

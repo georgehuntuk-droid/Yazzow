@@ -396,3 +396,49 @@ export async function getStudentsForTutor(tutorId: string) {
   if (error || !data) return [];
   return data;
 }
+
+export async function getRecentMessagesForTutor(tutorId: string, limit = 10) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("tutor_id", tutorId)
+    .eq("sender", "parent")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+export async function getTutorAverageRating(tutorId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("lesson_rating")
+    .eq("tutor_id", tutorId)
+    .not("lesson_rating", "is", null);
+
+  if (error || !data || data.length === 0) {
+    return { averageRating: null, ratingCount: 0 };
+  }
+
+  const sum = data.reduce((acc, b) => acc + (b.lesson_rating || 0), 0);
+  const averageRating = Math.round((sum / data.length) * 10) / 10;
+  return { averageRating, ratingCount: data.length };
+}
+
+export async function getLatestAdminNotices(limit = 2) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("admin_notices")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return data;
+}
+
+
+

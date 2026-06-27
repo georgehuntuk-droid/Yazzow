@@ -22,10 +22,10 @@ export const PUBLIC_SITE_URL =
 
 /** Tutor SaaS plan — billed to the tutor (Stripe Billing on the platform account). */
 export const TUTOR_SUBSCRIPTION = {
-  amountCents: 2500,
+  amountCents: 1500,
   currency: "gbp",
   interval: "month" as const,
-  label: "£25/month",
+  label: "£15/month",
 } as const;
 
 /** Per-sale platform cut (0 = subscription-only monetization). */

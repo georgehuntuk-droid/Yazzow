@@ -30,6 +30,10 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     portalSideWidgetTitle: row.portal_side_widget_title ?? undefined,
     portalSideWidgetContent: row.portal_side_widget_content ?? undefined,
     automatedLessonReminders: (row as any).automated_lesson_reminders === true,
+    country: (row as any).country ?? "",
+    bankName: (row as any).bank_name ?? "",
+    bankSortCode: (row as any).bank_sort_code ?? "",
+    bankAccountNumber: (row as any).bank_account_number ?? "",
   };
 }
 

@@ -173,3 +173,44 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
   revalidatePath("/admin");
   return { ok: true as const };
 }
+
+/** Creates a new platform admin notice/announcement. */
+export async function createAdminNoticeAction(title: string, content: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("admin_notices")
+    .insert({
+      title: title.trim(),
+      content: content.trim(),
+    });
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+/** Deletes a platform admin notice/announcement. */
+export async function deleteAdminNoticeAction(noticeId: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("admin_notices")
+    .delete()
+    .eq("id", noticeId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+

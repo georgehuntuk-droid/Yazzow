@@ -84,18 +84,20 @@ export function DashboardActivityTimeline({
     }));
 
     const messageActivities: ActivityItem[] = messages.map((m) => {
+      const email = (m.parentEmail || (m as any).parent_email || "").trim().toLowerCase();
       const matchingStudent = students.find(
-        (st) => st.parentEmail.toLowerCase() === m.parentEmail.toLowerCase()
+        (st) => st.parentEmail.toLowerCase() === email
       );
-      const studentLabel = matchingStudent ? matchingStudent.studentName : m.parentEmail;
+      const studentLabel = matchingStudent ? matchingStudent.studentName : email;
+      const createdAtVal = m.created_at || (m as any).created_at || "";
       return {
         id: `message-${m.id}`,
         type: "message",
         title: "New Message",
         description: `From parent of ${studentLabel}:`,
         chatBubble: m.content,
-        time: formatRelativeTime(m.created_at),
-        rawTime: m.created_at,
+        time: formatRelativeTime(createdAtVal),
+        rawTime: createdAtVal,
       };
     });
 

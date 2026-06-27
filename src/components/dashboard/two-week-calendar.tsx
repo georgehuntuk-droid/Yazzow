@@ -1233,7 +1233,7 @@ export function TwoWeekCalendar({
                               >
                                 <span className="flex items-center gap-2">
                                   <Coins className="size-4 text-primary" />
-                                  <span>Pay Cash / Bank Direct</span>
+                                  <span>Bank Transfer or Cash</span>
                                 </span>
                               </button>
                             )}

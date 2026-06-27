@@ -24,8 +24,11 @@ const WEEKDAYS = [
   { value: 0, label: "Sunday" },
 ];
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-const MINUTES = ["00", "15", "30", "45"];
+const TIME_OPTIONS = Array.from({ length: 24 * 4 }, (_, i) => {
+  const h = Math.floor(i / 4).toString().padStart(2, "0");
+  const m = ((i % 4) * 15).toString().padStart(2, "0");
+  return `${h}:${m}`;
+});
 
 interface ScheduleRule {
   id: string;
@@ -43,10 +46,8 @@ export function WeeklyScheduleSettings() {
   
   // Add rule form state
   const [dayOfWeek, setDayOfWeek] = useState<number>(1);
-  const [startHour, setStartHour] = useState("14");
-  const [startMinute, setStartMinute] = useState("00");
-  const [endHour, setEndHour] = useState("17");
-  const [endMinute, setEndMinute] = useState("00");
+  const [startTime, setStartTime] = useState("14:00");
+  const [endTime, setEndTime] = useState("17:00");
   
   // Generate slots state
   const [weeksAhead, setWeeksAhead] = useState<number>(4);
@@ -80,9 +81,6 @@ export function WeeklyScheduleSettings() {
     setError(null);
     setSuccess(null);
 
-    const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
-    const endTime = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
-
     try {
       const result = await createScheduleRule({
         dayOfWeek,
@@ -98,10 +96,8 @@ export function WeeklyScheduleSettings() {
       setSuccess("Weekly standard hour rule added successfully!");
       // Reset form
       setDayOfWeek(1);
-      setStartHour("14");
-      setStartMinute("00");
-      setEndHour("17");
-      setEndMinute("00");
+      setStartTime("14:00");
+      setEndTime("17:00");
       
       // Refresh list
       await fetchRules();
@@ -235,7 +231,7 @@ export function WeeklyScheduleSettings() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Add Rule Form */}
-            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 bg-muted/20 p-4 rounded-xl border border-border/40">
+            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 md:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 bg-muted/20 p-4 rounded-xl border border-border/40">
               <div className="space-y-1.5">
                 <label htmlFor="rule-day" className="text-xs font-semibold text-foreground">
                   Day
@@ -244,7 +240,7 @@ export function WeeklyScheduleSettings() {
                   id="rule-day"
                   value={dayOfWeek}
                   onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-                  className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary cursor-pointer"
                 >
                   {WEEKDAYS.map((d) => (
                     <option key={d.value} value={d.value}>
@@ -257,63 +253,35 @@ export function WeeklyScheduleSettings() {
                 <label className="text-xs font-semibold text-foreground">
                   From
                 </label>
-                <div className="flex gap-1.5">
-                  <select
-                    value={startHour}
-                    onChange={(e) => setStartHour(e.target.value)}
-                    className="flex h-9 w-full rounded-xl border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
-                  >
-                    {HOURS.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="flex items-center text-muted-foreground font-semibold">:</span>
-                  <select
-                    value={startMinute}
-                    onChange={(e) => setStartMinute(e.target.value)}
-                    className="flex h-9 w-full rounded-xl border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
-                  >
-                    {MINUTES.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary cursor-pointer"
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">
                   Until
                 </label>
-                <div className="flex gap-1.5">
-                  <select
-                    value={endHour}
-                    onChange={(e) => setEndHour(e.target.value)}
-                    className="flex h-9 w-full rounded-xl border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
-                  >
-                    {HOURS.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="flex items-center text-muted-foreground font-semibold">:</span>
-                  <select
-                    value={endMinute}
-                    onChange={(e) => setEndMinute(e.target.value)}
-                    className="flex h-9 w-full rounded-xl border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:border-primary"
-                  >
-                    {MINUTES.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary cursor-pointer"
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex flex-col justify-end sm:col-span-3 xl:col-span-1 2xl:col-span-3">
+              <div className="flex flex-col justify-end sm:col-span-3 xl:col-span-1 2xl:col-span-3 md:col-span-3">
                 <Button
                   type="submit"
                   disabled={actionLoading === "add"}

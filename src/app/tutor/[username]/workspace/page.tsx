@@ -16,6 +16,7 @@ import { Logo } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { PushSubscriptionToggle } from "@/components/pwa/push-subscription-toggle";
+import { PushNotificationBanner } from "@/components/pwa/push-notification-banner";
 import { CreateWorkspaceForm } from "./create-workspace-form";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import { WorkspaceDashboard } from "./workspace-dashboard";
@@ -539,6 +540,9 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
 
         {/* Dashboard Content */}
         <main className="yazz-container max-w-5xl flex-1 py-8 sm:py-10 space-y-8">
+          {/* Push notification promo banner */}
+          <PushNotificationBanner />
+
           {/* Welcome banner */}
           <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-r from-primary/5 to-transparent p-6 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative z-10">

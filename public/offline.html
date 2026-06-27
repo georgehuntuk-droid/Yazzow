@@ -61,7 +61,22 @@
     <div class="icon">📶</div>
     <h1>You're Offline</h1>
     <p>Please check your internet connection. Yazzow will automatically reconnect when you go back online.</p>
-    <a href="javascript:window.location.reload();" class="btn">Retry Connection</a>
+    <a href="javascript:void(0);" onclick="retryConnection()" class="btn">Retry Connection</a>
   </div>
+  <script>
+    async function retryConnection() {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+          }
+        } catch (e) {
+          console.error('Failed to unregister SW:', e);
+        }
+      }
+      window.location.reload();
+    }
+  </script>
 </body>
 </html>

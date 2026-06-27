@@ -190,9 +190,9 @@ export function WorkspaceDashboard({
       </div>
 
       {/* Main Responsive Grid Layout */}
-      <div className="grid gap-6 lg:grid-cols-3 items-start">
+      <div className="grid gap-6 lg:grid-cols-3 items-start min-w-0 w-full">
         {/* Desktop Left / Mobile Main Column (2/3 width on desktop) */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 min-w-0 w-full space-y-4">
           
           {/* Tab Navigation header */}
           <div className="flex items-center justify-between border-b border-border/40 pb-1.5">

@@ -205,9 +205,9 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
           <BookingStatusBanner manageUrl={bookingManageUrl} />
         </Suspense>
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-8 lg:grid-cols-[1fr_320px] min-w-0 w-full">
           {/* Main Area */}
-          <div className="space-y-8">
+          <div className="space-y-8 min-w-0 w-full">
             <PublicProfile tutor={tutor} />
 
             {/* Mobile/Tablet Placement: Join Group / Portal Signup (Hidden on desktop) */}

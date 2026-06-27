@@ -74,35 +74,45 @@ export function DashboardActivityTimeline({
   let activities: ActivityItem[] = [];
 
   if (hasStudents) {
-    const studentActivities: ActivityItem[] = students.map((s) => ({
-      id: `student-${s.id}`,
-      type: "completed",
-      title: "New Student",
-      description: `${s.studentName} was onboarded as a student.`,
-      time: formatRelativeTime(s.createdAt),
-      rawTime: s.createdAt,
-    }));
+    const studentActivities: ActivityItem[] = students
+      .filter((s) => s && s.id)
+      .map((s) => ({
+        id: `student-${s.id}`,
+        type: "completed",
+        title: "New Student",
+        description: `${s.studentName || "A student"} was onboarded as a student.`,
+        time: formatRelativeTime(s.createdAt || ""),
+        rawTime: s.createdAt || "",
+      }));
 
-    const messageActivities: ActivityItem[] = messages.map((m) => {
-      const email = (m.parentEmail || (m as any).parent_email || "").trim().toLowerCase();
-      const matchingStudent = students.find(
-        (st) => (st.parentEmail || "").toLowerCase() === email
-      );
-      const studentLabel = matchingStudent ? matchingStudent.studentName : email;
-      const createdAtVal = m.created_at || (m as any).created_at || "";
-      return {
-        id: `message-${m.id}`,
-        type: "message",
-        title: "New Message",
-        description: `From parent of ${studentLabel}:`,
-        chatBubble: m.content,
-        time: formatRelativeTime(createdAtVal),
-        rawTime: createdAtVal,
-      };
-    });
+    const messageActivities: ActivityItem[] = messages
+      .filter((m) => m && m.id)
+      .map((m) => {
+        const email = (m.parentEmail || (m as any).parent_email || "").trim().toLowerCase();
+        const matchingStudent = students.find(
+          (st) => st && (st.parentEmail || "").toLowerCase() === email
+        );
+        const studentLabel = matchingStudent ? matchingStudent.studentName : (email || "parent");
+        const createdAtVal = m.created_at || (m as any).created_at || "";
+        return {
+          id: `message-${m.id}`,
+          type: "message",
+          title: "New Message",
+          description: `From parent of ${studentLabel}:`,
+          chatBubble: m.content || "",
+          time: formatRelativeTime(createdAtVal),
+          rawTime: createdAtVal,
+        };
+      });
 
     activities = [...studentActivities, ...messageActivities]
-      .sort((a, b) => new Date(b.rawTime || "").getTime() - new Date(a.rawTime || "").getTime())
+      .sort((a, b) => {
+        const timeA = a.rawTime ? new Date(a.rawTime).getTime() : 0;
+        const timeB = b.rawTime ? new Date(b.rawTime).getTime() : 0;
+        const validA = isNaN(timeA) ? 0 : timeA;
+        const validB = isNaN(timeB) ? 0 : timeB;
+        return validB - validA;
+      })
       .slice(0, 10);
   } else {
     // Prefilled fallback

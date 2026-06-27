@@ -178,7 +178,8 @@ export async function getStudentsWithLessonsForTutor(
     cachedAuthEmails.emails.forEach((email) => authEmails.add(email));
   } else {
     try {
-      const { data: usersData } = await admin.auth.admin.listUsers();
+      const resList = await admin.auth.admin.listUsers();
+      const usersData = resList?.data;
       if (usersData?.users) {
         usersData.users.forEach((u) => {
           if (u.email) authEmails.add(u.email.toLowerCase());

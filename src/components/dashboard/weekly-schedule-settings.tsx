@@ -225,7 +225,7 @@ export function WeeklyScheduleSettings() {
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Add Rule Form */}
-            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 bg-muted/20 p-4 rounded-xl border border-border/40">
+            <form onSubmit={handleAddRule} className="grid gap-4 grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3 bg-muted/20 p-4 rounded-xl border border-border/40">
               <div className="space-y-1.5">
                 <label htmlFor="rule-day" className="text-xs font-semibold text-foreground">
                   Day
@@ -269,7 +269,7 @@ export function WeeklyScheduleSettings() {
                   className="h-9 bg-background"
                 />
               </div>
-              <div className="flex flex-col justify-end">
+              <div className="flex flex-col justify-end sm:col-span-3 xl:col-span-1 2xl:col-span-3">
                 <Button
                   type="submit"
                   disabled={actionLoading === "add"}

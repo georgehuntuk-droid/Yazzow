@@ -160,3 +160,41 @@ export async function sendBookingMovedEmail(input: {
   return sendResendEmail({ to: input.to, subject, html });
 }
 
+export async function sendNewMessageEmail(input: {
+  to: string;
+  senderName: string;
+  messageContent: string;
+  actionUrl: string;
+}): Promise<boolean> {
+  const subject = `New message from ${input.senderName} on Yazzow`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+      <!-- Logo Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+      </div>
+      
+      <h2 style="font-size: 20px; font-weight: 800; color: #446152; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">New Message Received</h2>
+      
+      <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+        You have received a new message from <strong>${input.senderName}</strong>.
+      </p>
+      
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 24px; font-family: sans-serif; font-style: italic; color: #334155; line-height: 1.5; font-size: 14px;">
+        &ldquo;${input.messageContent}&rdquo;
+      </div>
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <a href="${input.actionUrl}" style="background-color: #446152; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 700; font-size: 14px; box-shadow: 0 2px 4px rgba(68, 97, 82, 0.15); font-family: sans-serif;">Reply on Yazzow</a>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+      
+      <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.5; margin: 0; font-family: sans-serif;">
+        Please do not reply directly to this email. Click the button above to view and reply on your portal.
+      </p>
+    </div>
+  `;
+  return sendResendEmail({ to: input.to, subject, html });
+}
+

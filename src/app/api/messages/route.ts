@@ -251,7 +251,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
       }
 
-      // Send push notification to tutor
+      // Send push notification & email to tutor
       try {
         const { sendPushNotification } = await import("@/lib/notifications/web-push");
         await sendPushNotification(tutorId, {
@@ -259,8 +259,22 @@ export async function POST(request: Request) {
           body: content.trim(),
           url: `/dashboard/messages?parentEmail=${encodeURIComponent(parentEmail)}`,
         });
+
+        // Email notification to tutor
+        const { data: tutorUser } = await admin.auth.admin.getUserById(tutorId);
+        const tutorEmail = tutorUser?.user?.email;
+        if (tutorEmail) {
+          const { sendNewMessageEmail } = await import("@/lib/notifications/booking-update");
+          const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+          await sendNewMessageEmail({
+            to: tutorEmail,
+            senderName: "Parent / Student",
+            messageContent: content.trim(),
+            actionUrl: `${PUBLIC_SITE_URL}/dashboard/messages?parentEmail=${encodeURIComponent(parentEmail)}`,
+          });
+        }
       } catch (pushErr) {
-        console.error("Failed to send push notification to tutor:", pushErr);
+        console.error("Failed to send notification to tutor:", pushErr);
       }
 
       return NextResponse.json({ ok: true, message });
@@ -296,7 +310,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
     }
 
-    // Send push notification to parent
+    // Send push notification & email to parent
     try {
       const { data: usersData } = await admin.auth.admin.listUsers();
       const parentUser = usersData?.users?.find(
@@ -310,8 +324,18 @@ export async function POST(request: Request) {
           url: `/tutor/${tutor.username}/workspace?tab=chat`,
         });
       }
+
+      // Email notification to parent
+      const { sendNewMessageEmail } = await import("@/lib/notifications/booking-update");
+      const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+      await sendNewMessageEmail({
+        to: parentEmail,
+        senderName: tutor.displayName || "Tutor",
+        messageContent: content.trim(),
+        actionUrl: `${PUBLIC_SITE_URL}/tutor/${tutor.username}/workspace?tab=chat`,
+      });
     } catch (pushErr) {
-      console.error("Failed to send push notification to parent:", pushErr);
+      console.error("Failed to send notification to parent:", pushErr);
     }
 
     return NextResponse.json({ ok: true, message });
@@ -351,7 +375,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to send message." }, { status: 500 });
       }
 
-      // Send push notification to tutor
+      // Send push notification & email to tutor
       try {
         const { sendPushNotification } = await import("@/lib/notifications/web-push");
         await sendPushNotification(tutorId, {
@@ -359,8 +383,22 @@ export async function POST(request: Request) {
           body: content.trim(),
           url: `/dashboard/messages?parentEmail=${encodeURIComponent(user.email!)}`,
         });
+
+        // Email notification to tutor
+        const { data: tutorUser } = await admin.auth.admin.getUserById(tutorId);
+        const tutorEmail = tutorUser?.user?.email;
+        if (tutorEmail) {
+          const { sendNewMessageEmail } = await import("@/lib/notifications/booking-update");
+          const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+          await sendNewMessageEmail({
+            to: tutorEmail,
+            senderName: user.email || "Parent / Student",
+            messageContent: content.trim(),
+            actionUrl: `${PUBLIC_SITE_URL}/dashboard/messages?parentEmail=${encodeURIComponent(user.email!)}`,
+          });
+        }
       } catch (pushErr) {
-        console.error("Failed to send push notification to tutor:", pushErr);
+        console.error("Failed to send notification to tutor:", pushErr);
       }
 
       return NextResponse.json({ ok: true, message });

@@ -89,8 +89,10 @@ export function TwoWeekCalendar({
 }: TwoWeekCalendarProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   useEffect(() => {
     setMounted(true);
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
   const [, startTransition] = useTransition();
   const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2">("week1");
@@ -479,6 +481,11 @@ export function TwoWeekCalendar({
           </div>
         </div>
 
+        {/* Mobile horizontal scroll hint */}
+        <div className="lg:hidden flex items-center justify-center gap-1.5 text-[10px] font-bold text-primary/75 bg-primary/5 py-1.5 px-3 rounded-xl w-max mx-auto mb-2 select-none">
+          <span>⇄ Swipe horizontally to scroll schedule</span>
+        </div>
+
         <div className="overflow-x-auto border border-border/80 rounded-2xl bg-card shadow-sm">
           <div className="min-w-[760px] flex flex-col">
             {/* Day Headers */}
@@ -636,7 +643,7 @@ export function TwoWeekCalendar({
                       return (
                         <div
                           key={slot.id}
-                          draggable={role === "tutor" && !isPast}
+                          draggable={role === "tutor" && !isPast && !isTouchDevice}
                           onDragStart={(e) => {
                             if (role === "tutor") {
                               e.dataTransfer.setData("slotId", slot.id);

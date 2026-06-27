@@ -88,38 +88,38 @@ export function WorkspaceDashboard({
       <PwaInstallBanner />
 
       {/* Stats row */}
-      <div className="grid gap-4 grid-cols-3">
+      <div className="grid gap-3 grid-cols-3">
         <Card className="yazz-surface hover:border-primary/20 transition-all duration-200">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+          <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-center text-center sm:text-left gap-1.5 sm:gap-3.5">
+            <div className="flex size-8 sm:size-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
               <GraduationCap className="size-4.5 sm:size-5" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate">Credits</p>
+            <div className="min-w-0 flex flex-col items-center sm:items-start w-full">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate w-full">Credits</p>
               <p className="text-xl sm:text-2xl font-black text-foreground mt-0.5 leading-none">{studentRecord.lesson_credits}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="yazz-surface hover:border-blue-500/20 transition-all duration-200">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 shrink-0">
+          <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-center text-center sm:text-left gap-1.5 sm:gap-3.5">
+            <div className="flex size-8 sm:size-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 shrink-0">
               <CalendarRange className="size-4.5 sm:size-5" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate">Lessons</p>
+            <div className="min-w-0 flex flex-col items-center sm:items-start w-full">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate w-full">Lessons</p>
               <p className="text-xl sm:text-2xl font-black text-foreground mt-0.5 leading-none">{upcomingLessons.length}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="yazz-surface hover:border-emerald-500/20 transition-all duration-200">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
+          <CardContent className="p-3 sm:p-5 flex flex-col sm:flex-row items-center text-center sm:text-left gap-1.5 sm:gap-3.5">
+            <div className="flex size-8 sm:size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0">
               <CheckCircle2 className="size-4.5 sm:size-5" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate">Tasks Done</p>
+            <div className="min-w-0 flex flex-col items-center sm:items-start w-full">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate w-full">Tasks Done</p>
               <p className="text-xl sm:text-2xl font-black text-foreground mt-0.5 leading-none">
                 {tasks.filter((t) => t.status === "completed").length}/{tasks.length}
               </p>

@@ -144,7 +144,7 @@ export function TutorStatsMatrix({
           })}
         </div>
 
-        <div className="border-t border-border/50 mt-6 pt-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="border-t border-border/50 mt-6 pt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Earnings</span>
             <span className="text-2xl sm:text-3xl font-black text-foreground mt-1 selection:bg-blue-100">

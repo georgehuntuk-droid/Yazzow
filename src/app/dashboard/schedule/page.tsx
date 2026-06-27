@@ -1,9 +1,8 @@
-import { CalendarRange, Calendar, Settings } from "lucide-react";
+import { CalendarRange } from "lucide-react";
 
 import { requireTutorProfile } from "@/lib/auth/session";
 import { getSlotsForTutorOwner } from "@/lib/tutors/portal-data";
-import { ScheduleEditor } from "@/components/dashboard/schedule-editor";
-import { WeeklyScheduleSettings } from "@/components/dashboard/weekly-schedule-settings";
+import { ScheduleClientContainer } from "@/components/dashboard/schedule-client-container";
 import { DashboardShell } from "@/components/layout/page-header";
 import { BRAND_NAME } from "@/lib/constants";
 
@@ -35,26 +34,8 @@ export default async function SchedulePage() {
           </div>
         </div>
 
-        {/* Combined Side-by-Side Schedule Builder Grid */}
-        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] items-start">
-          {/* Left Column: Interactive Calendar */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
-              <Calendar className="size-4.5 text-primary" />
-              1. Interactive Calendar (Slots)
-            </h2>
-            <ScheduleEditor slots={slots} profile={profile} />
-          </div>
-
-          {/* Right Column: Weekly Standard Hours & Bulk generation */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
-              <Settings className="size-4.5 text-primary" />
-              2. Standard Hours Rules
-            </h2>
-            <WeeklyScheduleSettings />
-          </div>
-        </div>
+        {/* Collapsible schedule container */}
+        <ScheduleClientContainer slots={slots} profile={profile} />
       </div>
     </DashboardShell>
   );

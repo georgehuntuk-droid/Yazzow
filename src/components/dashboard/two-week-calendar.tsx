@@ -29,7 +29,8 @@ import {
   cancelBooking, 
   notifyRunningLate, 
   sendLessonReminderAction,
-  moveAvailabilitySlotAction
+  moveAvailabilitySlotAction,
+  createAvailabilitySlot
 } from "@/lib/dashboard/actions";
 import { cancelBookingByStudent } from "@/lib/dashboard/actions";
 
@@ -223,6 +224,82 @@ export function TwoWeekCalendar({
 
   const hourHeight = 52; // Height in pixels for one hour
   const calendarHeight = (maxHour - minHour) * hourHeight;
+
+  // Click-and-drag slot builder state & handlers
+  const [dragSelect, setDragSelect] = useState<{
+    dateKey: string;
+    startHour: number;
+    endHour: number;
+  } | null>(null);
+
+  const getHourFromY = (y: number) => {
+    const hourOffset = Math.floor(y / hourHeight);
+    return minHour + hourOffset;
+  };
+
+  const handleGridMouseDown = (e: React.MouseEvent<HTMLDivElement>, dateKey: string) => {
+    if (role !== "tutor" || e.button !== 0) return;
+    
+    // Ignore if clicked on an existing slot block or target button/interactive element
+    if ((e.target as HTMLElement).closest(".slot-block") || (e.target as HTMLElement).closest("button")) {
+      return;
+    }
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const hour = getHourFromY(clickY);
+    
+    if (hour >= minHour && hour < maxHour) {
+      setDragSelect({
+        dateKey,
+        startHour: hour,
+        endHour: hour + 1
+      });
+    }
+  };
+
+  const handleGridMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragSelect) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const currentY = e.clientY - rect.top;
+    const hour = Math.max(dragSelect.startHour + 1, Math.min(maxHour, Math.round(currentY / hourHeight) + minHour));
+    
+    if (hour !== dragSelect.endHour) {
+      setDragSelect({
+        ...dragSelect,
+        endHour: hour
+      });
+    }
+  };
+
+  const handleGridMouseUp = async () => {
+    if (!dragSelect) return;
+    const { dateKey, startHour, endHour } = dragSelect;
+    setDragSelect(null);
+    
+    if (startHour >= endHour) return;
+    
+    // Construct local timestamps safely
+    const startsAt = new Date(`${dateKey}T${String(startHour).padStart(2, "0")}:00:00`);
+    const endsAt = new Date(`${dateKey}T${String(endHour).padStart(2, "0")}:00:00`);
+    
+    if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) return;
+    
+    try {
+      const result = await createAvailabilitySlot({
+        startsAtIso: startsAt.toISOString(),
+        endsAtIso: endsAt.toISOString(),
+      });
+      if (result.ok) {
+        router.refresh();
+      } else {
+        alert(result.error || "Failed to create slot.");
+      }
+    } catch (err) {
+      console.error("Error creating slot via drag:", err);
+    }
+  };
 
   // Filter and group slots by date label (YYYY-MM-DD)
   const slotsByDate = useMemo(() => {
@@ -519,7 +596,7 @@ export function TwoWeekCalendar({
             </div>
 
             {/* Time Grid Layout */}
-            <div className="flex relative">
+            <div className="flex relative" onMouseLeave={handleGridMouseUp}>
               {/* Sticky Hours Axis */}
               <div 
                 className="w-14 shrink-0 border-r border-border/60 sticky left-0 bg-card z-30 text-right pr-2 text-[10px] text-muted-foreground font-semibold select-none relative" 
@@ -574,6 +651,9 @@ export function TwoWeekCalendar({
 
                       handleMoveSlot(slotId, dateKey, targetHour);
                     }}
+                    onMouseDown={(e) => handleGridMouseDown(e, dateKey)}
+                    onMouseMove={handleGridMouseMove}
+                    onMouseUp={handleGridMouseUp}
                     className={cn(
                       "flex-1 border-r border-border/40 last:border-r-0 relative group transition-colors duration-200",
                       isToday && "bg-primary/[0.01]",
@@ -589,6 +669,25 @@ export function TwoWeekCalendar({
                         style={{ top: `${idx * hourHeight}px`, height: "1px" }}
                       />
                     ))}
+
+                    {/* Visual drag selection preview block */}
+                    {dragSelect && dragSelect.dateKey === dateKey && (
+                      <div
+                        className="absolute left-1 right-1 rounded-xl border-2 border-dashed border-primary bg-primary/10 text-primary-foreground z-10 p-2 flex flex-col justify-between pointer-events-none select-none"
+                        style={{
+                          top: `${(dragSelect.startHour - minHour) * hourHeight}px`,
+                          height: `${(dragSelect.endHour - dragSelect.startHour) * hourHeight}px`
+                        }}
+                      >
+                        <div className="text-[9px] font-bold text-primary flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                          <span>Creating Open Slot...</span>
+                        </div>
+                        <div className="text-[10px] font-extrabold text-primary">
+                          {String(dragSelect.startHour).padStart(2, "0")}:00 - {String(dragSelect.endHour).padStart(2, "0")}:00
+                        </div>
+                      </div>
+                    )}
 
                     {/* Today line indicator */}
                     {isToday && (() => {

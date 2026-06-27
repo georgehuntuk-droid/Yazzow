@@ -71,7 +71,7 @@ export function ScheduleEditor({ slots, profile }: ScheduleEditorProps) {
     const groups: { [dateKey: string]: TutorSlot[] } = {};
     
     // Sort slots by startsAt date in ascending order
-    const sortedSlots = [...slots].sort(
+    const sortedSlots = [...(slots || [])].sort(
       (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
     );
     

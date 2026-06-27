@@ -100,10 +100,10 @@ export function TwoWeekCalendar({
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
 
-  const [localSlots, setLocalSlots] = useState<CalendarSlot[]>(slots);
+  const [localSlots, setLocalSlots] = useState<CalendarSlot[]>(slots || []);
 
   useEffect(() => {
-    setLocalSlots(slots);
+    setLocalSlots(slots || []);
   }, [slots]);
 
   const handleMoveSlot = async (slotId: string, targetDateKey: string, targetHour: number) => {

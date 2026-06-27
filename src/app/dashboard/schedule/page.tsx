@@ -12,7 +12,12 @@ export const metadata = {
 
 export default async function SchedulePage() {
   const { profile } = await requireTutorProfile();
-  const slots = await getSlotsForTutorOwner(profile.id);
+  let slots: any[] = [];
+  try {
+    slots = await getSlotsForTutorOwner(profile.id);
+  } catch (err) {
+    console.error("Error fetching slots in SchedulePage:", err);
+  }
 
   return (
     <DashboardShell>

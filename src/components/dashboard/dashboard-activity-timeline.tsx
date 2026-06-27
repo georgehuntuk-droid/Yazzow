@@ -86,7 +86,7 @@ export function DashboardActivityTimeline({
     const messageActivities: ActivityItem[] = messages.map((m) => {
       const email = (m.parentEmail || (m as any).parent_email || "").trim().toLowerCase();
       const matchingStudent = students.find(
-        (st) => st.parentEmail.toLowerCase() === email
+        (st) => (st.parentEmail || "").toLowerCase() === email
       );
       const studentLabel = matchingStudent ? matchingStudent.studentName : email;
       const createdAtVal = m.created_at || (m as any).created_at || "";

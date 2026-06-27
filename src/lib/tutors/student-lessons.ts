@@ -259,7 +259,7 @@ export async function getStudentsWithLessonsForTutor(
       createdAt: student.created_at,
       lessons,
       tasks: studentTasks,
-      hasAccount: authEmails.has(student.parent_email.toLowerCase()),
+      hasAccount: student.parent_email ? authEmails.has(student.parent_email.toLowerCase()) : false,
       owedAmountCents,
     };
   });

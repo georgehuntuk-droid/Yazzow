@@ -153,7 +153,8 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
       ) : null}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-2 sm:gap-4">
-          <Logo size="header" href="/" className="shrink-0" />
+          <Logo size="header" href="/" iconOnly={true} className="inline-flex sm:hidden shrink-0" />
+          <Logo size="header" href="/" iconOnly={false} className="hidden sm:inline-flex shrink-0" />
           <div className="flex items-center gap-1.5 sm:gap-3">
             <CurrencySelector tutorCurrency={tutor.currency} />
             {isSamplePortal ? (

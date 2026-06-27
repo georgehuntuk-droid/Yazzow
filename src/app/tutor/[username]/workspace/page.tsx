@@ -473,13 +473,14 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
       <div className="min-h-screen bg-background flex flex-col">
         {/* Navigation Header */}
         <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-          <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
-            <Logo size="header" href="/" />
-            <div className="flex items-center gap-3">
+          <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-2 sm:gap-4">
+            <Logo size="header" href="/" iconOnly={true} className="inline-flex sm:hidden shrink-0" />
+            <Logo size="header" href="/" iconOnly={false} className="hidden sm:inline-flex shrink-0" />
+            <div className="flex items-center gap-1.5 sm:gap-3">
               {otherTutors.length > 1 && (
                 <div className="relative group">
-                  <button className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline transition-colors mr-1 cursor-pointer">
-                    ⇄ Switch Tutor <ChevronDown className="size-3" />
+                  <button className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:underline transition-colors mr-1 cursor-pointer">
+                    ⇄ Switch <span className="hidden xs:inline">Tutor</span> <ChevronDown className="size-3" />
                   </button>
                   <div className="absolute right-0 mt-2 w-48 rounded-xl border border-border bg-card p-1 shadow-lg hidden group-hover:block hover:block z-50 animate-in fade-in duration-200">
                     {otherTutors.map((t) => (
@@ -499,31 +500,36 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
               {studentRecords.length > 1 && (
                 <Link
                   href={`/tutor/${username}/workspace`}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline transition-colors mr-1"
+                  className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:underline transition-colors mr-1 shrink-0"
                 >
-                  ⇄ Switch Student
+                  ⇄ Switch <span className="hidden xs:inline">Student</span>
                 </Link>
               )}
-              <span className="hidden sm:inline-block text-xs font-semibold text-muted-foreground bg-muted/70 px-2.5 py-1 rounded-lg">
+              <span className="hidden md:inline-block text-xs font-semibold text-muted-foreground bg-muted/70 px-2.5 py-1 rounded-lg">
                 Student: {studentRecord.student_name}
               </span>
-              <InstallAppButton size="sm" variant="outline" className="hidden sm:inline-flex" />
+              <InstallAppButton size="sm" variant="outline" className="hidden sm:inline-flex shrink-0" />
               <PushSubscriptionToggle />
               <Link
                 href={`/tutor/${username}/workspace/guide`}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-foreground transition-colors py-1.5 px-3 rounded-lg border border-primary/20 hover:bg-primary/5 bg-primary/5 shadow-sm"
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-primary hover:text-foreground transition-colors p-2 rounded-lg border border-primary/20 hover:bg-primary/5 bg-primary/5 shadow-sm sm:py-1.5 sm:px-3 shrink-0"
+                title="Guide & Simulator"
               >
-                <BookOpen className="size-3.5 text-primary" /> Guide & Simulator
+                <BookOpen className="size-3.5 text-primary" />
+                <span className="hidden sm:inline">Guide & Simulator</span>
               </Link>
               <Link
                 href="/support"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-muted/30 bg-background/30"
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg border border-border hover:bg-muted/30 bg-background/30 sm:py-1.5 sm:px-3 shrink-0"
+                title="Support & AI Helper"
               >
-                <HelpCircle className="size-3.5 text-primary" /> Support & AI Helper
+                <HelpCircle className="size-3.5 text-primary" />
+                <span className="hidden sm:inline">Support & AI Helper</span>
               </Link>
-              <form action="/auth/signout" method="post">
-                <button type="submit" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors py-1.5 px-3 rounded-lg border border-border hover:bg-destructive/5 cursor-pointer">
-                  <LogOut className="size-3.5" /> Sign Out
+              <form action="/auth/signout" method="post" className="shrink-0">
+                <button type="submit" className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors p-2 rounded-lg border border-border hover:bg-destructive/5 cursor-pointer sm:py-1.5 sm:px-3" title="Sign Out">
+                  <LogOut className="size-3.5" />
+                  <span className="hidden sm:inline">Sign Out</span>
                 </button>
               </form>
             </div>

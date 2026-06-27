@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   BookOpen, 
@@ -77,8 +78,21 @@ export function WorkspaceDashboard({
   parentEmail,
   username
 }: WorkspaceDashboardProps) {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   // activeTab can be "tasks" | "chat" | "worksheets" | "calendar" | "info"
-  const [activeTab, setActiveTab] = useState<"tasks" | "chat" | "worksheets" | "calendar" | "info">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "chat" | "worksheets" | "calendar" | "info">(
+    (tabParam === "chat" || tabParam === "worksheets" || tabParam === "calendar" || tabParam === "info")
+      ? tabParam
+      : "tasks"
+  );
+
+  useEffect(() => {
+    if (tabParam === "chat" || tabParam === "worksheets" || tabParam === "calendar" || tabParam === "info") {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const pendingTasksCount = tasks.filter((t) => t.status === "pending").length;
 

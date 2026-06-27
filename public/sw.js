@@ -106,17 +106,33 @@ self.addEventListener("push", (event) => {
 // Notification Click: Open correct link
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || "/dashboard";
+  
+  // Resolve relative target URL to absolute location
+  const absoluteUrl = new URL(event.notification.data?.url || "/dashboard", self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // Find an open tab/window with the same hostname and path
       for (const client of clientList) {
-        if (client.url.endsWith(targetUrl) && "focus" in client) {
-          return client.focus();
+        try {
+          const clientUrlObj = new URL(client.url);
+          const targetUrlObj = new URL(absoluteUrl);
+          
+          if (clientUrlObj.pathname === targetUrlObj.pathname && "focus" in client) {
+            // Navigate the tab to select the tab/route and focus it
+            if ("navigate" in client) {
+              client.navigate(absoluteUrl);
+            }
+            return client.focus();
+          }
+        } catch (e) {
+          // ignore parsing error
         }
       }
+      
+      // If no tab is open, open a new window
       if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+        return clients.openWindow(absoluteUrl);
       }
     })
   );

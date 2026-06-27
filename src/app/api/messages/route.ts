@@ -307,7 +307,7 @@ export async function POST(request: Request) {
         await sendPushNotification(parentUser.id, {
           title: `New Message from ${tutor.displayName || "your Tutor"}`,
           body: content.trim(),
-          url: `/tutor/${tutor.username}/workspace`,
+          url: `/tutor/${tutor.username}/workspace?tab=chat`,
         });
       }
     } catch (pushErr) {

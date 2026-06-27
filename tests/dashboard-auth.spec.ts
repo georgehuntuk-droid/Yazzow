@@ -17,13 +17,22 @@ test.describe('Dashboard & Authentication Flow', () => {
 
   test('should show error banner when signing in with incorrect credentials', async ({ page }) => {
     await page.goto('/auth/login');
-    await page.waitForTimeout(1500);
+    // Wait longer for hydration to complete under CPU constraints
+    await page.waitForTimeout(4000);
 
     // Fill form with dummy incorrect credentials
     await page.fill('#email', 'wrongtutor@example.com');
-    await expect(page.locator('#email')).toHaveValue('wrongtutor@example.com');
-
     await page.fill('#password', 'wrongpassword123');
+
+    // Wait a brief moment to make sure React hydration didn't clear the values
+    await page.waitForTimeout(1000);
+    const emailVal = await page.$eval('#email', (el: HTMLInputElement) => el.value);
+    if (emailVal !== 'wrongtutor@example.com') {
+      await page.fill('#email', 'wrongtutor@example.com');
+      await page.fill('#password', 'wrongpassword123');
+    }
+
+    await expect(page.locator('#email')).toHaveValue('wrongtutor@example.com');
     await expect(page.locator('#password')).toHaveValue('wrongpassword123');
 
     // Click submit

@@ -49,3 +49,34 @@ export function slugifyUsername(input: string): string {
 export function isValidUsername(username: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(username) && username.length >= 3;
 }
+
+const SWEAR_WORDS = new Set([
+  "fuck", "fucking", "fucker", "shit", "shitting", "shitter",
+  "bitch", "cunt", "asshole", "pussy", "dick", "bastard",
+  "wanker", "twat", "cock", "bollocks", "motherfucker"
+]);
+
+export function containsProfanity(text: string): boolean {
+  if (!text) return false;
+  
+  // Normalize text: lowercase, remove special characters/spaces to catch bypassed spellings (e.g. f-u-c-k)
+  const normalized = text.toLowerCase().replace(/[^a-z0-9]/g, "");
+  
+  for (const word of SWEAR_WORDS) {
+    if (normalized.includes(word)) {
+      return true;
+    }
+  }
+
+  // Split by whitespace and check individual words
+  const words = text.toLowerCase().split(/\s+/);
+  for (const w of words) {
+    const cleanWord = w.replace(/[^a-z0-9]/g, "");
+    if (SWEAR_WORDS.has(cleanWord)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+

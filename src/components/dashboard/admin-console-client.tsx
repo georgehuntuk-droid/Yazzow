@@ -301,8 +301,11 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
     });
   };
 
-  const formatDate = (isoString: string) => {
-    return new Date(isoString).toLocaleDateString("en-GB", {
+  const formatDate = (isoString?: string | null) => {
+    if (!isoString) return "—";
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -904,13 +907,18 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                          {new Date(notice.created_at).toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
+                          {(() => {
+                            if (!notice.created_at) return "—";
+                            const d = new Date(notice.created_at);
+                            if (isNaN(d.getTime())) return "—";
+                            return d.toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            });
+                          })()}
                         </span>
                         <h4 className="text-base font-black text-foreground mt-1 select-all">{notice.title}</h4>
                       </div>

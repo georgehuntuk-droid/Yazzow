@@ -20,7 +20,7 @@ import {
   storagePathFromPublicUrl,
 } from "@/lib/supabase/storage";
 import { removeTutorFiles, uploadTutorFile } from "@/lib/supabase/tutor-storage";
-import { isValidUsername, slugifyUsername } from "@/lib/tutors/utils";
+import { isValidUsername, slugifyUsername, containsProfanity } from "@/lib/tutors/utils";
 
 async function revalidatePortal(username: string, previousUsername?: string) {
   revalidatePath("/dashboard");
@@ -92,6 +92,18 @@ export async function updatePortalProfile(input: {
 
   if (!displayName) {
     return { ok: false as const, error: "Display name is required." };
+  }
+
+  if (
+    containsProfanity(displayName) ||
+    containsProfanity(headline) ||
+    containsProfanity(bio) ||
+    containsProfanity(paymentInstructions || "")
+  ) {
+    return {
+      ok: false as const,
+      error: "Please remove any inappropriate language from your profile.",
+    };
   }
 
   if (lessonPriceCents === null) {
@@ -270,6 +282,13 @@ export async function changePortalUsername(rawUsername: string) {
     return {
       ok: false as const,
       error: "Username must be 3+ characters, lowercase letters, numbers, and hyphens only.",
+    };
+  }
+
+  if (containsProfanity(username)) {
+    return {
+      ok: false as const,
+      error: "Please remove any inappropriate language from your username.",
     };
   }
 

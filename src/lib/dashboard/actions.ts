@@ -18,7 +18,7 @@ import {
   splitAvailabilityIntoHourlySlots,
 } from "@/lib/scheduling/hourly-slots";
 import { formatSupabaseError } from "@/lib/supabase/errors";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatSlotRange } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { removeTutorFiles, uploadTutorFile } from "@/lib/supabase/tutor-storage";
 
@@ -1562,6 +1562,19 @@ export async function moveAvailabilitySlotAction(input: {
     return { ok: false as const, error: "Slot not found or access denied." };
   }
 
+  let bookingToNotify = null;
+  if (slot.is_booked) {
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("slot_id", input.slotId)
+      .eq("status", "confirmed")
+      .maybeSingle();
+    if (booking) {
+      bookingToNotify = booking;
+    }
+  }
+
   // 2. Check for overlaps/clashes with OTHER slots
   const { data: existingSlots } = await supabase
     .from("availability_slots")
@@ -1596,6 +1609,23 @@ export async function moveAvailabilitySlotAction(input: {
 
   if (updateError) {
     return { ok: false as const, error: formatSupabaseError(updateError.message) };
+  }
+
+  if (bookingToNotify) {
+    try {
+      const oldSlotLabel = formatSlotRange(slot.starts_at, slot.ends_at);
+      const newSlotLabel = formatSlotRange(input.startsAtIso, input.endsAtIso);
+      const { sendBookingMovedEmail } = await import("@/lib/notifications/booking-update");
+      await sendBookingMovedEmail({
+        to: bookingToNotify.parent_email,
+        tutorName: profile.display_name,
+        studentName: bookingToNotify.student_name,
+        oldSlotLabel,
+        newSlotLabel,
+      });
+    } catch (err) {
+      console.error("Failed to send booking rescheduled email notification:", err);
+    }
   }
 
   await revalidateTutor(profile.username);

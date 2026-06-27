@@ -115,11 +115,16 @@ export default async function DashboardPage() {
                 <div key={notice.id} className="rounded-xl border border-border/80 bg-card/70 p-4 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 h-16 w-16 rounded-full bg-primary/5 blur-lg pointer-events-none" />
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    {new Date(notice.created_at).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric"
-                    })}
+                    {(() => {
+                      if (!notice.created_at) return "—";
+                      const d = new Date(notice.created_at);
+                      if (isNaN(d.getTime())) return "—";
+                      return d.toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric"
+                      });
+                    })()}
                   </span>
                   <h3 className="text-sm font-black text-foreground mt-1">{notice.title}</h3>
                   <p className="text-xs font-medium text-muted-foreground mt-1.5 leading-relaxed whitespace-pre-wrap">

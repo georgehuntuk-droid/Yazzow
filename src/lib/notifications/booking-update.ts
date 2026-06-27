@@ -111,3 +111,52 @@ export async function sendTutorCancellationEmail(input: {
   `;
   return sendResendEmail({ to: input.to, subject, html });
 }
+
+export async function sendBookingMovedEmail(input: {
+  to: string;
+  tutorName: string;
+  studentName: string | null;
+  oldSlotLabel: string;
+  newSlotLabel: string;
+}): Promise<boolean> {
+  const subject = `Lesson rescheduled: ${input.newSlotLabel} with ${input.tutorName}`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+      <!-- Logo Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+      </div>
+      
+      <h2 style="font-size: 20px; font-weight: 800; color: #2563eb; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Lesson Rescheduled</h2>
+      
+      <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+        Your scheduled lesson for <strong>${input.studentName || "GCSE Student"}</strong> with <strong>${input.tutorName}</strong> has been moved to a new time.
+      </p>
+      
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 14px;">
+          <tr>
+            <td style="padding: 6px 0; color: #64748b; width: 100px;">Old Time:</td>
+            <td style="padding: 6px 0; color: #0f172a; text-decoration: line-through;">${input.oldSlotLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #64748b;">New Time:</td>
+            <td style="padding: 6px 0; color: #2563eb; font-weight: 700;">${input.newSlotLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #64748b;">Tutor:</td>
+            <td style="padding: 6px 0; color: #0f172a;">${input.tutorName}</td>
+          </tr>
+        </table>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+      
+      <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.5; margin: 0; font-family: sans-serif;">
+        If you have any questions or this new time does not work for you, please contact your tutor directly to coordinate.
+      </p>
+    </div>
+  `;
+  return sendResendEmail({ to: input.to, subject, html });
+}
+

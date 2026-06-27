@@ -8,7 +8,7 @@ import { formatSupabaseError } from "@/lib/supabase/errors";
 import { createClient } from "@/lib/supabase/server";
 import type { TutorProfileRow } from "@/lib/supabase/database.types";
 import { rowToTutorProfile } from "@/lib/tutors/utils";
-import { isValidUsername } from "@/lib/tutors/utils";
+import { isValidUsername, containsProfanity } from "@/lib/tutors/utils";
 
 export async function checkUsernameAvailable(
   username: string,
@@ -68,6 +68,18 @@ export async function completeOnboarding(input: OnboardingInput) {
 
   if (!isValidUsername(input.username)) {
     return { ok: false as const, error: "Invalid username format." };
+  }
+
+  if (
+    containsProfanity(input.username) ||
+    containsProfanity(input.displayName) ||
+    containsProfanity(input.headline || "") ||
+    containsProfanity(input.bio || "")
+  ) {
+    return {
+      ok: false as const,
+      error: "Please remove any inappropriate language from your profile.",
+    };
   }
 
   const supabase = await createClient();

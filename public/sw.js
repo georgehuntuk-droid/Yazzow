@@ -1,8 +1,7 @@
-const CACHE_NAME = "yazzow-cache-v6";
+const CACHE_NAME = "yazzow-cache-v7";
 const OFFLINE_URL = "/offline.html";
 
 const ASSETS_TO_CACHE = [
-  "/",
   OFFLINE_URL,
   "/icon.png?v=3",
   "/favicon.ico"
@@ -37,21 +36,12 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests
   if (event.request.method !== "GET") return;
 
-  // Network-First for HTML/page requests to ensure updates load immediately when online
+  // Network-only for HTML/page requests to prevent caching dynamic authorized pages
   if (event.request.mode === "navigate" || event.request.headers.get("accept")?.includes("text/html")) {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          const responseCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseCopy);
-          });
-          return response;
-        })
         .catch(() => {
-          return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || caches.match(OFFLINE_URL);
-          });
+          return caches.match(OFFLINE_URL);
         })
     );
     return;

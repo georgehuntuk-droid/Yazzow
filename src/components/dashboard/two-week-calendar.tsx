@@ -263,8 +263,8 @@ export function TwoWeekCalendar({
   };
 
   // Tutor Actions
-  const handleTutorDeleteSlot = async (slotId: string) => {
-    if (!confirm("Delete this open slot?")) return;
+  const handleTutorDeleteSlot = async (slotId: string, skipConfirm = false) => {
+    if (!skipConfirm && !confirm("Delete this open slot?")) return;
     setActionLoading(true);
     setErrorMsg(null);
     const res = await deleteAvailabilitySlot(slotId);
@@ -304,8 +304,8 @@ export function TwoWeekCalendar({
     }
   };
 
-  const handleTutorCancelBooking = async (bookingId: string) => {
-    if (!confirm("Cancel this booking? This will reopen the slot and email the parent.")) return;
+  const handleTutorCancelBooking = async (bookingId: string, skipConfirm = false) => {
+    if (!skipConfirm && !confirm("Cancel this booking? This will reopen the slot and email the parent.")) return;
     setActionLoading(true);
     setErrorMsg(null);
     const res = await cancelBooking(bookingId);
@@ -675,7 +675,7 @@ export function TwoWeekCalendar({
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleTutorCancelBooking(slot.booking!.id);
+                                      handleTutorCancelBooking(slot.booking!.id, true);
                                     }}
                                     className="bg-red-850 text-white hover:bg-red-900 border-none rounded p-0.5 hover:scale-105 transition-all shadow cursor-pointer flex items-center justify-center size-5"
                                     title="Cancel Booking"
@@ -687,7 +687,7 @@ export function TwoWeekCalendar({
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleTutorDeleteSlot(slot.id);
+                                      handleTutorDeleteSlot(slot.id, true);
                                     }}
                                     className="bg-red-600 text-white hover:bg-red-700 border-none rounded p-0.5 hover:scale-105 transition-all shadow cursor-pointer flex items-center justify-center size-5"
                                     title="Delete Slot"

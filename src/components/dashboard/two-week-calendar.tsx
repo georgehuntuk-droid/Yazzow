@@ -122,8 +122,9 @@ export function TwoWeekCalendar({
     const end = new Date(slot.endsAt);
     const durationMs = end.getTime() - start.getTime();
 
-    // Construct local startsAt date based on targetDateKey (YYYY-MM-DD) and targetHour
-    const targetStartsAt = new Date(`${targetDateKey}T${String(targetHour).padStart(2, "0")}:00:00`);
+    // Construct local startsAt date based on targetDateKey (YYYY-MM-DD) and targetHour safely
+    const [year, month, day] = targetDateKey.split("-").map(Number);
+    const targetStartsAt = new Date(year, month - 1, day, targetHour, 0, 0);
     
     if (Number.isNaN(targetStartsAt.getTime())) {
       setErrorMsg("Invalid date or hour format.");
@@ -283,16 +284,17 @@ export function TwoWeekCalendar({
     if (startHour >= endHour) return;
     
     // Construct local timestamps safely
-    const startsAt = new Date(`${dateKey}T${String(startHour).padStart(2, "0")}:00:00`);
-    const endsAt = new Date(`${dateKey}T${String(endHour).padStart(2, "0")}:00:00`);
+    const [year, month, day] = dateKey.split("-").map(Number);
+    const startsAt = new Date(year, month - 1, day, startHour, 0, 0);
+    const endsAt = new Date(year, month - 1, day, endHour, 0, 0);
     
     if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) return;
 
     // Optimistically paint temporary slot blocks to screen instantly
     const tempSlots: CalendarSlot[] = [];
     for (let hr = startHour; hr < endHour; hr++) {
-      const slotStart = new Date(`${dateKey}T${String(hr).padStart(2, "0")}:00:00`);
-      const slotEnd = new Date(`${dateKey}T${String(hr + 1).padStart(2, "0")}:00:00`);
+      const slotStart = new Date(year, month - 1, day, hr, 0, 0);
+      const slotEnd = new Date(year, month - 1, day, hr + 1, 0, 0);
       tempSlots.push({
         id: `temp-${Date.now()}-${hr}`,
         startsAt: slotStart.toISOString(),

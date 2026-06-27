@@ -196,8 +196,9 @@ export function WeeklyScheduleSettings() {
   }
 
   const formatTimeStr = (time: string) => {
+    if (!time) return "--:--";
     const parts = time.split(":");
-    return `${parts[0]}:${parts[1]}`;
+    return `${parts[0] || "00"}:${parts[1] || "00"}`;
   };
 
   const getDayName = (dayNum: number) => {

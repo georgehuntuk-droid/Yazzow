@@ -31,7 +31,12 @@ export function PushNotificationBanner() {
       "PushManager" in window &&
       typeof Notification !== "undefined"
     ) {
-      const dismissed = localStorage.getItem("yazzow-push-dismissed") === "true";
+      let dismissed = false;
+      try {
+        dismissed = localStorage.getItem("yazzow-push-dismissed") === "true";
+      } catch (e) {
+        console.warn("localStorage is blocked or unavailable:", e);
+      }
       const isDefault = Notification.permission === "default";
       
       if (isDefault && !dismissed) {
@@ -41,7 +46,11 @@ export function PushNotificationBanner() {
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem("yazzow-push-dismissed", "true");
+    try {
+      localStorage.setItem("yazzow-push-dismissed", "true");
+    } catch (e) {
+      console.warn("localStorage is blocked or unavailable:", e);
+    }
     setVisible(false);
   };
 
@@ -89,7 +98,11 @@ export function PushNotificationBanner() {
           await subscription.unsubscribe();
         } else {
           // Success! Save dismissed key and close banner
-          localStorage.setItem("yazzow-push-dismissed", "true");
+          try {
+            localStorage.setItem("yazzow-push-dismissed", "true");
+          } catch (e) {
+            console.warn("localStorage is blocked or unavailable:", e);
+          }
           setVisible(false);
           alert("Push notifications enabled! You will now receive instant alerts for chat messages and lesson updates.");
         }

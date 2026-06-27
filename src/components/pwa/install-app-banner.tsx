@@ -40,7 +40,12 @@ export function PwaInstallBanner() {
 
   useEffect(() => {
     // Check local storage for dismissal
-    const isDismissed = localStorage.getItem("yazzow-pwa-banner-dismissed") === "true";
+    let isDismissed = false;
+    try {
+      isDismissed = localStorage.getItem("yazzow-pwa-banner-dismissed") === "true";
+    } catch (e) {
+      console.warn("localStorage is blocked or unavailable:", e);
+    }
     if (isDismissed) {
       setDismissed(true);
     }
@@ -127,7 +132,11 @@ export function PwaInstallBanner() {
 
   const handleDismiss = () => {
     setDismissed(true);
-    localStorage.setItem("yazzow-pwa-banner-dismissed", "true");
+    try {
+      localStorage.setItem("yazzow-pwa-banner-dismissed", "true");
+    } catch (e) {
+      console.warn("localStorage is blocked or unavailable:", e);
+    }
   };
 
   if (!initialized || isInstalled || dismissed) return null;

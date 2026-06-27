@@ -29,17 +29,72 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile } = await requireTutorProfile();
   const publicLink = tutorPublicUrl(profile.username);
-  const [slots, studentGroups, recentBookings, packSales, portalBooking, recentMessages, tutorRating, notices] =
-    await Promise.all([
-      getSlotsForTutorOwner(profile.id),
-      getStudentsWithLessonsForTutor(profile.id),
-      getRecentBookingsForTutor(profile.id),
-      getDigitalSalesForTutor(profile.id),
-      getPortalBookingStatus(profile.id),
-      getRecentMessagesForTutor(profile.id),
-      getTutorAverageRating(profile.id),
-      getLatestAdminNotices(2),
+
+  let slots: any[] = [];
+  let studentGroups: any = { active: [], archived: [], pending: [] };
+  let recentBookings: any[] = [];
+  let packSales: any[] = [];
+  let portalBooking: any = { canAcceptBookings: false, subscriptionActive: false };
+  let recentMessages: any[] = [];
+  let tutorRating: any = { averageRating: 0, ratingCount: 0 };
+  let notices: any[] = [];
+
+  try {
+    const [
+      slotsRes,
+      studentGroupsRes,
+      recentBookingsRes,
+      packSalesRes,
+      portalBookingRes,
+      recentMessagesRes,
+      tutorRatingRes,
+      noticesRes,
+    ] = await Promise.all([
+      getSlotsForTutorOwner(profile.id).catch((err) => {
+        console.error("Error in getSlotsForTutorOwner:", err);
+        return [];
+      }),
+      getStudentsWithLessonsForTutor(profile.id).catch((err) => {
+        console.error("Error in getStudentsWithLessonsForTutor:", err);
+        return { active: [], archived: [], pending: [] };
+      }),
+      getRecentBookingsForTutor(profile.id).catch((err) => {
+        console.error("Error in getRecentBookingsForTutor:", err);
+        return [];
+      }),
+      getDigitalSalesForTutor(profile.id).catch((err) => {
+        console.error("Error in getDigitalSalesForTutor:", err);
+        return [];
+      }),
+      getPortalBookingStatus(profile.id).catch((err) => {
+        console.error("Error in getPortalBookingStatus:", err);
+        return { canAcceptBookings: false, subscriptionActive: false };
+      }),
+      getRecentMessagesForTutor(profile.id).catch((err) => {
+        console.error("Error in getRecentMessagesForTutor:", err);
+        return [];
+      }),
+      getTutorAverageRating(profile.id).catch((err) => {
+        console.error("Error in getTutorAverageRating:", err);
+        return { averageRating: 0, ratingCount: 0 };
+      }),
+      getLatestAdminNotices(2).catch((err) => {
+        console.error("Error in getLatestAdminNotices:", err);
+        return [];
+      }),
     ]);
+
+    slots = slotsRes;
+    studentGroups = studentGroupsRes;
+    recentBookings = recentBookingsRes;
+    packSales = packSalesRes;
+    portalBooking = portalBookingRes;
+    recentMessages = recentMessagesRes;
+    tutorRating = tutorRatingRes;
+    notices = noticesRes;
+  } catch (err) {
+    console.error("Failed to execute Promise.all in dashboard page:", err);
+  }
 
   const allStudents = [
     ...studentGroups.active,

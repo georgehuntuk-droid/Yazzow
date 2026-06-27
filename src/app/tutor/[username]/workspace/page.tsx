@@ -328,46 +328,86 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     portalBooking = { canAcceptBookings: true };
   } else {
     const admin = createAdminClient();
-    const [rawBookingsRes, rawTasksRes, rawOpenSlotsRes, rawResourcesRes, portalBookingRes] = await Promise.all([
-      admin
-        .from("bookings")
-        .select(`
-          id, 
-          status, 
-          amount_cents, 
-          created_at, 
-          tutor_lesson_feedback, 
-          lesson_rating, 
-          running_late_note, 
-          availability_slots (id, starts_at, ends_at)
-        `)
-        .eq("tutor_id", tutor.id)
-        .ilike("parent_email", user.email)
-        .order("created_at", { ascending: false }),
-      admin
-        .from("student_tasks")
-        .select("*")
-        .eq("student_id", studentRecord!.id)
-        .order("created_at", { ascending: false }),
-      admin
-        .from("availability_slots")
-        .select("id, starts_at, ends_at, is_booked")
-        .eq("tutor_id", tutor.id)
-        .gte("starts_at", new Date().toISOString())
-        .order("starts_at", { ascending: true }),
-      admin
-        .from("digital_resources")
-        .select("*")
-        .eq("tutor_id", tutor.id)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false }),
-      getPortalBookingStatus(tutor.id)
-    ]);
-    rawBookings = rawBookingsRes.data;
-    rawTasks = rawTasksRes.data;
-    rawOpenSlots = rawOpenSlotsRes.data;
-    rawResources = rawResourcesRes.data;
-    portalBooking = portalBookingRes;
+    try {
+      const [rawBookingsRes, rawTasksRes, rawOpenSlotsRes, rawResourcesRes, portalBookingRes] = await Promise.all([
+        Promise.resolve(
+          admin
+            .from("bookings")
+            .select(`
+              id, 
+              status, 
+              amount_cents, 
+              created_at, 
+              tutor_lesson_feedback, 
+              lesson_rating, 
+              running_late_note, 
+              availability_slots (id, starts_at, ends_at)
+            `)
+            .eq("tutor_id", tutor.id)
+            .ilike("parent_email", user.email)
+            .order("created_at", { ascending: false })
+        )
+          .then((res) => res)
+          .catch((err) => {
+            console.error("Error fetching bookings in workspace:", err);
+            return { data: [], error: err };
+          }),
+        Promise.resolve(
+          admin
+            .from("student_tasks")
+            .select("*")
+            .eq("student_id", studentRecord!.id)
+            .order("created_at", { ascending: false })
+        )
+          .then((res) => res)
+          .catch((err) => {
+            console.error("Error fetching tasks in workspace:", err);
+            return { data: [], error: err };
+          }),
+        Promise.resolve(
+          admin
+            .from("availability_slots")
+            .select("id, starts_at, ends_at, is_booked")
+            .eq("tutor_id", tutor.id)
+            .gte("starts_at", new Date().toISOString())
+            .order("starts_at", { ascending: true })
+        )
+          .then((res) => res)
+          .catch((err) => {
+            console.error("Error fetching availability slots in workspace:", err);
+            return { data: [], error: err };
+          }),
+        Promise.resolve(
+          admin
+            .from("digital_resources")
+            .select("*")
+            .eq("tutor_id", tutor.id)
+            .eq("is_published", true)
+            .order("created_at", { ascending: false })
+        )
+          .then((res) => res)
+          .catch((err) => {
+            console.error("Error fetching resources in workspace:", err);
+            return { data: [], error: err };
+          }),
+        getPortalBookingStatus(tutor.id)
+          .catch((err) => {
+            console.error("Error fetching portal booking status in workspace:", err);
+            return { canAcceptBookings: false, subscriptionActive: false };
+          })
+      ]);
+      rawBookings = rawBookingsRes?.data ?? [];
+      rawTasks = rawTasksRes?.data ?? [];
+      rawOpenSlots = rawOpenSlotsRes?.data ?? [];
+      rawResources = rawResourcesRes?.data ?? [];
+      portalBooking = portalBookingRes ?? { canAcceptBookings: false, subscriptionActive: false };
+    } catch (err) {
+      console.error("Failed to load workspace data: ", err);
+    }
+  }
+
+  if (!portalBooking) {
+    portalBooking = { canAcceptBookings: false, subscriptionActive: false };
   }
 
   const paymentsEnabled = portalBooking.canAcceptBookings;

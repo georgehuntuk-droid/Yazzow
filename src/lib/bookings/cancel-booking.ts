@@ -65,6 +65,35 @@ export async function cancelLessonBooking(input: {
 
 
   const profile = await getTutorNotifyProfile(input.tutorId);
+
+  // 0. Trigger push notifications for cancellations
+  try {
+    const { sendPushNotification } = await import("@/lib/notifications/web-push");
+    const { formatSlotRange } = await import("@/lib/format");
+    const slotLabel = formatSlotRange(slotRow.starts_at, slotRow.ends_at);
+
+    if (input.cancelledBy === "tutor") {
+      const { data: usersData } = await admin.auth.admin.listUsers();
+      const parentUser = usersData?.users?.find(
+        (u) => u.email?.toLowerCase() === booking.parent_email.toLowerCase()
+      );
+      if (parentUser?.id) {
+        await sendPushNotification(parentUser.id, {
+          title: "Lesson Cancelled by Tutor",
+          body: `Your lesson on ${slotLabel} has been cancelled by ${profile?.display_name || "Tutor"}.`,
+          url: `/tutor/${profile?.username || "tutor"}/workspace`,
+        });
+      }
+    } else {
+      await sendPushNotification(input.tutorId, {
+        title: "Lesson Cancelled by Parent",
+        body: `${booking.student_name || "Student"} has cancelled their lesson on ${slotLabel}.`,
+        url: `/dashboard/schedule`,
+      });
+    }
+  } catch (pushErr) {
+    console.error("[cancelLessonBooking] Failed to send push notification:", pushErr);
+  }
   
   // 1. Send cancellation confirmation email to the parent
   try {

@@ -337,7 +337,7 @@ export function LessonCheckoutButton({
         </div>
       ) : null}
 
-      {availableCredits !== null && availableCredits <= -creditLimit ? (
+      {availableCredits !== null && creditLimit > 0 && availableCredits <= -creditLimit ? (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs text-destructive leading-normal font-medium mb-1">
           ⚠️ Booking blocked: you have exceeded your credit limit. Please contact your tutor to clear your balance and resume bookings.
         </div>
@@ -349,20 +349,20 @@ export function LessonCheckoutButton({
             ? "Lesson booked successfully! Pay your tutor directly."
             : "Lesson booked successfully using credit!"}
         </div>
-      ) : availableCredits !== null && availableCredits <= -creditLimit ? (
+      ) : availableCredits !== null && creditLimit > 0 && availableCredits <= -creditLimit ? (
         <Button
           className="w-full h-11 text-sm font-semibold shadow-md cursor-not-allowed opacity-55"
           disabled
         >
           Booking Blocked (Limit Exceeded)
         </Button>
-      ) : availableCredits !== null && availableCredits > -creditLimit ? (
+      ) : availableCredits !== null ? (
         <div className="space-y-2">
           <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg font-medium flex items-center justify-between">
             <span>
               {availableCredits > 0
                 ? `You have ${availableCredits} prepaid credit${availableCredits === 1 ? "" : "s"} left.`
-                : `You will book on account (balance: ${availableCredits} credit${availableCredits === -1 ? "" : "s"}, limit: -${creditLimit}).`}
+                : `You will book on account (balance: ${Math.abs(availableCredits)} unpaid lesson${Math.abs(availableCredits) === 1 ? "" : "s"}${creditLimit > 0 ? `, limit: ${creditLimit}` : ""}).`}
             </span>
             <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-800">
               {availableCredits > 0 ? "Available" : "On Account"}

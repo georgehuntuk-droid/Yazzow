@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { 
   BookOpen, 
   CalendarRange, 
@@ -80,6 +81,7 @@ export function WorkspaceDashboard({
 }: WorkspaceDashboardProps) {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
+  const router = useRouter();
 
   // activeTab can be "tasks" | "chat" | "worksheets" | "calendar" | "info"
   const [activeTab, setActiveTab] = useState<"tasks" | "chat" | "worksheets" | "calendar" | "info">(
@@ -93,6 +95,47 @@ export function WorkspaceDashboard({
       setActiveTab(tabParam);
     }
   }, [tabParam]);
+
+  // Real-time Postgres listener to refresh workspace details instantly
+  useEffect(() => {
+    const supabase = createClient();
+    
+    const channel = supabase
+      .channel("workspace-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          router.refresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        () => {
+          router.refresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "availability_slots" },
+        () => {
+          router.refresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "students" },
+        () => {
+          router.refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [router]);
 
   const pendingTasksCount = tasks.filter((t) => t.status === "pending").length;
 
@@ -109,8 +152,12 @@ export function WorkspaceDashboard({
               <GraduationCap className="size-4.5 sm:size-5" />
             </div>
             <div className="min-w-0 flex flex-col items-center sm:items-start w-full">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate w-full">Credits</p>
-              <p className="text-xl sm:text-2xl font-black text-foreground mt-0.5 leading-none">{studentRecord.lesson_credits}</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider truncate w-full">
+                {studentRecord.lesson_credits > 0 ? "Prepaid Lessons" : "Unpaid Lessons"}
+              </p>
+              <p className="text-xl sm:text-2xl font-black text-foreground mt-0.5 leading-none">
+                {Math.abs(studentRecord.lesson_credits)}
+              </p>
             </div>
           </CardContent>
         </Card>

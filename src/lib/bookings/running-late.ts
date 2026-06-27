@@ -67,8 +67,25 @@ export async function sendRunningLateNotice(input: {
     tutor_id: input.tutorId,
     parent_email: booking.parent_email,
     sender: "tutor",
-    content: messageContent,
   });
+
+  // Trigger push notification to parent
+  try {
+    const { data: usersData } = await admin.auth.admin.listUsers();
+    const parentUser = usersData?.users?.find(
+      (u) => u.email?.toLowerCase() === booking.parent_email.toLowerCase()
+    );
+    if (parentUser?.id) {
+      const { sendPushNotification } = await import("@/lib/notifications/web-push");
+      await sendPushNotification(parentUser.id, {
+        title: "Tutor Running Late",
+        body: `${profile.display_name} is running late: "${note || "No details provided."}"`,
+        url: `/tutor/${profile.username}/workspace?tab=chat`,
+      });
+    }
+  } catch (pushErr) {
+    console.error("[sendRunningLateNotice] Failed to send push notification:", pushErr);
+  }
 
   return { ok: true, emailed: false };
 }
@@ -137,6 +154,18 @@ export async function sendStudentRunningLateNotice(input: {
     sender: "parent",
     content: messageContent,
   });
+
+  // Trigger push notification to tutor
+  try {
+    const { sendPushNotification } = await import("@/lib/notifications/web-push");
+    await sendPushNotification(booking.tutor_id, {
+      title: "Student Running Late",
+      body: `${studentDisplayName} is running late: "${note || "No details provided."}"`,
+      url: `/dashboard/messages?parentEmail=${encodeURIComponent(booking.parent_email)}`,
+    });
+  } catch (pushErr) {
+    console.error("[sendStudentRunningLateNotice] Failed to send push notification:", pushErr);
+  }
 
   return { ok: true, emailed: false };
 }

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     // Filter students who have not exceeded their credit limit
     const eligibleStudents = students.filter(
-      (s) => (s.lesson_credits ?? 0) - 1 >= -(s.credit_limit ?? 0)
+      (s) => !(s.credit_limit ?? 0) || (s.lesson_credits ?? 0) - 1 >= -(s.credit_limit ?? 0)
     );
 
     if (eligibleStudents.length === 0) {

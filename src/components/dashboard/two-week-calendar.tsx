@@ -1013,34 +1013,38 @@ export function TwoWeekCalendar({
                             Payment Method
                           </label>
                           <div className="grid gap-2">
-                            {/* Credits Option */}
-                            {(() => {
-                              const canUseCredit = (studentCredits ?? 0) - 1 >= -(creditLimit ?? 0);
-                              return (
-                                <button
-                                  type="button"
-                                  disabled={!canUseCredit}
-                                  className={cn(
-                                    "flex items-center justify-between p-3.5 border rounded-xl text-left transition-all duration-200 cursor-pointer text-xs font-bold",
-                                    paymentMethod === "credit"
-                                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/30"
-                                      : "border-border bg-card hover:bg-muted/50 text-foreground",
-                                    !canUseCredit && "opacity-50 cursor-not-allowed hover:bg-transparent"
-                                  )}
-                                  onClick={() => setPaymentMethod("credit")}
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <Coins className="size-4 text-primary" />
-                                    <span>Tutor Lesson Credits ({studentCredits} available)</span>
-                                  </span>
-                                  {!canUseCredit && (
-                                    <span className="text-[10px] text-muted-foreground font-medium">
-                                      No credit
-                                    </span>
-                                  )}
-                                </button>
-                              );
-                            })()}
+                             {/* Credits Option */}
+                             {(() => {
+                               const canUseCredit = !(creditLimit ?? 0) || (studentCredits ?? 0) - 1 >= -(creditLimit ?? 0);
+                               return (
+                                 <button
+                                   type="button"
+                                   disabled={!canUseCredit}
+                                   className={cn(
+                                     "flex items-center justify-between p-3.5 border rounded-xl text-left transition-all duration-200 cursor-pointer text-xs font-bold",
+                                     paymentMethod === "credit"
+                                       ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/30"
+                                       : "border-border bg-card hover:bg-muted/50 text-foreground",
+                                     !canUseCredit && "opacity-50 cursor-not-allowed hover:bg-transparent"
+                                   )}
+                                   onClick={() => setPaymentMethod("credit")}
+                                 >
+                                   <span className="flex items-center gap-2">
+                                     <Coins className="size-4 text-primary" />
+                                     <span>
+                                       {studentCredits > 0
+                                         ? `Book using Prepaid Credits (${studentCredits} left)`
+                                         : `Book on Account (Balance: ${Math.abs(studentCredits ?? 0)} unpaid lesson${Math.abs(studentCredits ?? 0) === 1 ? "" : "s"})`}
+                                     </span>
+                                   </span>
+                                   {!canUseCredit && (
+                                     <span className="text-[10px] text-muted-foreground font-medium">
+                                       Limit Exceeded
+                                     </span>
+                                   )}
+                                 </button>
+                               );
+                             })()}
 
                             {/* Card Option */}
                             {paymentsEnabled && (

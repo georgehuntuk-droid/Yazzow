@@ -113,13 +113,6 @@ export default function RootLayout({
                     function(err) { console.log('SW reg failed:', err); }
                   );
                 });
-                let refreshing = false;
-                navigator.serviceWorker.addEventListener('controllerchange', function() {
-                  if (navigator.serviceWorker.controller && !refreshing) {
-                    refreshing = true;
-                    window.location.reload();
-                  }
-                });
               }
               window.deferredPrompt = null;
               window.addEventListener('beforeinstallprompt', function(e) {

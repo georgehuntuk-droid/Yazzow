@@ -343,6 +343,9 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
     const isLoading = actionLoadingId === ticket.id && isPending;
     const draftNotes = editingNotesText[ticket.id] ?? ticket.admin_notes ?? "";
     const isNotesSaving = savingNotesId === ticket.id;
+    const matchedTutor = tutors.find(
+      (t) => t.email.toLowerCase() === ticket.email.toLowerCase()
+    );
 
     return (
       <Card key={ticket.id} className="yazz-surface">
@@ -372,6 +375,27 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
               <p className="text-xs text-muted-foreground">
                 Submitted: <span className="font-medium text-foreground">{formatDate(ticket.created_at)}</span> from <span className="font-semibold">{ticket.source}</span>
               </p>
+              {matchedTutor && (
+                <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                  <Badge variant="secondary" className="text-[9px] bg-primary/10 text-primary hover:bg-primary/10 font-bold py-0 h-4.5 px-1.5 rounded">
+                    Tutor Account Matched
+                  </Badge>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(matchedTutor)}
+                    className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit className="size-3" /> Audit/Inspect Account
+                  </button>
+                  <Link
+                    href={`/tutor/${matchedTutor.username}`}
+                    target="_blank"
+                    className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    <Globe className="size-3" /> View Portal
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Status toggles & Delete button */}
@@ -1037,6 +1061,53 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                   onChange={(e) => setEditPaymentInstructions(e.target.value)}
                   className="flex min-h-24 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
                 />
+              </div>
+
+              {/* Platform & Billing Audit Section */}
+              <div className="mt-4 pt-4 border-t border-border/40 space-y-3 bg-muted/20 p-4 rounded-xl border border-border/30">
+                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                  Platform & Billing Audit
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-xs leading-normal">
+                  <div>
+                    <p className="text-muted-foreground font-medium">Subscription State</p>
+                    <p className="font-semibold text-foreground flex items-center gap-1.5 mt-0.5">
+                      {editingTutor.subscriptionStatus === "active" || editingTutor.subscriptionStatus === "trialing" ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-600">
+                          <CheckCircle className="size-3.5" /> Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-rose-600">
+                          <XCircle className="size-3.5" /> Inactive
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground font-medium">Billing Period End</p>
+                    <p className="font-semibold text-foreground mt-0.5">
+                      {formatDate(editingTutor.subscriptionCurrentPeriodEnd)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground font-medium">Lesson volume (Gross)</p>
+                    <p className="font-semibold text-foreground mt-0.5">
+                      {formatMoney(editingTutor.lessonVolumeCents, editingTutor.currency)} ({editingTutor.lessonCount} bookings)
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground font-medium">Storefront volume (Gross)</p>
+                    <p className="font-semibold text-foreground mt-0.5">
+                      {formatMoney(editingTutor.resourceVolumeCents, editingTutor.currency)} ({editingTutor.resourceCount} downloads)
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground font-medium">Stripe connected account ID</p>
+                    <p className="font-mono text-[10px] text-foreground bg-background p-2 rounded-lg border border-border/60 select-all mt-1.5">
+                      {editingTutor.stripeAccountId || "Not Connected"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-4 mt-6">

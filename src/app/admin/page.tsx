@@ -150,6 +150,21 @@ export default async function AdminDashboardPage() {
     studentName: s.student_name,
   }));
 
+  const studentEmails = new Set(rawStudents.map((s) => s.parent_email?.toLowerCase()).filter(Boolean));
+
+  const pendingOnboardingUsers = authUsers.filter((u) => {
+    const email = u.email?.toLowerCase();
+    if (!email) return false;
+    const hasProfile = rawProfiles.some((p) => p.id === u.id);
+    const isStudent = studentEmails.has(email);
+    return !hasProfile && !isStudent;
+  }).map((u) => ({
+    id: u.id,
+    email: u.email || "No email",
+    createdAt: u.created_at,
+    name: u.user_metadata?.display_name || u.user_metadata?.full_name || "New SignUp",
+  }));
+
   // Create helper structures for fast lookups
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email]));
   
@@ -235,6 +250,7 @@ export default async function AdminDashboardPage() {
             supportTickets={rawTickets}
             notices={rawNotices}
             studentsList={studentsList}
+            pendingOnboardingUsers={pendingOnboardingUsers}
           />
         </div>
 

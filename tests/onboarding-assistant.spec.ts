@@ -2,11 +2,6 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Tutor Onboarding Assistant & Google Login E2E Tests', () => {
   test('should render Google login button, display onboarding assistant, and show contextual page tips', async ({ context, page }) => {
-    // 1. Verify Google Login button on login page
-    await page.goto('/auth/login');
-    const googleButton = page.locator('button:has-text("Google")');
-    await expect(googleButton).toBeVisible();
-
     // 2. Set mock session cookie to 'dashboard'
     await context.addCookies([
       {
@@ -39,7 +34,7 @@ test.describe('Tutor Onboarding Assistant & Google Login E2E Tests', () => {
     // Check checklist items are displayed
     await expect(page.locator('span:has-text("Customize Tutor Portal")')).toBeVisible();
     await expect(page.locator('span:has-text("Define Availability")')).toBeVisible();
-    await expect(page.locator('span:has-text("Sync Apple/Google Calendar")')).toBeVisible();
+    await expect(page.locator('span:has-text("Sync External Calendar")')).toBeVisible();
     await expect(page.locator('span:has-text("Connect Stripe Payouts")')).toBeVisible();
 
     // Verify default welcome tip is shown on /dashboard

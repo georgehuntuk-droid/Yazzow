@@ -190,43 +190,7 @@ export function CalendarSyncPanel({ settings, googleConfigured }: CalendarSyncPa
           </ul>
         </div>
 
-        <div className="space-y-4 border-t border-border/60 pt-6">
-          <div>
-            <h3 className="text-sm font-semibold">Google Calendar</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              New bookings are added to your Google Calendar as events (one-way sync).
-            </p>
-          </div>
-          {googleConfigured ? (
-            settings.googleConnected ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  <Check className="size-3.5" />
-                  Connected
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={loading}
-                  onClick={handleDisconnectGoogle}
-                >
-                  Disconnect
-                </Button>
-              </div>
-            ) : (
-              <Button size="sm" render={<Link href="/api/calendar/google/connect" />}>
-                <ExternalLink className="size-4" data-icon="inline-start" />
-                Connect Google Calendar
-              </Button>
-            )
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Google sync requires <code className="text-xs">GOOGLE_CLIENT_ID</code> and{" "}
-              <code className="text-xs">GOOGLE_CLIENT_SECRET</code> in your environment.
-            </p>
-          )}
-        </div>
+
       </CardContent>
     </Card>
   );

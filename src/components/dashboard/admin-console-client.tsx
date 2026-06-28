@@ -81,6 +81,13 @@ type AdminStudentData = {
   studentName: string;
 };
 
+type AdminPendingUserData = {
+  id: string;
+  email: string;
+  createdAt: string;
+  name: string;
+};
+
 type AdminConsoleClientProps = {
   tutors: AdminTutorData[];
   platformStats?: unknown;
@@ -88,6 +95,7 @@ type AdminConsoleClientProps = {
   supportTickets: SupportTicket[];
   notices: AdminNotice[];
   studentsList?: AdminStudentData[];
+  pendingOnboardingUsers?: AdminPendingUserData[];
 };
 
 export function AdminConsoleClient({ 
@@ -95,7 +103,8 @@ export function AdminConsoleClient({
   isServiceRoleConfigured = true, 
   supportTickets = [], 
   notices = [],
-  studentsList = []
+  studentsList = [],
+  pendingOnboardingUsers = []
 }: AdminConsoleClientProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
@@ -116,6 +125,7 @@ export function AdminConsoleClient({
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
   const [ticketReplyText, setTicketReplyText] = useState<Record<string, string>>({});
   const [isReplyingId, setIsReplyingId] = useState<string | null>(null);
+  const [pendingSearch, setPendingSearch] = useState("");
 
   // Edit Tutor-specific states
   const [editingTutor, setEditingTutor] = useState<AdminTutorData | null>(null);
@@ -382,6 +392,15 @@ export function AdminConsoleClient({
       return true;
     });
 
+  // Pending Onboarding users filter
+  const filteredPending = pendingOnboardingUsers.filter((u) => {
+    return (
+      u.email.toLowerCase().includes(pendingSearch.toLowerCase()) ||
+      u.name.toLowerCase().includes(pendingSearch.toLowerCase()) ||
+      u.id.toLowerCase().includes(pendingSearch.toLowerCase())
+    );
+  });
+
   const renderTicketCard = (ticket: SupportTicket) => {
     const isLoading = actionLoadingId === ticket.id && isPending;
     const draftNotes = editingNotesText[ticket.id] ?? ticket.admin_notes ?? "";
@@ -600,6 +619,9 @@ export function AdminConsoleClient({
           </TabsTrigger>
           <TabsTrigger value="closed_tickets" className="rounded-lg px-4 font-semibold">
             Closed Tickets ({supportTickets.filter(t => t.status === "resolved" || t.status === "closed").length})
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="rounded-lg px-4 font-semibold">
+            Pending Onboarding ({pendingOnboardingUsers.length})
           </TabsTrigger>
           <TabsTrigger value="notices" className="rounded-lg px-4 font-semibold">
             Notice Board ({notices.length})
@@ -973,6 +995,84 @@ export function AdminConsoleClient({
               </Card>
             ) : (
               filteredClosedTickets.map((ticket) => renderTicketCard(ticket))
+            )}
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="pending" className="space-y-6 outline-none">
+        <div className="space-y-6">
+          {/* Pending Onboarding Search */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search registered users by email or user ID..."
+                className="pl-10"
+                value={pendingSearch}
+                onChange={(e) => setPendingSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Pending Users Listing */}
+          <div className="space-y-4">
+            {filteredPending.length === 0 ? (
+              <Card className="yazz-surface border-dashed p-10 text-center">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-muted-foreground">No pre-onboarded/pending onboarding users match your search.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <table className="min-w-full divide-y divide-border text-sm leading-normal">
+                  <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-6 py-3.5 text-left">User Profile</th>
+                      <th className="px-6 py-3.5 text-left">Registered At</th>
+                      <th className="px-6 py-3.5 text-left">Supabase Auth ID</th>
+                      <th className="px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border text-foreground font-medium bg-card">
+                    {filteredPending.map((user) => {
+                      const isLoading = actionLoadingId === user.id && isPending;
+                      return (
+                        <tr key={user.id} className="hover:bg-muted/10 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-semibold">{user.name}</div>
+                            <div className="text-xs text-muted-foreground">{user.email}</div>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground">
+                            {formatDate(user.createdAt)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded select-all font-mono">
+                              {user.id}
+                            </code>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => handleDeleteTutor(user.id, user.email)}
+                              className="h-8 size-8 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
+                              title="Delete user completely"
+                            >
+                              {isLoading ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="size-4" />
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

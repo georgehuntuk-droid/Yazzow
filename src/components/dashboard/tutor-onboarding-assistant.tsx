@@ -142,8 +142,8 @@ export function TutorOnboardingAssistant({ status }: TutorOnboardingAssistantPro
     },
     {
       id: "calendar",
-      title: "Sync Apple/Google Calendar",
-      desc: "Link calendar so bookings sync automatically",
+      title: "Sync External Calendar",
+      desc: "Subscribe to calendar feed on your phone",
       completed: status.isCalendarSynced,
       href: "/dashboard/schedule",
       icon: Calendar,

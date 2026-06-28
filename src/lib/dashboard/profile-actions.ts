@@ -148,19 +148,65 @@ export async function updatePortalProfile(input: {
     .update(updatePayload)
     .eq("id", profile.id);
 
-  if (error && (error.code === "42703" || error.message.includes("payment_reminder") || error.message.includes("automated_lesson_reminders"))) {
-    delete updatePayload.payment_reminder_amount_threshold_cents;
-    delete updatePayload.payment_reminder_days_after;
-    delete updatePayload.automated_lesson_reminders;
-    const retryRes = await supabase
-      .from("tutor_profiles")
-      .update(updatePayload)
-      .eq("id", profile.id);
-    if (retryRes.error) {
-      return { ok: false as const, error: formatSupabaseError(retryRes.error.message) };
+  if (error) {
+    const isColumnError = 
+      error.code === "42703" || 
+      error.message.includes("column") || 
+      error.message.includes("Could not find the");
+
+    if (isColumnError) {
+      const msg = error.message.toLowerCase();
+      const optionalColumns = [
+        "bank_account_number",
+        "bank_sort_code",
+        "bank_name",
+        "country",
+        "payment_reminder_amount_threshold_cents",
+        "payment_reminder_days_after",
+        "automated_lesson_reminders"
+      ];
+
+      let modified = false;
+      for (const col of optionalColumns) {
+        if (msg.includes(col.toLowerCase())) {
+          delete updatePayload[col];
+          modified = true;
+        }
+      }
+
+      // If we couldn't parse the specific column, strip all optional columns to be safe
+      if (!modified) {
+        for (const col of optionalColumns) {
+          delete updatePayload[col];
+        }
+      }
+
+      const retryRes = await supabase
+        .from("tutor_profiles")
+        .update(updatePayload)
+        .eq("id", profile.id);
+
+      if (retryRes.error) {
+        // Fallback to absolute minimum core columns guaranteed to exist
+        const corePayload = {
+          display_name: updatePayload.display_name,
+          headline: updatePayload.headline,
+          bio: updatePayload.bio,
+          lesson_price_cents: updatePayload.lesson_price_cents,
+          currency: updatePayload.currency,
+        };
+        const secondRetryRes = await supabase
+          .from("tutor_profiles")
+          .update(corePayload)
+          .eq("id", profile.id);
+        
+        if (secondRetryRes.error) {
+          return { ok: false as const, error: formatSupabaseError(secondRetryRes.error.message) };
+        }
+      }
+    } else {
+      return { ok: false as const, error: formatSupabaseError(error.message) };
     }
-  } else if (error) {
-    return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 
   await revalidatePortal(profile.username);

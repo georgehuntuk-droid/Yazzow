@@ -76,15 +76,27 @@ export type AdminNotice = {
   created_at: string;
 };
 
+type AdminStudentData = {
+  parentEmail: string;
+  studentName: string;
+};
+
 type AdminConsoleClientProps = {
   tutors: AdminTutorData[];
   platformStats?: unknown;
   isServiceRoleConfigured?: boolean;
   supportTickets: SupportTicket[];
   notices: AdminNotice[];
+  studentsList?: AdminStudentData[];
 };
 
-export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, supportTickets = [], notices = [] }: AdminConsoleClientProps) {
+export function AdminConsoleClient({ 
+  tutors, 
+  isServiceRoleConfigured = true, 
+  supportTickets = [], 
+  notices = [],
+  studentsList = []
+}: AdminConsoleClientProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
   const [isPending, startTransition] = useTransition();
@@ -377,6 +389,9 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
     const matchedTutor = tutors.find(
       (t) => t.email.toLowerCase() === ticket.email.toLowerCase()
     );
+    const matchedStudent = !matchedTutor && (studentsList ?? []).find(
+      (s) => s.parentEmail.toLowerCase() === ticket.email.toLowerCase()
+    );
 
     return (
       <Card key={ticket.id} className="yazz-surface">
@@ -392,6 +407,21 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                 <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
                   {ticket.category}
                 </Badge>
+                {matchedTutor && (
+                  <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10 text-[9px] uppercase font-bold py-0 h-4.5 px-1.5 rounded">
+                    Tutor
+                  </Badge>
+                )}
+                {matchedStudent && (
+                  <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 hover:bg-blue-500/10 text-[9px] uppercase font-bold py-0 h-4.5 px-1.5 rounded">
+                    Student/Parent
+                  </Badge>
+                )}
+                {!matchedTutor && !matchedStudent && (
+                  <Badge variant="outline" className="text-muted-foreground text-[9px] uppercase font-bold py-0 h-4.5 px-1.5 rounded">
+                    Guest/Visitor
+                  </Badge>
+                )}
                 <Badge 
                   className={cn(
                     "text-[10px] font-bold",
@@ -425,6 +455,13 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                   >
                     <Globe className="size-3" /> View Portal
                   </Link>
+                </div>
+              )}
+              {matchedStudent && (
+                <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                  <Badge variant="secondary" className="text-[9px] bg-blue-500/10 text-blue-600 hover:bg-blue-500/10 font-bold py-0 h-4.5 px-1.5 rounded">
+                    Student Matches Parent: {matchedStudent.studentName}
+                  </Badge>
                 </div>
               )}
             </div>

@@ -39,8 +39,21 @@ export async function POST(request: Request) {
     const user = await safeGetAuthUser();
     const admin = createAdminClient();
 
+    let tutorId = null;
+    if (user) {
+      // Only set tutor_id if the user actually has a tutor profile
+      const { data: profile } = await admin
+        .from("tutor_profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile) {
+        tutorId = user.id;
+      }
+    }
+
     const { error } = await admin.from("support_tickets").insert({
-      tutor_id: user?.id || null,
+      tutor_id: tutorId,
       name,
       email,
       category,

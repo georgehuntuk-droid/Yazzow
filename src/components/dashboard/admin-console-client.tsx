@@ -32,6 +32,7 @@ import {
   adminUpdateTutorProfile,
   createAdminNoticeAction,
   deleteAdminNoticeAction,
+  replyToSupportTicketAction,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -101,6 +102,8 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
   const [closedSubFilter, setClosedSubFilter] = useState<"all" | "resolved" | "closed">("all");
   const [editingNotesText, setEditingNotesText] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
+  const [ticketReplyText, setTicketReplyText] = useState<Record<string, string>>({});
+  const [isReplyingId, setIsReplyingId] = useState<string | null>(null);
 
   // Edit Tutor-specific states
   const [editingTutor, setEditingTutor] = useState<AdminTutorData | null>(null);
@@ -200,6 +203,34 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
         setActionLoadingId(null);
       }
     });
+  };
+
+  const handleSendTicketReply = async (ticket: SupportTicket) => {
+    const text = ticketReplyText[ticket.id]?.trim();
+    if (!text) return;
+
+    setIsReplyingId(ticket.id);
+    try {
+      const res = await replyToSupportTicketAction({
+        ticketId: ticket.id,
+        name: ticket.name,
+        email: ticket.email,
+        category: ticket.category,
+        originalMessage: ticket.message,
+        replyMessage: text,
+      });
+
+      if (res.ok) {
+        setTicketReplyText(prev => ({ ...prev, [ticket.id]: "" }));
+        alert("Reply sent successfully via email!");
+      } else {
+        alert(`Failed to send reply: ${res.error}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error sending reply");
+    } finally {
+      setIsReplyingId(null);
+    }
   };
 
   const handleCreateNotice = async (e: React.FormEvent) => {
@@ -478,6 +509,40 @@ export function AdminConsoleClient({ tutors, isServiceRoleConfigured = true, sup
                 onClick={() => handleSaveTicketNotes(ticket.id)}
               >
                 {isNotesSaving ? "Saving..." : "Save Note"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Reply to Customer section */}
+          <div className="space-y-2 border-t border-border/40 pt-4">
+            <label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+              Reply to Customer (Will email them directly)
+            </label>
+            <div className="flex flex-col gap-2.5">
+              <textarea
+                value={ticketReplyText[ticket.id] ?? ""}
+                onChange={(e) => setTicketReplyText(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                placeholder="Write your email response back to the customer... Ticket ID will be quoted automatically."
+                className="flex min-h-24 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={isReplyingId === ticket.id || !(ticketReplyText[ticket.id]?.trim())}
+                className="self-start gap-1.5 font-semibold text-white bg-primary hover:bg-primary/90"
+                onClick={() => handleSendTicketReply(ticket)}
+              >
+                {isReplyingId === ticket.id ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Sending Reply...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="size-3.5" />
+                    Send Email Reply
+                  </>
+                )}
               </Button>
             </div>
           </div>

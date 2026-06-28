@@ -214,3 +214,53 @@ export async function deleteAdminNoticeAction(noticeId: string) {
   return { ok: true as const };
 }
 
+/** Sends an email reply back to the support ticket author. */
+export async function replyToSupportTicketAction(payload: {
+  ticketId: string;
+  name: string;
+  email: string;
+  category: string;
+  originalMessage: string;
+  replyMessage: string;
+}) {
+  await requireAdmin();
+
+  // 1. Send the email via Resend
+  const { sendSupportTicketReplyEmail } = await import("@/lib/notifications/support-email");
+  
+  try {
+    await sendSupportTicketReplyEmail(payload);
+  } catch (err) {
+    return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  // 2. Append reply details to the admin notes in database for audit logs
+  const admin = createAdminClient();
+  const { data: ticket } = await admin
+    .from("support_tickets")
+    .select("admin_notes")
+    .eq("id", payload.ticketId)
+    .maybeSingle();
+
+  const timestamp = new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const newNotes = [
+    ticket?.admin_notes || "",
+    `--- Sent Reply (${timestamp}) ---\n${payload.replyMessage.trim()}`
+  ].filter(Boolean).join("\n\n");
+
+  const { error } = await admin
+    .from("support_tickets")
+    .update({ 
+      admin_notes: newNotes, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq("id", payload.ticketId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
+

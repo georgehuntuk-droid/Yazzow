@@ -138,6 +138,78 @@ export async function sendSupportTicketConfirmationEmail(
   }
 }
 
+export async function sendSupportTicketReplyEmail(payload: {
+  ticketId: string;
+  name: string;
+  email: string;
+  category: string;
+  originalMessage: string;
+  replyMessage: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("Support email is not configured yet (missing RESEND_API_KEY).");
+  }
+
+  const inbox = getSupportInboxEmail();
+  const from =
+    process.env.RESEND_FROM_EMAIL?.trim() ?? `${BRAND_NAME} Support <support@${publicSiteHost()}>`;
+  const categoryLabel = CATEGORY_LABELS[payload.category] ?? payload.category;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: payload.email,
+      reply_to: inbox,
+      subject: `Re: [Yazzow Support] Ticket #${payload.ticketId.slice(0, 8)} - ${categoryLabel}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <!-- Logo Header -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+          </div>
+          
+          <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Support Update</h2>
+          
+          <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; font-family: sans-serif;">
+            Hi ${escapeHtml(payload.name)},
+          </p>
+          
+          <div style="font-size: 15px; line-height: 1.6; color: #0f172a; font-family: sans-serif; white-space: pre-wrap; margin-bottom: 24px; padding: 4px 0;">
+${escapeHtml(payload.replyMessage)}
+          </div>
+          
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; font-size: 13px;">
+            <p style="font-size: 13px; font-weight: 700; color: #475569; margin: 0 0 10px 0; font-family: sans-serif;">
+              Original Request (Ticket #${payload.ticketId.slice(0, 8)}):
+            </p>
+            <p style="font-size: 12px; color: #64748b; margin: 0 0 6px 0; font-family: sans-serif;">
+              <strong>Category:</strong> ${escapeHtml(categoryLabel)}
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 12px 0;" />
+            <p style="font-size: 12px; color: #64748b; margin: 0; white-space: pre-wrap; font-family: sans-serif;">
+              ${escapeHtml(payload.originalMessage)}
+            </p>
+          </div>
+          
+          <p style="font-size: 13px; color: #94a3b8; text-align: center; font-family: sans-serif; margin-top: 32px;">
+            You can reply directly to this email if you have any follow-up questions.
+          </p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to send support reply email (${response.status}).`);
+  }
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")

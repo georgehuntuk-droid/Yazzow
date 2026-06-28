@@ -103,20 +103,42 @@ export async function completeOnboarding(input: OnboardingInput) {
     return { ok: false as const, error: "That username is already taken." };
   }
 
-  const { data, error } = await supabase
+  const insertPayload: any = {
+    id: user.id,
+    username: input.username,
+    display_name: input.displayName.trim(),
+    headline: input.headline?.trim() || null,
+    bio: input.bio?.trim() || null,
+    lesson_price_cents: 4500,
+    currency: input.currency || "gbp",
+    country: input.country || null,
+  };
+
+  let { data, error } = await supabase
     .from("tutor_profiles")
-    .insert({
-      id: user.id,
-      username: input.username,
-      display_name: input.displayName.trim(),
-      headline: input.headline?.trim() || null,
-      bio: input.bio?.trim() || null,
-      lesson_price_cents: 4500,
-      currency: input.currency || "gbp",
-      country: input.country || null,
-    })
+    .insert(insertPayload)
     .select("*")
-    .single();
+    .maybeSingle();
+
+  if (error) {
+    const isColumnError =
+      error.code === "42703" ||
+      error.message.includes("column") ||
+      error.message.includes("Could not find the");
+
+    if (isColumnError) {
+      delete insertPayload.country;
+
+      const retryRes = await supabase
+        .from("tutor_profiles")
+        .insert(insertPayload)
+        .select("*")
+        .maybeSingle();
+
+      data = retryRes.data;
+      error = retryRes.error;
+    }
+  }
 
   if (error || !data) {
     return {

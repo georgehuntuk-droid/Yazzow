@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Sparkles, Loader2, ArrowRight, ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -38,8 +39,37 @@ export function LessonPackagesTab({
 
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkSession() {
+      if (isDemo) return;
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          setEmail(session.user.email);
+          setIsLoggedIn(true);
+
+          // Get the student's name if they exist in the DB
+          const response = await fetch(
+            `/api/tutor/credits?email=${encodeURIComponent(session.user.email.trim())}&tutorId=${tutor.id}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.studentName) {
+              setStudentName(data.studentName);
+            }
+          }
+        }
+      } catch {
+        // ignore session load errors
+      }
+    }
+    void checkSession();
+  }, [isDemo, tutor.id]);
 
   const hasCustomPackages = packages && packages.length > 0;
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(() => {
@@ -206,7 +236,7 @@ export function LessonPackagesTab({
               </li>
               <li className="flex items-start gap-2 leading-relaxed">
                 <span className="text-primary font-bold mt-0.5">•</span>
-                <span>Credits are stored under your parent email address securely.</span>
+                <span>Credits are stored under your email address securely.</span>
               </li>
             </ul>
           </div>
@@ -214,20 +244,35 @@ export function LessonPackagesTab({
           {/* Checkout Input Controls */}
           <div className="border-t border-border/60 pt-5 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label htmlFor="package-parent-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Parent Email Address
-                </label>
-                <Input
-                  id="package-parent-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@family.com"
-                  className="h-10 bg-background"
-                />
-              </div>
+              {isLoggedIn ? (
+                <div className="rounded-xl bg-primary/5 border border-primary/20 p-3.5 flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+                      Account Email
+                    </span>
+                    <span className="text-sm font-bold text-foreground">{email}</span>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-200/60 shadow-sm">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Signed In
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label htmlFor="package-parent-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  <Input
+                    id="package-parent-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="h-10 bg-background"
+                  />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label htmlFor="package-student-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Student Name (optional)

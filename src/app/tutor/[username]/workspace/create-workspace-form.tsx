@@ -96,7 +96,7 @@ export function CreateWorkspaceForm({
             
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                Parent Email
+                Email Address
               </label>
               <Input
                 type="email"

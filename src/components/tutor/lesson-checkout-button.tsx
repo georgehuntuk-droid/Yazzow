@@ -227,7 +227,7 @@ export function LessonCheckoutButton({
       ) : (
         <div className="space-y-1.5">
           <label htmlFor="parent-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Parent Email Address
+            Email Address
           </label>
           <div className="relative">
             <Input
@@ -242,7 +242,7 @@ export function LessonCheckoutButton({
                 }
               }}
               onBlur={(e) => handleCheckCredits(e.target.value)}
-              placeholder="you@family.com"
+              placeholder="you@example.com"
               className="h-10 bg-background"
             />
           </div>
@@ -309,7 +309,7 @@ export function LessonCheckoutButton({
                 >
                   <span className="flex items-center justify-center gap-1.5">
                     💵
-                    Pay Directly
+                    Bank Transfer / Cash
                   </span>
                 </button>
               </div>
@@ -407,7 +407,7 @@ export function LessonCheckoutButton({
             <span className="inline-flex items-center gap-1.5">
               {paymentMethod === "cash" ? (
                 <>
-                  Confirm Booking (Cash/Direct)
+                  Confirm Booking (Bank/Cash)
                 </>
               ) : (
                 <>
@@ -447,7 +447,7 @@ export function LessonCheckoutButton({
               Direct/Cash Booking
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              This slot is reserved instantly on the calendar. You will pay your tutor directly via cash, bank transfer, or their preferred method.
+              This slot is reserved instantly on the calendar. You will pay your tutor directly via bank transfer, cash, or their preferred method.
             </p>
           </div>
         </div>

@@ -75,10 +75,10 @@ export function JoinTutorFamily({
                 Connected with {tutor.displayName}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Active parent account for: <strong className="text-foreground font-semibold">{studentNames}</strong>
+                Active account for: <strong className="text-foreground font-semibold">{studentNames}</strong>
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Linked parent email: <code className="bg-muted px-1 py-0.2 rounded font-mono">{currentUserEmail}</code>
+                Linked email: <code className="bg-muted px-1 py-0.2 rounded font-mono">{currentUserEmail}</code>
               </p>
             </div>
           </div>
@@ -102,10 +102,10 @@ export function JoinTutorFamily({
         </div>
         <div className="space-y-1 max-w-md mx-auto">
           <h2 className="font-heading text-lg font-semibold text-foreground">
-            Access Parent Portal & Workspace
+            Access Portal & Workspace
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Log in or sign up to access your child's lessons, homework assignments, test credits, and chat directly with {tutor.displayName}.
+            Log in or sign up to access your lessons, homework assignments, test credits, and chat directly with {tutor.displayName}.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-xs mx-auto pt-1">
@@ -141,7 +141,7 @@ export function JoinTutorFamily({
       </div>
 
       <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
-        You are logged in as <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px]">{currentUserEmail}</code>. Enter your child's name below to link and activate their student workspace.
+        You are logged in as <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px]">{currentUserEmail}</code>. Enter your name below to link and activate your student workspace.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 max-w-lg">
@@ -159,7 +159,7 @@ export function JoinTutorFamily({
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-            Parent Email
+            Email Address
           </label>
           <Input
             type="email"

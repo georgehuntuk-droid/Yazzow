@@ -115,4 +115,19 @@ test.describe('Landing Page & Navigation', () => {
     // Verify success message is displayed
     await expect(page.locator('text=Message sent')).toBeVisible();
   });
+
+  test('should load the security overview page and verify elements', async ({ page }) => {
+    // Go to the security page
+    await page.goto('/security');
+
+    // Verify title and page header
+    await expect(page).toHaveTitle(/Security/i);
+    await expect(page.locator('h1:has-text("Security Overview")')).toBeVisible();
+
+    // Verify key sections are visible
+    await expect(page.locator('h3:has-text("Flexible Access Controls")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Encrypted Passwords")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Multi-Factor Authentication")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Secure Server Infrastructure")')).toBeVisible();
+  });
 });

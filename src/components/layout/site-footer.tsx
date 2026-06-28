@@ -67,6 +67,11 @@ export function SiteFooter() {
                 Refund Policy
               </Link>
             </li>
+            <li>
+              <Link href="/security" className="transition hover:text-primary">
+                Security
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

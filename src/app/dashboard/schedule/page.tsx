@@ -5,6 +5,9 @@ import { getSlotsForTutorOwner } from "@/lib/tutors/portal-data";
 import { ScheduleClientContainer } from "@/components/dashboard/schedule-client-container";
 import { DashboardShell } from "@/components/layout/page-header";
 import { BRAND_NAME } from "@/lib/constants";
+import { getTutorCalendarSettings } from "@/lib/calendar/queries";
+import { isGoogleCalendarConfigured } from "@/lib/calendar/google";
+import { CalendarSyncPanel } from "@/components/dashboard/calendar-sync-panel";
 
 export const metadata = {
   title: `Schedule Builder · ${BRAND_NAME}`,
@@ -12,12 +15,19 @@ export const metadata = {
 
 export default async function SchedulePage() {
   const { profile } = await requireTutorProfile();
-  let slots: any[] = [];
-  try {
-    slots = await getSlotsForTutorOwner(profile.id);
-  } catch (err) {
-    console.error("Error fetching slots in SchedulePage:", err);
-  }
+  
+  const [slots, calendarSettings] = await Promise.all([
+    getSlotsForTutorOwner(profile.id).catch((err) => {
+      console.error("Error fetching slots in SchedulePage:", err);
+      return [];
+    }),
+    getTutorCalendarSettings(profile.id).catch((err) => {
+      console.error("Error fetching calendar settings in SchedulePage:", err);
+      return null;
+    }),
+  ]);
+
+  const googleConfigured = isGoogleCalendarConfigured();
 
   return (
     <DashboardShell>
@@ -41,6 +51,11 @@ export default async function SchedulePage() {
 
         {/* Collapsible schedule container */}
         <ScheduleClientContainer slots={slots} profile={profile} />
+
+        {/* Calendar Sync integration panel */}
+        <div className="mt-8">
+          <CalendarSyncPanel settings={calendarSettings} googleConfigured={googleConfigured} />
+        </div>
       </div>
     </DashboardShell>
   );

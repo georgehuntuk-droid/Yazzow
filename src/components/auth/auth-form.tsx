@@ -112,6 +112,28 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred during Google sign-in.");
+      setLoading(false);
+    }
+  }
+
+
   return (
     <Card className="yazz-surface border-primary/10 shadow-[0_8px_32px_oklch(0.42_0.15_286/0.1)] overflow-hidden">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
@@ -265,6 +287,31 @@ export function AuthForm({ mode }: AuthFormProps) {
             )}
           </Button>
         </form>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-10 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer border-border hover:bg-muted"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+        >
+          <svg className="size-4" viewBox="0 0 24 24">
+            <path
+              fill="#EA4335"
+              d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5a5.99 5.99 0 0 1 5.991-6.014c1.558 0 2.978.593 4.053 1.564l3.12-3.12A9.957 9.957 0 0 0 13.991 2C8.473 2 4 6.473 4 12s4.473 10 9.991 10c5.782 0 9.61-4.064 9.61-9.782 0-.64-.055-1.258-.163-1.933H12.24Z"
+            />
+          </svg>
+          Google
+        </Button>
 
 
 

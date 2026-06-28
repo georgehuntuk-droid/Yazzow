@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { isPlatformAdminUser } from "@/lib/auth/platform-admin";
 import { requireUser } from "@/lib/auth/session";
-import { getTutorProfileForUser } from "@/lib/tutors/queries";
+import { getTutorProfileForUser, getTutorOnboardingStatus } from "@/lib/tutors/queries";
+import { TutorOnboardingAssistant } from "@/components/dashboard/tutor-onboarding-assistant";
 
 import type { Metadata } from "next";
 
@@ -45,10 +46,16 @@ export default async function DashboardLayout({
     }
   }
 
+  const onboardingStatus = await getTutorOnboardingStatus(profile.id);
+
   return (
     <div className="flex min-h-full flex-col bg-background lg:flex-row">
       <DashboardNav isAdmin={isAdmin} />
-      <div className="flex min-h-full flex-1 flex-col">{children}</div>
+      <div className="flex min-h-full flex-1 flex-col">
+        {children}
+        <TutorOnboardingAssistant status={onboardingStatus} />
+      </div>
     </div>
   );
 }
+

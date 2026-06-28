@@ -353,16 +353,12 @@ export function TwoWeekCalendar({
     setErrorMsg(null);
     setSuccessMsg(null);
     
-    // Choose default payment method for student
+    // Choose default payment method for student: either credits or bank transfer/cash
     const canUseCredit = (studentCredits ?? 0) - 1 >= -(creditLimit ?? 0);
     if (canUseCredit) {
       setPaymentMethod("credit");
-    } else if (paymentsEnabled) {
-      setPaymentMethod("card");
-    } else if (tutor.allowCashPayments !== false) {
-      setPaymentMethod("cash");
     } else {
-      setPaymentMethod("card");
+      setPaymentMethod("cash");
     }
   };
 
@@ -1200,25 +1196,6 @@ export function TwoWeekCalendar({
                                );
                              })()}
 
-                            {/* Card Option */}
-                            {paymentsEnabled && (
-                              <button
-                                type="button"
-                                className={cn(
-                                  "flex items-center justify-between p-3.5 border rounded-xl text-left transition-all duration-200 cursor-pointer text-xs font-bold",
-                                  paymentMethod === "card"
-                                    ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/30"
-                                    : "border-border bg-card hover:bg-muted/50 text-foreground"
-                                )}
-                                onClick={() => setPaymentMethod("card")}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <CreditCard className="size-4 text-primary" />
-                                  <span>Pay with Debit/Credit Card</span>
-                                </span>
-                              </button>
-                            )}
-
                             {/* Cash Option */}
                             {tutor.allowCashPayments !== false && (
                               <button
@@ -1248,8 +1225,8 @@ export function TwoWeekCalendar({
                           onClick={() => handleStudentBookSlot(selectedSlot)}
                         >
                           {actionLoading 
-                            ? "Booking Lesson..." 
-                            : (paymentMethod === "card" ? "Pay & Book Lesson" : "Confirm Booking")}
+                             ? "Booking Lesson..." 
+                             : "Confirm Booking"}
                         </Button>
                       </div>
                     </div>

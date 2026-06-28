@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "crypto";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -29,14 +30,24 @@ export async function getTutorCalendarSettings(
     .eq("id", tutorId)
     .maybeSingle();
 
-  if (error || !data?.calendar_feed_token) return null;
+  if (error) return null;
 
-  const feedUrl = `${PUBLIC_SITE_URL}/api/calendar/${data.calendar_feed_token}`;
+  let feedToken = data?.calendar_feed_token;
+  if (!feedToken) {
+    feedToken = randomUUID();
+    const { error: updateError } = await supabase
+      .from("tutor_profiles")
+      .update({ calendar_feed_token: feedToken })
+      .eq("id", tutorId);
+    if (updateError) return null;
+  }
+
+  const feedUrl = `${PUBLIC_SITE_URL}/api/calendar/${feedToken}`;
   const webcalUrl = feedUrl.replace(/^https:/, "webcal:");
 
   return {
-    feedToken: data.calendar_feed_token,
-    googleConnected: Boolean(data.google_refresh_token),
+    feedToken,
+    googleConnected: Boolean(data?.google_refresh_token),
     feedUrl,
     webcalUrl,
   };

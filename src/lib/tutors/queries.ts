@@ -151,3 +151,103 @@ export async function getPackagesForTutor(tutorId: string): Promise<TutorPackage
     return [];
   }
 }
+
+export type OnboardingProgress = {
+  isProfileCustomized: boolean;
+  isScheduleSetup: boolean;
+  isCalendarSynced: boolean;
+  isStripeConnected: boolean;
+  isStorefrontSetup: boolean;
+  totalSteps: number;
+  completedSteps: number;
+};
+
+export async function getTutorOnboardingStatus(
+  tutorId: string,
+): Promise<OnboardingProgress> {
+  const cookieStore = await cookies();
+  const testVal = cookieStore.get("yazzow-test-session")?.value;
+  if (testVal === "dashboard") {
+    return {
+      isProfileCustomized: true,
+      isScheduleSetup: true,
+      isCalendarSynced: true,
+      isStripeConnected: false,
+      isStorefrontSetup: false,
+      totalSteps: 5,
+      completedSteps: 3,
+    };
+  }
+
+  if (!isSupabaseConfigured()) {
+    return {
+      isProfileCustomized: false,
+      isScheduleSetup: false,
+      isCalendarSynced: false,
+      isStripeConnected: false,
+      isStorefrontSetup: false,
+      totalSteps: 5,
+      completedSteps: 0,
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Query profile details
+    const { data: profile } = await supabase
+      .from("tutor_profiles")
+      .select("bio, avatar_url, stripe_account_id, google_refresh_token")
+      .eq("id", tutorId)
+      .maybeSingle();
+
+    // Query availability slot count
+    const { count: slotsCount } = await supabase
+      .from("availability_slots")
+      .select("id", { count: "exact", head: true })
+      .eq("tutor_id", tutorId);
+
+    // Query storefront digital resources count
+    const { count: resourcesCount } = await supabase
+      .from("digital_resources")
+      .select("id", { count: "exact", head: true })
+      .eq("tutor_id", tutorId);
+
+    const isProfileCustomized = !!(profile?.bio && profile.bio.trim().length > 0) || !!profile?.avatar_url;
+    const isScheduleSetup = (slotsCount ?? 0) > 0;
+    const isCalendarSynced = !!profile?.google_refresh_token;
+    const isStripeConnected = !!profile?.stripe_account_id;
+    const isStorefrontSetup = (resourcesCount ?? 0) > 0;
+
+    const completedSteps = [
+      isProfileCustomized,
+      isScheduleSetup,
+      isCalendarSynced,
+      isStripeConnected,
+      isStorefrontSetup,
+    ].filter(Boolean).length;
+
+    return {
+      isProfileCustomized,
+      isScheduleSetup,
+      isCalendarSynced,
+      isStripeConnected,
+      isStorefrontSetup,
+      totalSteps: 5,
+      completedSteps,
+    };
+  } catch (err) {
+    console.error("Error in getTutorOnboardingStatus:", err);
+    return {
+      isProfileCustomized: false,
+      isScheduleSetup: false,
+      isCalendarSynced: false,
+      isStripeConnected: false,
+      isStorefrontSetup: false,
+      totalSteps: 5,
+      completedSteps: 0,
+    };
+  }
+}
+
+

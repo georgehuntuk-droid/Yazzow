@@ -115,8 +115,7 @@ export default async function DashboardPage() {
   
   const activeStudentsCount = studentGroups.active.length;
   const openSlotsCount = slots.filter((s) => !s.isBooked && new Date(s.startsAt) > new Date()).length;
-  const rawFirst = (profile.displayName || "").trim().split(/[\s\._]+/)[0] || "there";
-  const firstName = rawFirst.charAt(0).toUpperCase() + rawFirst.slice(1);
+  const displayName = (profile.displayName || "there").trim();
 
   return (
     <DashboardShell>
@@ -125,7 +124,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-heading text-3xl font-black tracking-tight text-foreground selection:bg-blue-100 flex items-center gap-2">
-              Hello {firstName}
+              Hello {displayName}
               <Sparkles className="size-5 text-primary animate-pulse" />
             </h1>
             <p className="text-sm font-semibold text-muted-foreground mt-1">

@@ -324,10 +324,14 @@ export function WorkspaceDashboard({
 
           {/* Render Tab Contents */}
           <div className="space-y-4">
-            {/* 1. Tasks Content: Visible on mobile and desktop if tasks or chat */}
+            {/* 1. Tasks Content: Visible on mobile and desktop if tasks, or only desktop if chat */}
             <div className={cn(
               "space-y-3",
-              (activeTab === "tasks" || activeTab === "chat") ? "block" : "hidden"
+              activeTab === "tasks" 
+                ? "block" 
+                : activeTab === "chat" 
+                  ? "hidden lg:block" 
+                  : "hidden"
             )}>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -356,10 +360,14 @@ export function WorkspaceDashboard({
               </div>
             </div>
 
-            {/* 3. Calendar Content: Visible on mobile and desktop if calendar or info */}
+            {/* 3. Calendar Content: Visible on mobile and desktop if calendar, or only desktop if info */}
             <div className={cn(
               "space-y-3",
-              (activeTab === "calendar" || activeTab === "info") ? "block" : "hidden"
+              activeTab === "calendar" 
+                ? "block" 
+                : activeTab === "info" 
+                  ? "hidden lg:block" 
+                  : "hidden"
             )}>
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">

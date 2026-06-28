@@ -24,10 +24,11 @@ test.describe('Tutor Onboarding Assistant & Google Login E2E Tests', () => {
     const guidePanelHeader = page.locator('h3:has-text("Tutor Setup Guide")');
     const guideBadge = page.locator('button:has-text("Setup Guide")');
     
-    // It should auto-open on dashboard for incomplete setup, but support either badge or header
-    const isHeaderVisible = await guidePanelHeader.isVisible();
-    if (!isHeaderVisible) {
-      await expect(guideBadge).toBeVisible();
+    // Wait for either the guide panel header or the guide badge to appear (hydration complete)
+    await expect(guidePanelHeader.or(guideBadge)).toBeVisible();
+    
+    // If the panel is collapsed (badge visible), click it to open
+    if (await guideBadge.isVisible()) {
       await guideBadge.click();
     }
 

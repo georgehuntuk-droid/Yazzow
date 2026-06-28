@@ -83,11 +83,11 @@ export async function updatePortalProfile(input: {
 
   const { profile } = await requireTutorProfile();
 
-  const displayName = input.displayName.trim();
-  const headline = input.headline.trim();
-  const bio = input.bio.trim();
+  const displayName = input.displayName?.trim() || "";
+  const headline = input.headline?.trim() || "";
+  const bio = input.bio?.trim() || "";
   const lessonPriceCents = parsePriceToCents(input.lessonPrice);
-  const currency = input.currency.toLowerCase() as SupportedCurrency;
+  const currency = input.currency?.toLowerCase() as SupportedCurrency || "gbp";
   const paymentInstructions = input.paymentInstructions?.trim() || null;
 
   if (!displayName) {

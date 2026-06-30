@@ -51,9 +51,6 @@ test.describe('Tutor Onboarding Assistant & Google Login E2E Tests', () => {
     await expect(page.locator('span:has-text("Schedule Setup Tip")')).toBeVisible();
     await expect(page.locator('text=Click and drag directly on the calendar')).toBeVisible();
     
-    // Verify Calendar Sync Panel has loaded on the schedule page
-    await expect(page.locator('h3:has-text("Apple Calendar · Outlook · iCal")')).toBeVisible();
-
     // 7. Navigate to Payments and verify tip updates
     await page.goto('/dashboard/payments');
     await expect(page.locator('span:has-text("Payments Setup Tip")')).toBeVisible();

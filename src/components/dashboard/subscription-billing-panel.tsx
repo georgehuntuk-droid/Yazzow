@@ -91,11 +91,12 @@ export function SubscriptionBillingPanel({
   }
 
   async function handleCancelSubscription() {
-    if (
-      !confirm(
-        "Are you sure you want to cancel your Yazzow subscription? Your portal will remain active until the end of your paid billing cycle, and no further payments will be taken."
-      )
-    ) {
+    const isComp = !subscription.stripeCustomerId;
+    const confirmMsg = isComp
+      ? "Are you sure you want to cancel your complimentary Yazzow membership? This will immediately revert your portal to the inactive status."
+      : "Are you sure you want to cancel your Yazzow subscription? Your portal will remain active until the end of your paid billing cycle, and no further payments will be taken.";
+
+    if (!confirm(confirmMsg)) {
       return;
     }
 
@@ -217,23 +218,27 @@ export function SubscriptionBillingPanel({
               </div>
             )}
 
-            {subscription.stripeCustomerId && !subscription.cancelAtPeriodEnd ? (
+            {subscribed && !subscription.cancelAtPeriodEnd ? (
               <div className="flex flex-col sm:flex-row gap-2.5">
+                {subscription.stripeCustomerId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openPortal}
+                    disabled={loading}
+                    className="h-10 font-medium cursor-pointer"
+                  >
+                    {loading ? "Opening…" : "Manage billing & invoices"}
+                  </Button>
+                )}
                 <Button
-                  variant="outline"
-                  onClick={openPortal}
-                  disabled={loading}
-                  className="h-10 font-medium"
-                >
-                  {loading ? "Opening…" : "Manage billing & invoices"}
-                </Button>
-                <Button
+                  type="button"
                   variant="destructive"
                   onClick={handleCancelSubscription}
                   disabled={loading}
-                  className="h-10 font-medium"
+                  className="h-10 font-medium cursor-pointer"
                 >
-                  {loading ? "Cancelling…" : "Cancel Subscription"}
+                  {loading ? "Cancelling…" : !subscription.stripeCustomerId ? "Cancel Complimentary Membership" : "Cancel Subscription"}
                 </Button>
               </div>
             ) : null}

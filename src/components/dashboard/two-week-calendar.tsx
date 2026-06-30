@@ -99,6 +99,12 @@ export function TwoWeekCalendar({
   const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2" | "week3" | "week4">("week1");
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
+  const [mouseDownY, setMouseDownY] = useState<number | null>(null);
+  const [addSlotModalData, setAddSlotModalData] = useState<{
+    dateKey: string;
+    hour: number;
+    minutes: number;
+  } | null>(null);
 
   const [localSlots, setLocalSlots] = useState<CalendarSlot[]>(slots || []);
 
@@ -106,7 +112,7 @@ export function TwoWeekCalendar({
     setLocalSlots(slots || []);
   }, [slots]);
 
-  const handleMoveSlot = async (slotId: string, targetDateKey: string, targetHour: number) => {
+  const handleMoveSlot = async (slotId: string, targetDateKey: string, targetHour: number, targetMinutes: number = 0) => {
     const slot = localSlots.find(s => s.id === slotId);
     if (!slot) {
       setErrorMsg("Slot not found.");
@@ -124,7 +130,7 @@ export function TwoWeekCalendar({
 
     // Construct local startsAt date based on targetDateKey (YYYY-MM-DD) and targetHour safely
     const [year, month, day] = targetDateKey.split("-").map(Number);
-    const targetStartsAt = new Date(year, month - 1, day, targetHour, 0, 0);
+    const targetStartsAt = new Date(year, month - 1, day, targetHour, targetMinutes, 0);
     
     if (Number.isNaN(targetStartsAt.getTime())) {
       setErrorMsg("Invalid date or hour format.");
@@ -235,9 +241,12 @@ export function TwoWeekCalendar({
     endHour: number;
   } | null>(null);
 
-  const getHourFromY = (y: number) => {
-    const hourOffset = Math.floor(y / hourHeight);
-    return minHour + hourOffset;
+  const getHourAndMinutesFromY = (y: number) => {
+    const rawHours = y / hourHeight;
+    const snappedHours = Math.round(rawHours * 4) / 4; // snap to nearest 15 mins (0.25)
+    const hour = Math.floor(snappedHours);
+    const minutes = Math.round((snappedHours - hour) * 60);
+    return { hour: minHour + hour, minutes };
   };
 
   const handleGridMouseDown = (e: React.MouseEvent<HTMLDivElement>, dateKey: string) => {
@@ -250,13 +259,15 @@ export function TwoWeekCalendar({
     
     const rect = e.currentTarget.getBoundingClientRect();
     const clickY = e.clientY - rect.top;
-    const hour = getHourFromY(clickY);
+    setMouseDownY(clickY);
+    
+    const { hour, minutes } = getHourAndMinutesFromY(clickY);
     
     if (hour >= minHour && hour < maxHour) {
       setDragSelect({
         dateKey,
-        startHour: hour,
-        endHour: hour + 1
+        startHour: hour + minutes / 60,
+        endHour: hour + minutes / 60 + 1 // Default 1 hour
       });
     }
   };
@@ -266,43 +277,82 @@ export function TwoWeekCalendar({
     
     const rect = e.currentTarget.getBoundingClientRect();
     const currentY = e.clientY - rect.top;
-    const hour = Math.max(dragSelect.startHour + 1, Math.min(maxHour, Math.round(currentY / hourHeight) + minHour));
+    const { hour, minutes } = getHourAndMinutesFromY(currentY);
+    const endFraction = hour + minutes / 60;
     
-    if (hour !== dragSelect.endHour) {
+    const newEndHour = Math.max(dragSelect.startHour + 0.25, Math.min(maxHour, endFraction));
+    
+    if (newEndHour !== dragSelect.endHour) {
       setDragSelect({
         ...dragSelect,
-        endHour: hour
+        endHour: newEndHour
       });
     }
   };
 
-  const handleGridMouseUp = async () => {
-    if (!dragSelect) return;
+  const handleGridMouseUp = async (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragSelect) {
+      setMouseDownY(null);
+      return;
+    }
     const { dateKey, startHour, endHour } = dragSelect;
     setDragSelect(null);
-    
+
+    let isClick = false;
+    const clickedY = mouseDownY;
+    setMouseDownY(null);
+
+    if (e && e.currentTarget && clickedY !== null) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const releaseY = e.clientY - rect.top;
+      if (Math.abs(releaseY - clickedY) < 5) {
+        isClick = true;
+      }
+    }
+
+    if (isClick && clickedY !== null) {
+      // It's a click! Let's open the Add Slot modal for this exact time
+      const { hour, minutes } = getHourAndMinutesFromY(clickedY);
+      setAddSlotModalData({
+        dateKey,
+        hour,
+        minutes
+      });
+      return;
+    }
+
     if (startHour >= endHour) return;
-    
-    // Construct local timestamps safely
+
+    // Construct local timestamps based on startHour and endHour (which can be fractions now!)
     const [year, month, day] = dateKey.split("-").map(Number);
-    const startsAt = new Date(year, month - 1, day, startHour, 0, 0);
-    const endsAt = new Date(year, month - 1, day, endHour, 0, 0);
+    const startHourInt = Math.floor(startHour);
+    const startMin = Math.round((startHour - startHourInt) * 60);
+    const endHourInt = Math.floor(endHour);
+    const endMin = Math.round((endHour - endHourInt) * 60);
+
+    const startsAt = new Date(year, month - 1, day, startHourInt, startMin, 0);
+    const endsAt = new Date(year, month - 1, day, endHourInt, endMin, 0);
     
     if (isNaN(startsAt.getTime()) || isNaN(endsAt.getTime())) return;
 
     // Optimistically paint temporary slot blocks to screen instantly
     const tempSlots: CalendarSlot[] = [];
-    for (let hr = startHour; hr < endHour; hr++) {
-      const slotStart = new Date(year, month - 1, day, hr, 0, 0);
-      const slotEnd = new Date(year, month - 1, day, hr + 1, 0, 0);
+    let cursor = startsAt.getTime();
+    const durationMs = 60 * 60 * 1000;
+    while (cursor + durationMs <= endsAt.getTime()) {
+      const slotStart = new Date(cursor);
+      const slotEnd = new Date(cursor + durationMs);
       tempSlots.push({
-        id: `temp-${Date.now()}-${hr}`,
+        id: `temp-${Date.now()}-${cursor}`,
         startsAt: slotStart.toISOString(),
         endsAt: slotEnd.toISOString(),
         isBooked: false,
         booking: null,
       });
+      cursor += durationMs;
     }
+
+    if (tempSlots.length === 0) return;
 
     const previousSlots = [...localSlots];
     setLocalSlots(prev => [...prev, ...tempSlots]);
@@ -313,10 +363,8 @@ export function TwoWeekCalendar({
         endsAtIso: endsAt.toISOString(),
       });
       if (result.ok) {
-        // Silently sync server state in the background
         router.refresh();
       } else {
-        // Revert on failure
         setLocalSlots(previousSlots);
         alert(result.error || "Failed to create slot.");
       }
@@ -686,10 +734,9 @@ export function TwoWeekCalendar({
 
                       const rect = e.currentTarget.getBoundingClientRect();
                       const dropY = e.clientY - rect.top;
-                      const hourOffset = Math.round(dropY / hourHeight);
-                      const targetHour = minHour + hourOffset;
+                      const { hour, minutes } = getHourAndMinutesFromY(dropY);
 
-                      handleMoveSlot(slotId, dateKey, targetHour);
+                      handleMoveSlot(slotId, dateKey, hour, minutes);
                     }}
                     onMouseDown={(e) => handleGridMouseDown(e, dateKey)}
                     onMouseMove={handleGridMouseMove}
@@ -724,7 +771,13 @@ export function TwoWeekCalendar({
                           <span>Creating Open Slot...</span>
                         </div>
                         <div className="text-[10px] font-extrabold text-primary">
-                          {String(dragSelect.startHour).padStart(2, "0")}:00 - {String(dragSelect.endHour).padStart(2, "0")}:00
+                          {(() => {
+                            const startH = Math.floor(dragSelect.startHour);
+                            const startM = Math.round((dragSelect.startHour - startH) * 60);
+                            const endH = Math.floor(dragSelect.endHour);
+                            const endM = Math.round((dragSelect.endHour - endH) * 60);
+                            return `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} - ${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
+                          })()}
                         </div>
                       </div>
                     )}
@@ -1249,6 +1302,151 @@ export function TwoWeekCalendar({
                 </p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD SLOT DIALOG MODAL */}
+      {addSlotModalData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setAddSlotModalData(null)}
+          />
+
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/40">
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold text-[10px] uppercase tracking-wider px-2.5 py-0.5">
+                Add Availability Slot
+              </Badge>
+              <button
+                type="button"
+                onClick={() => setAddSlotModalData(null)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setActionLoading(true);
+                setErrorMsg(null);
+                setSuccessMsg(null);
+
+                const { dateKey, hour, minutes } = addSlotModalData;
+                const [year, month, day] = dateKey.split("-").map(Number);
+                const startsAt = new Date(year, month - 1, day, hour, minutes, 0);
+                const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000); // 1 hour duration
+
+                const res = await createAvailabilitySlot({
+                  startsAtIso: startsAt.toISOString(),
+                  endsAtIso: endsAt.toISOString(),
+                });
+
+                setActionLoading(false);
+                if (res.ok) {
+                  setSuccessMsg("Availability slot added successfully.");
+                  setAddSlotModalData(null);
+                  router.refresh();
+                } else {
+                  setErrorMsg(res.error);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div className="space-y-1.5 bg-muted/20 p-4 rounded-xl border border-border/40 text-xs">
+                <p className="font-semibold text-muted-foreground">Selected Date:</p>
+                <p className="font-bold text-foreground text-sm">
+                  {(() => {
+                    const [year, month, day] = addSlotModalData.dateKey.split("-").map(Number);
+                    return new Date(year, month - 1, day).toLocaleDateString("en-GB", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric"
+                    });
+                  })()}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-muted-foreground block">Starts At</label>
+                  <select
+                    className="flex h-9.5 w-full rounded-xl border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
+                    value={`${addSlotModalData.hour}:${addSlotModalData.minutes}`}
+                    onChange={(e) => {
+                      const [h, m] = e.target.value.split(":").map(Number);
+                      setAddSlotModalData({
+                        ...addSlotModalData,
+                        hour: h,
+                        minutes: m
+                      });
+                    }}
+                  >
+                    {Array.from({ length: (maxHour - minHour) * 4 }).map((_, idx) => {
+                      const h = minHour + Math.floor(idx / 4);
+                      const m = (idx % 4) * 15;
+                      const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                      return (
+                        <option key={timeStr} value={`${h}:${m}`}>
+                          {timeStr}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-muted-foreground block">Ends At (1 hour duration)</label>
+                  <div className="flex h-9.5 w-full items-center rounded-xl border border-border bg-muted/20 px-3 text-xs text-muted-foreground font-semibold">
+                    {(() => {
+                      const h = addSlotModalData.hour + 1;
+                      const m = addSlotModalData.minutes;
+                      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-xs font-semibold text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="size-3.5 shrink-0" />
+                  {errorMsg}
+                </p>
+              )}
+
+              {successMsg && (
+                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
+                  <Check className="size-3.5 shrink-0" />
+                  {successMsg}
+                </p>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl text-xs font-bold"
+                  onClick={() => setAddSlotModalData(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={actionLoading}
+                  className="rounded-xl text-xs font-bold bg-primary text-white"
+                >
+                  {actionLoading ? "Creating..." : "Create 1-Hour Slot"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

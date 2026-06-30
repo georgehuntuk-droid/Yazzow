@@ -56,8 +56,13 @@ export function PushSubscriptionToggle({ className }: { className?: string }) {
         }
         setSubscribed(false);
       } else {
-        // Request Permission
-        const requestedPermission = await Notification.requestPermission();
+        // Request Permission (with callback fallback for compatibility)
+        const requestedPermission = await new Promise<NotificationPermission>((resolve) => {
+          const result = Notification.requestPermission(resolve);
+          if (result && typeof result.then === "function") {
+            result.then(resolve);
+          }
+        });
 
         if (requestedPermission !== "granted") {
           alert("Notification permission denied. Please enable them in your browser/device settings.");

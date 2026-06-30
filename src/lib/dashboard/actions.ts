@@ -84,7 +84,7 @@ export async function createAvailabilitySlot(input: {
     }
     return {
       ok: false as const,
-      error: `Use whole-hour blocks (e.g. 2:00pm–5:00pm creates three 1-hour bookable slots). Each slot is ${LESSON_SLOT_DURATION_MINUTES} minutes.`,
+      error: `Use blocks in multiples of 60 minutes (e.g. 2:15pm–4:15pm creates two 1-hour slots). Each slot is exactly ${LESSON_SLOT_DURATION_MINUTES} minutes.`,
     };
   }
 

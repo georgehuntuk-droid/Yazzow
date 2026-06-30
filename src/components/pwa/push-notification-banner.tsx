@@ -59,8 +59,13 @@ export function PushNotificationBanner() {
     setLoading(true);
 
     try {
-      // 1. Request Browser Permission
-      const permission = await Notification.requestPermission();
+      // 1. Request Browser Permission (with callback fallback for compatibility)
+      const permission = await new Promise<NotificationPermission>((resolve) => {
+        const result = Notification.requestPermission(resolve);
+        if (result && typeof result.then === "function") {
+          result.then(resolve);
+        }
+      });
       if (permission !== "granted") {
         alert("Notification permission was denied. If you change your mind, you can enable them in your browser/device site settings.");
         handleDismiss();

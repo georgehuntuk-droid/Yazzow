@@ -263,7 +263,22 @@ export async function fulfillTutorSubscriptionCheckout(
 export async function cancelTutorSubscription(tutorId: string): Promise<void> {
   const state = await getTutorSubscriptionState(tutorId);
   if (!state.stripeSubscriptionId) {
-    throw new Error("No active subscription found.");
+    // If it's a complimentary / admin-granted subscription, we can just clear it in the database directly!
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("tutor_profiles")
+      .update({
+        subscription_status: null,
+        subscription_current_period_end: null,
+        stripe_subscription_id: null,
+        stripe_customer_id: null,
+      })
+      .eq("id", tutorId);
+
+    if (error) {
+      throw new Error(`Failed to cancel complimentary subscription: ${error.message}`);
+    }
+    return;
   }
 
   const stripe = getStripe();

@@ -12,7 +12,7 @@ export async function cancelLessonBooking(input: {
 
   const { data: booking, error: fetchError } = await admin
     .from("bookings")
-    .select("id, slot_id, tutor_id, parent_email, student_name, status")
+    .select("id, slot_id, tutor_id, parent_email, student_name, status, stripe_payment_intent_id")
     .eq("id", input.bookingId)
     .eq("tutor_id", input.tutorId)
     .maybeSingle();
@@ -61,6 +61,28 @@ export async function cancelLessonBooking(input: {
 
   if (slotError) {
     return { ok: false, error: slotError.message };
+  }
+
+  // 0. Refund prepaid lesson credit if the booking was paid with credits
+  if (!booking.stripe_payment_intent_id) {
+    try {
+      const { data: student } = await admin
+        .from("students")
+        .select("id, lesson_credits")
+        .eq("tutor_id", booking.tutor_id)
+        .ilike("parent_email", booking.parent_email)
+        .eq("student_name", booking.student_name || "")
+        .maybeSingle();
+
+      if (student) {
+        await admin
+          .from("students")
+          .update({ lesson_credits: (student.lesson_credits ?? 0) + 1 })
+          .eq("id", student.id);
+      }
+    } catch (refundErr) {
+      console.error("[cancelLessonBooking] Failed to process credit refund:", refundErr);
+    }
   }
 
 

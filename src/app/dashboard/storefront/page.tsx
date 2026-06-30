@@ -4,6 +4,7 @@ import { requireTutorProfile } from "@/lib/auth/session";
 import { getResourcesForTutorOwner, getDigitalSalesForTutor } from "@/lib/tutors/portal-data";
 import { StorefrontManager } from "@/components/dashboard/storefront-manager";
 import { DigitalSalesLedger } from "@/components/dashboard/digital-sales-ledger";
+import { StorefrontGuide } from "@/components/dashboard/storefront-guide";
 import { DashboardShell } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { BRAND_NAME } from "@/lib/constants";
@@ -37,12 +38,8 @@ export default async function StorefrontPage() {
           </div>
         </div>
 
-        {/* Informational banner */}
-        <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 px-6 py-4">
-          <p className="text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed">
-            Upload files, specify subjects/grades, and set pricing. Published items are instantly visible on your public storefront. Families buy directly from you with zero platform commission.
-          </p>
-        </div>
+        {/* Storefront & Stripe Interactive Guide */}
+        <StorefrontGuide />
 
         {/* Storefront Manager Card container */}
         <Card className="yazz-surface border-border/80 shadow-md">

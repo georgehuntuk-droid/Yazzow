@@ -12,11 +12,7 @@ export function splitAvailabilityIntoHourlySlots(
   const durationMs = LESSON_SLOT_DURATION_MINUTES * 60 * 1000;
   const totalMs = endsAt.getTime() - startsAt.getTime();
 
-  if (totalMs < durationMs) {
-    return [];
-  }
-
-  if (totalMs % durationMs !== 0) {
+  if (totalMs < 15 * 60 * 1000) {
     return [];
   }
 
@@ -24,12 +20,22 @@ export function splitAvailabilityIntoHourlySlots(
   let cursor = startsAt.getTime();
   const endMs = endsAt.getTime();
 
+  // 1. Create as many 1-hour slots as possible
   while (cursor + durationMs <= endMs) {
     windows.push({
       startsAt: new Date(cursor),
       endsAt: new Date(cursor + durationMs),
     });
     cursor += durationMs;
+  }
+
+  // 2. If there is any remainder left that is at least 15 minutes, add it as a slot!
+  const remainderMs = endMs - cursor;
+  if (remainderMs >= 15 * 60 * 1000) {
+    windows.push({
+      startsAt: new Date(cursor),
+      endsAt: new Date(endMs),
+    });
   }
 
   return windows;

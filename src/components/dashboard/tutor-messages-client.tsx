@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, MessageSquare, AlertCircle } from "lucide-react";
+import { Send, Loader2, MessageSquare, AlertCircle, Paperclip } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ type Message = {
   id: string;
   sender: "tutor" | "parent";
   content: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
   created_at: string;
 };
 
@@ -58,9 +60,11 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
   const [loadingThreads, setLoadingThreads] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email");
@@ -160,10 +164,10 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
     }
   }, [messages]);
 
-  // Send message
+  // Handle message send
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim() || sending || !activeThreadEmail) return;
+    if ((!content.trim() && !uploading) || !activeThreadEmail || sending) return;
 
     setSending(true);
     setError(null);
@@ -171,7 +175,7 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
     const messageText = content.trim();
     setContent("");
 
-    // Optimistic message add
+    // Optimistically add message
     const tempId = Math.random().toString();
     const optimisticMessage: Message = {
       id: tempId,
@@ -197,22 +201,83 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
         throw new Error(data.error ?? "Failed to send message.");
       }
 
-      // Update messages with actual database record
+      // Replace optimistic message with actual
       setMessages((prev) =>
         prev.map((msg) => (msg.id === tempId ? data.message : msg))
       );
 
-      // Refresh threads to update latest message and sorting
+      // Reload threads to update latest message preview
       void loadThreads(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message.");
       // Remove optimistic message
       setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
-      setContent(messageText); // restore
+      setContent(messageText); // restore input
     } finally {
       setSending(false);
     }
   }
+
+  // Handle File upload and send attachment
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeThreadEmail) return;
+
+    setUploading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const uploadRes = await fetch("/api/messages/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json();
+        throw new Error(errData.error || "File upload failed.");
+      }
+
+      const uploadData = await uploadRes.json();
+      if (!uploadData.ok) {
+        throw new Error(uploadData.error || "File upload failed.");
+      }
+
+      // Send message with the attachment!
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parentEmail: activeThreadEmail,
+          content: content.trim() || `Sent an attachment: ${file.name}`,
+          attachmentUrl: uploadData.url,
+          attachmentName: uploadData.name,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message with attachment.");
+      }
+
+      const data = await response.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to send message.");
+      }
+
+      setMessages((prev) => [...prev, data.message]);
+      setContent("");
+      void loadThreads(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload file.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const activeThread = threads.find((t) => t.parentEmail.toLowerCase() === activeThreadEmail?.toLowerCase());
 
@@ -343,7 +408,22 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
                                 : "bg-muted/70 text-foreground rounded-tl-none border border-border/40"
                             }`}
                           >
-                            {msg.content}
+                            <div className="space-y-1.5">
+                              {msg.content && <div>{msg.content}</div>}
+                              {msg.attachment_url && (
+                                <a
+                                  href={msg.attachment_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1.5 mt-1 px-2.5 py-1.5 rounded-xl bg-background/20 hover:bg-background/30 text-xs font-semibold border border-foreground/10 transition-colors cursor-pointer"
+                                >
+                                  <Paperclip className="size-3.5 shrink-0" />
+                                  <span className="truncate max-w-[200px] underline">
+                                    {msg.attachment_name || "Attachment"}
+                                  </span>
+                                </a>
+                              )}
+                            </div>
                           </div>
                           <span className="text-[10px] text-muted-foreground font-semibold mt-1 px-1">
                             {new Date(msg.created_at).toLocaleTimeString([], {
@@ -368,17 +448,37 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
               {/* Chat Composer */}
               <form
                 onSubmit={handleSend}
-                className="flex gap-2.5 mt-4 pt-4 border-t border-border/40 shrink-0"
+                className="flex gap-2.5 mt-4 pt-4 border-t border-border/40 shrink-0 items-center"
               >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 rounded-xl cursor-pointer"
+                  disabled={sending || uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="size-4" />
+                  )}
+                </Button>
                 <Input
-                  required
+                  required={!uploading}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={`Reply to ${activeThread?.studentName || activeThreadEmail}…`}
                   className="h-11 bg-background flex-1 text-sm rounded-xl"
-                  disabled={sending}
+                  disabled={sending || uploading}
                 />
-                <Button type="submit" className="h-11 px-5 rounded-xl font-bold" disabled={sending}>
+                <Button type="submit" className="h-11 px-5 rounded-xl font-bold" disabled={sending || uploading}>
                   {sending ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (

@@ -216,10 +216,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { token, parentEmail: parentEmailParam, content } = body;
+    const { token, parentEmail: parentEmailParam, content, attachmentUrl, attachmentName } = body;
 
-    if (!content?.trim()) {
-      return NextResponse.json({ error: "Message content is required." }, { status: 400 });
+    if (!content?.trim() && !attachmentUrl) {
+      return NextResponse.json({ error: "Message content or attachment is required." }, { status: 400 });
     }
 
     const admin = createAdminClient();
@@ -251,7 +251,9 @@ export async function POST(request: Request) {
           tutor_id: tutorId,
           parent_email: parentEmail,
           sender: "parent",
-          content: content.trim(),
+          content: (content || "").trim(),
+          attachment_url: attachmentUrl || null,
+          attachment_name: attachmentName || null,
         })
         .select("*")
         .single();
@@ -310,7 +312,9 @@ export async function POST(request: Request) {
         tutor_id: tutor.id,
         parent_email: parentEmail,
         sender: "tutor",
-        content: content.trim(),
+        content: (content || "").trim(),
+        attachment_url: attachmentUrl || null,
+        attachment_name: attachmentName || null,
       })
       .select("*")
       .single();
@@ -375,7 +379,9 @@ export async function POST(request: Request) {
           tutor_id: tutorId,
           parent_email: user.email,
           sender: "parent",
-          content: content.trim(),
+          content: (content || "").trim(),
+          attachment_url: attachmentUrl || null,
+          attachment_name: attachmentName || null,
         })
         .select("*")
         .single();

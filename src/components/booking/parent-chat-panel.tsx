@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Paperclip } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,8 @@ type Message = {
   id: string;
   sender: "tutor" | "parent";
   content: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
   created_at: string;
 };
 
@@ -47,9 +49,11 @@ export function ParentChatPanel({ token, tutorDisplayName }: ParentChatPanelProp
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load messages
   async function loadMessages(isSilent = false) {
@@ -88,7 +92,7 @@ export function ParentChatPanel({ token, tutorDisplayName }: ParentChatPanelProp
   // Handle message send
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim() || sending) return;
+    if ((!content.trim() && !uploading) || sending) return;
 
     setSending(true);
     setError(null);
@@ -135,6 +139,67 @@ export function ParentChatPanel({ token, tutorDisplayName }: ParentChatPanelProp
       setSending(false);
     }
   }
+
+  // Handle File upload and send attachment
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("token", token);
+
+    try {
+      const uploadRes = await fetch("/api/messages/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json();
+        throw new Error(errData.error || "File upload failed.");
+      }
+
+      const uploadData = await uploadRes.json();
+      if (!uploadData.ok) {
+        throw new Error(uploadData.error || "File upload failed.");
+      }
+
+      // Send message with the attachment!
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          content: content.trim() || `Sent an attachment: ${file.name}`,
+          attachmentUrl: uploadData.url,
+          attachmentName: uploadData.name,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message with attachment.");
+      }
+
+      const data = await response.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to send message.");
+      }
+
+      setMessages((prev) => [...prev, data.message]);
+      setContent("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload file.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   return (
     <Card className="yazz-surface w-full border-primary/10 flex flex-col h-[500px]">
@@ -194,7 +259,22 @@ export function ParentChatPanel({ token, tutorDisplayName }: ParentChatPanelProp
                               : "bg-muted/70 text-foreground rounded-tl-none border border-border/40"
                           }`}
                         >
-                          {msg.content}
+                          <div className="space-y-1.5">
+                            {msg.content && <div>{msg.content}</div>}
+                            {msg.attachment_url && (
+                              <a
+                                href={msg.attachment_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 mt-1 px-2.5 py-1.5 rounded-xl bg-background/20 hover:bg-background/30 text-xs font-semibold border border-foreground/10 transition-colors cursor-pointer"
+                              >
+                                <Paperclip className="size-3.5 shrink-0" />
+                                <span className="truncate max-w-[200px] underline">
+                                  {msg.attachment_name || "Attachment"}
+                                </span>
+                              </a>
+                            )}
+                          </div>
                         </div>
                         <span className="text-[10px] text-muted-foreground font-semibold mt-1 px-1">
                           {new Date(msg.created_at).toLocaleTimeString([], {
@@ -216,16 +296,36 @@ export function ParentChatPanel({ token, tutorDisplayName }: ParentChatPanelProp
             ) : null}
 
             {/* Input Composer Form */}
-            <form onSubmit={handleSend} className="flex gap-2 mt-3 pt-3 border-t border-border/40">
+            <form onSubmit={handleSend} className="flex gap-2 mt-3 pt-3 border-t border-border/40 items-center">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-xl cursor-pointer"
+                disabled={sending || uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Paperclip className="size-4" />
+                )}
+              </Button>
               <Input
-                required
+                required={!uploading}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`Message ${tutorDisplayName}…`}
                 className="h-10 bg-background flex-1"
-                disabled={sending}
+                disabled={sending || uploading}
               />
-              <Button type="submit" size="icon" className="h-10 w-10 shrink-0" disabled={sending}>
+              <Button type="submit" size="icon" className="h-10 w-10 shrink-0" disabled={sending || uploading}>
                 {sending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (

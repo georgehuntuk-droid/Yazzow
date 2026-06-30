@@ -8,10 +8,9 @@ import type {
 import { LESSON_SLOT_DURATION_MINUTES } from "@/lib/constants";
 import type { DigitalResource, OpenSlot, RecentBooking, TutorSlot } from "@/lib/types";
 
-const LESSON_SLOT_MS = LESSON_SLOT_DURATION_MINUTES * 60 * 1000;
-
 function isHourlySlot(startsAt: string, endsAt: string): boolean {
-  return new Date(endsAt).getTime() - new Date(startsAt).getTime() === LESSON_SLOT_MS;
+  const duration = new Date(endsAt).getTime() - new Date(startsAt).getTime();
+  return duration >= 15 * 60 * 1000;
 }
 
 export async function getOpenSlotsForTutor(tutorId: string): Promise<OpenSlot[]> {

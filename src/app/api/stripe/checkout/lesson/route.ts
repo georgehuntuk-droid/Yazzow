@@ -63,15 +63,15 @@ export async function POST(request: Request) {
 
   const slotDurationMs =
     new Date(slot.ends_at).getTime() - new Date(slot.starts_at).getTime();
-  const expectedMs = LESSON_SLOT_DURATION_MINUTES * 60 * 1000;
-  if (slotDurationMs !== expectedMs) {
+  if (slotDurationMs < 15 * 60 * 1000) {
     return NextResponse.json(
-      { error: "This slot is not a valid one-hour booking." },
+      { error: "Invalid slot duration. Must be at least 15 minutes." },
       { status: 400 },
     );
   }
 
-  const amountCents = tutor.lesson_price_cents;
+  const durationHours = slotDurationMs / (60 * 60 * 1000);
+  const amountCents = Math.max(50, Math.round(tutor.lesson_price_cents * durationHours));
   const stripe = getStripe();
 
   const session = await stripe.checkout.sessions.create(

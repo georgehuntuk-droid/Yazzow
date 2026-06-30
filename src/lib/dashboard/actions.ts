@@ -73,19 +73,23 @@ export async function createAvailabilitySlot(input: {
     return { ok: false as const, error: "Availability must be in the future." };
   }
 
-  const hourlyWindows = splitAvailabilityIntoHourlySlots(startsAt, endsAt);
+  let hourlyWindows = splitAvailabilityIntoHourlySlots(startsAt, endsAt);
   if (hourlyWindows.length === 0) {
-    const hours = (endsAt.getTime() - startsAt.getTime()) / (60 * 60 * 1000);
-    if (hours > MAX_AVAILABILITY_BLOCK_HOURS) {
+    const durationMs = endsAt.getTime() - startsAt.getTime();
+    if (durationMs < 15 * 60 * 1000) {
       return {
         ok: false as const,
-        error: `Maximum block is ${MAX_AVAILABILITY_BLOCK_HOURS} hours per add.`,
+        error: "Slot duration must be at least 15 minutes.",
       };
     }
-    return {
-      ok: false as const,
-      error: `Use blocks in multiples of 60 minutes (e.g. 2:15pm–4:15pm creates two 1-hour slots). Each slot is exactly ${LESSON_SLOT_DURATION_MINUTES} minutes.`,
-    };
+    if (durationMs > 24 * 60 * 60 * 1000) {
+      return {
+        ok: false as const,
+        error: "Slot duration cannot exceed 24 hours.",
+      };
+    }
+    // Create it as a single custom slot!
+    hourlyWindows = [{ startsAt, endsAt }];
   }
 
   const supabase = await createClient();

@@ -219,26 +219,26 @@ export function SubscriptionBillingPanel({
             )}
 
             {subscribed && !subscription.cancelAtPeriodEnd ? (
-              <div className="flex flex-col sm:flex-row gap-2.5">
+              <div className="flex flex-wrap items-center gap-3">
                 {subscription.stripeCustomerId && (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={openPortal}
                     disabled={loading}
-                    className="h-10 font-medium cursor-pointer"
+                    className="h-9 text-xs font-semibold border-border/80 hover:bg-muted text-foreground rounded-xl cursor-pointer"
                   >
                     {loading ? "Opening…" : "Manage billing & invoices"}
                   </Button>
                 )}
                 <Button
                   type="button"
-                  variant="destructive"
+                  variant="ghost"
                   onClick={handleCancelSubscription}
                   disabled={loading}
-                  className="h-10 font-medium cursor-pointer"
+                  className="h-9 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-xl cursor-pointer font-semibold"
                 >
-                  {loading ? "Cancelling…" : !subscription.stripeCustomerId ? "Cancel Complimentary Membership" : "Cancel Subscription"}
+                  {loading ? "Cancelling…" : "Cancel Membership"}
                 </Button>
               </div>
             ) : null}

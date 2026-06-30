@@ -47,6 +47,10 @@ export async function POST(request: Request) {
       .update({ is_booked: true })
       .eq("id", slotId);
 
+    const slotDurationMs = new Date(slot.ends_at).getTime() - new Date(slot.starts_at).getTime();
+    const durationHours = slotDurationMs / (60 * 60 * 1000);
+    const amountCents = Math.max(50, Math.round(tutor.lesson_price_cents * durationHours));
+
     // 4. Create pending booking record with amount_cents and payment intent set to "cash"
     const { data: bookingRow, error: bookingError } = await admin
       .from("bookings")
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
         tutor_id: tutorId,
         parent_email: email,
         student_name: studentName?.trim() || null,
-        amount_cents: tutor.lesson_price_cents,
+        amount_cents: amountCents,
         platform_fee_cents: 0,
         stripe_payment_intent_id: "cash",
         status: "pending",
@@ -110,7 +114,7 @@ export async function POST(request: Request) {
         studentName: studentName?.trim() || null,
         startsAt: slot.starts_at,
         endsAt: slot.ends_at,
-        amountCents: tutor.lesson_price_cents,
+        amountCents: amountCents,
         currency: tutor.currency,
         status: "pending",
         paymentInstructions: tutor.payment_instructions,

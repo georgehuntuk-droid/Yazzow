@@ -17,6 +17,31 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient();
+
+    // Ensure 'attachments' bucket exists programmatically
+    try {
+      const { data: buckets } = await admin.storage.listBuckets();
+      const exists = buckets?.some((b) => b.id === "attachments");
+      if (!exists) {
+        await admin.storage.createBucket("attachments", {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+          allowedMimeTypes: [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/plain",
+          ],
+        });
+      }
+    } catch (err) {
+      console.warn("Could not auto-create attachments bucket:", err);
+    }
+
     let tutorId: string | null = null;
     let folderName: string = "anon";
 

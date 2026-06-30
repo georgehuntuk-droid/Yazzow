@@ -10,6 +10,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
     const parentEmailParam = searchParams.get("parentEmail");
+    const peek = searchParams.get("peek") === "true";
 
     const admin = createAdminClient();
 
@@ -46,12 +47,14 @@ export async function GET(request: Request) {
       }
 
       // Mark tutor messages as read
-      await admin
-        .from("messages")
-        .update({ is_read: true })
-        .eq("tutor_id", tutorId)
-        .eq("parent_email", parentEmail)
-        .eq("sender", "tutor");
+      if (!peek) {
+        await admin
+          .from("messages")
+          .update({ is_read: true })
+          .eq("tutor_id", tutorId)
+          .eq("parent_email", parentEmail)
+          .eq("sender", "tutor");
+      }
 
       return NextResponse.json({ ok: true, messages });
     }
@@ -81,12 +84,14 @@ export async function GET(request: Request) {
       }
 
       // Mark parent messages as read
-      await admin
-        .from("messages")
-        .update({ is_read: true })
-        .eq("tutor_id", tutor.id)
-        .eq("parent_email", parentEmail)
-        .eq("sender", "parent");
+      if (!peek) {
+        await admin
+          .from("messages")
+          .update({ is_read: true })
+          .eq("tutor_id", tutor.id)
+          .eq("parent_email", parentEmail)
+          .eq("sender", "parent");
+      }
 
       return NextResponse.json({ ok: true, messages });
     }
@@ -189,12 +194,14 @@ export async function GET(request: Request) {
       }
 
       // Mark tutor messages as read for this parent
-      await admin
-        .from("messages")
-        .update({ is_read: true })
-        .eq("tutor_id", tutorId)
-        .eq("parent_email", user.email)
-        .eq("sender", "tutor");
+      if (!peek) {
+        await admin
+          .from("messages")
+          .update({ is_read: true })
+          .eq("tutor_id", tutorId)
+          .eq("parent_email", user.email)
+          .eq("sender", "tutor");
+      }
 
       return NextResponse.json({ ok: true, messages });
     }

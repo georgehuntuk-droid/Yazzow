@@ -96,6 +96,33 @@ export function WorkspaceDashboard({
     }
   }, [tabParam]);
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (activeTab === "chat") {
+      setUnreadCount(0);
+      return;
+    }
+
+    async function checkUnread() {
+      try {
+        const res = await fetch(`/api/messages?tutorId=${encodeURIComponent(tutor.id)}&peek=true`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.messages)) {
+          const count = data.messages.filter((m: any) => m.sender === "tutor" && !m.is_read).length;
+          setUnreadCount(count);
+        }
+      } catch (err) {
+        console.error("Failed to check unread messages:", err);
+      }
+    }
+
+    void checkUnread();
+    const interval = setInterval(checkUnread, 10000); // check every 10 seconds
+    return () => clearInterval(interval);
+  }, [tutor.id, activeTab]);
+
   // Real-time Postgres listener to refresh workspace details instantly
   useEffect(() => {
     let supabase: any = null;
@@ -280,11 +307,20 @@ export function WorkspaceDashboard({
                 onClick={() => setActiveTab("chat")}
                 className={cn(
                   "flex flex-col sm:flex-row items-center gap-1.5 px-3 py-2 text-[11px] font-bold rounded-lg transition-all flex-1 justify-center cursor-pointer",
-                  activeTab === "chat" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"
+                  activeTab === "chat"
+                    ? "bg-card text-primary shadow-sm"
+                    : unreadCount > 0
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-muted-foreground"
                 )}
               >
-                <MessageCircle className="size-3.5" />
+                <MessageCircle className="size-3.5 shrink-0" />
                 <span className="hidden xs:inline">Chat</span>
+                {unreadCount > 0 && (
+                  <Badge className="bg-primary text-primary-foreground text-[9px] px-1 py-0.1 ml-0.5 scale-90 shrink-0">
+                    {unreadCount}
+                  </Badge>
+                )}
               </button>
 
               <button

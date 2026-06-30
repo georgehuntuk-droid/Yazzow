@@ -250,6 +250,23 @@
     background-size: 200% 100%;
     animation: yazz-shimmer 3s ease-in-out infinite;
   }
+
+  .scrollbar-thin-primary {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+
+    &::-webkit-scrollbar {
+      height: 5px;
+      display: block;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--primary);
+      border-radius: 9999px;
+    }
+  }
 }
 
 @keyframes yazz-fade-in {

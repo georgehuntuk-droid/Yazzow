@@ -70,7 +70,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
         <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-primary/80">Tutor Workspace</p>
       </div>
       <Separator className="bg-sidebar-border" />
-      <nav className="flex flex-1 flex-row gap-1.5 overflow-x-auto p-4 lg:flex-col lg:overflow-visible">
+      <nav className="flex flex-1 flex-row gap-1.5 overflow-x-auto px-4 pt-4 pb-2.5 scrollbar-thin-primary lg:flex-col lg:overflow-visible lg:p-4">
         {navItems.map((item) => {
           const active =
             "exact" in item && item.exact
@@ -81,7 +81,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex items-center justify-between w-full rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
+                "inline-flex items-center justify-between gap-3 w-auto lg:w-full rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
                 active
                   ? "bg-primary text-primary-foreground shadow-[0_4px_16px_oklch(0.55_0.18_250/0.25)] ring-1 ring-primary/10"
                   : "text-muted-foreground hover:bg-primary/5 hover:text-primary",
@@ -111,7 +111,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
             <Link
               href="/admin"
               className={cn(
-                "inline-flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
+                "inline-flex items-center gap-3 w-auto lg:w-full rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
                 pathname.startsWith("/admin")
                   ? "bg-amber-500 text-white shadow-sm ring-1 ring-amber-500/15"
                   : "text-muted-foreground hover:bg-amber-500/5 hover:text-amber-600",

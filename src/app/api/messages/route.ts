@@ -345,7 +345,7 @@ export async function POST(request: Request) {
         to: parentEmail,
         senderName: tutor.displayName || "Tutor",
         messageContent: content.trim(),
-        actionUrl: `${PUBLIC_SITE_URL}/tutor/${tutor.username}/workspace?tab=chat`,
+        actionUrl: `${PUBLIC_SITE_URL}/tutor/${tutor.username}/workspace?tab=chat&parentEmail=${encodeURIComponent(parentEmail)}`,
       });
     } catch (pushErr) {
       console.error("Failed to send notification to parent:", pushErr);

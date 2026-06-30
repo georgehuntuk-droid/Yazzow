@@ -23,7 +23,7 @@ import { WorkspaceDashboard } from "./workspace-dashboard";
 
 type WorkspacePageProps = {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ studentId?: string }>;
+  searchParams: Promise<{ studentId?: string; parentEmail?: string }>;
 };
 
 const DEMO_USERNAMES = new Set(["demo", "maya-chen"]);
@@ -55,6 +55,17 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
 
   if (!user || !user.email) {
     redirect(`/auth/login?next=/tutor/${username}/workspace`);
+  }
+
+  // If the logged-in user is the tutor of this workspace, redirect them to the tutor dashboard messages thread
+  const { getTutorProfileForUser } = await import("@/lib/tutors/queries");
+  const userTutorProfile = await getTutorProfileForUser(user.id);
+  if (userTutorProfile && userTutorProfile.id === tutor.id) {
+    const { parentEmail } = await searchParams;
+    if (parentEmail) {
+      redirect(`/dashboard/messages?email=${encodeURIComponent(parentEmail)}`);
+    }
+    redirect(`/dashboard/messages`);
   }
 
   // 2. Check student records via Admin Client to bypass RLS (since students can't read profiles of other students)

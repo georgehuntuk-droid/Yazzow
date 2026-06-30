@@ -67,7 +67,7 @@ export function TutorMessagesClient({ tutorId }: TutorMessagesClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchParams = useSearchParams();
-  const emailParam = searchParams.get("email");
+  const emailParam = searchParams.get("email") || searchParams.get("parentEmail");
 
   useEffect(() => {
     if (emailParam) {

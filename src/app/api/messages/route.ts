@@ -168,12 +168,14 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Tutor ID is required." }, { status: 400 });
       }
 
+      const userEmail = user.email.toLowerCase().trim();
+
       // Verify parent is connected with the tutor
       const { data: student } = await admin
         .from("students")
         .select("id")
         .eq("tutor_id", tutorId)
-        .eq("parent_email", user.email)
+        .ilike("parent_email", userEmail)
         .eq("status", "active")
         .maybeSingle();
 
@@ -186,7 +188,7 @@ export async function GET(request: Request) {
         .from("messages")
         .select("*")
         .eq("tutor_id", tutorId)
-        .eq("parent_email", user.email)
+        .ilike("parent_email", userEmail)
         .order("created_at", { ascending: true });
 
       if (msgErr) {
@@ -199,7 +201,7 @@ export async function GET(request: Request) {
           .from("messages")
           .update({ is_read: true })
           .eq("tutor_id", tutorId)
-          .eq("parent_email", user.email)
+          .ilike("parent_email", userEmail)
           .eq("sender", "tutor");
       }
 

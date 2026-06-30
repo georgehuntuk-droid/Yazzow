@@ -33,6 +33,7 @@ import {
   createAdminNoticeAction,
   deleteAdminNoticeAction,
   replyToSupportTicketAction,
+  clearTutorScheduleAction,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -134,7 +135,9 @@ export function AdminConsoleClient({
   const [editCurrency, setEditCurrency] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editPaymentInstructions, setEditPaymentInstructions] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [isClearingSchedule, setIsClearingSchedule] = useState(false);
 
   const handleOpenEditModal = (tutor: AdminTutorData) => {
     setEditingTutor(tutor);
@@ -143,6 +146,7 @@ export function AdminConsoleClient({
     setEditCurrency(tutor.currency);
     setEditPrice((tutor.lessonPriceCents / 100).toFixed(2));
     setEditPaymentInstructions(tutor.paymentInstructions ?? "");
+    setEditAvatarUrl(tutor.avatarUrl ?? "");
   };
 
   const handleSaveTutorDetails = async (e: React.FormEvent) => {
@@ -170,6 +174,7 @@ export function AdminConsoleClient({
         currency: editCurrency.toLowerCase(),
         lessonPriceCents: priceCents,
         paymentInstructions: editPaymentInstructions.trim() || null,
+        avatarUrl: editAvatarUrl.trim() || null,
       });
 
       if (res.ok) {
@@ -181,6 +186,28 @@ export function AdminConsoleClient({
       alert(err instanceof Error ? err.message : "Error saving tutor details");
     } finally {
       setIsSavingDetails(false);
+    }
+  };
+
+  const handleClearSchedule = async () => {
+    if (!editingTutor) return;
+
+    const confirmMsg = `WARNING: Are you absolutely sure you want to clear ${editingTutor.displayName}'s calendar schedule?\n\nThis will permanently delete all availability slots (both booked and unbooked) and cancel all bookings for this tutor. This action cannot be undone.`;
+    if (!confirm(confirmMsg)) return;
+
+    setIsClearingSchedule(true);
+    try {
+      const res = await clearTutorScheduleAction(editingTutor.id);
+      if (res.ok) {
+        alert("Schedule cleared successfully!");
+        setEditingTutor(null);
+      } else {
+        alert(`Failed to clear schedule: ${res.error}`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error clearing schedule");
+    } finally {
+      setIsClearingSchedule(false);
     }
   };
 
@@ -742,9 +769,17 @@ export function AdminConsoleClient({
                       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                         {/* Tutor info */}
                         <div className="flex items-start gap-4">
-                          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                            {tutor.displayName.charAt(0).toUpperCase()}
-                          </div>
+                          {tutor.avatarUrl ? (
+                            <img
+                              src={tutor.avatarUrl}
+                              alt={tutor.displayName}
+                              className="size-12 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                              {tutor.displayName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-heading text-lg font-semibold leading-none text-foreground">
@@ -1216,6 +1251,39 @@ export function AdminConsoleClient({
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <label htmlFor="edit-avatar-url" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+                  Avatar / Profile Photo URL
+                </label>
+                <div className="flex gap-3 items-center">
+                  {editAvatarUrl ? (
+                    <img src={editAvatarUrl} alt="Avatar Preview" className="size-10 rounded-full object-cover border border-border" />
+                  ) : (
+                    <div className="size-10 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                      No Pic
+                    </div>
+                  )}
+                  <Input
+                    id="edit-avatar-url"
+                    placeholder="https://... / public image url"
+                    value={editAvatarUrl}
+                    onChange={(e) => setEditAvatarUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  {editAvatarUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => setEditAvatarUrl("")}
+                      className="text-destructive hover:bg-destructive/10 text-xs font-semibold px-2 h-9 rounded-lg"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label htmlFor="edit-currency" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1267,8 +1335,18 @@ export function AdminConsoleClient({
 
               {/* Platform & Billing Audit Section */}
               <div className="mt-4 pt-4 border-t border-border/40 space-y-3 bg-muted/20 p-4 rounded-xl border border-border/30">
-                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                  Platform & Billing Audit
+                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex justify-between items-center">
+                  <span>Platform & Billing Audit</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    disabled={isClearingSchedule || isSavingDetails}
+                    onClick={handleClearSchedule}
+                    className="border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold h-7 px-2.5 rounded-lg shrink-0 cursor-pointer"
+                  >
+                    {isClearingSchedule ? "Clearing..." : "Clear Schedule (Cancel slots/bookings)"}
+                  </Button>
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-xs leading-normal">
                   <div>

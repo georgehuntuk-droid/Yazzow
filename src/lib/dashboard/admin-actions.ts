@@ -151,6 +151,7 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
   currency: string;
   lessonPriceCents: number;
   paymentInstructions?: string | null;
+  avatarUrl?: string | null;
 }) {
   await requireAdmin();
 
@@ -163,11 +164,42 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
       currency: payload.currency.trim().toLowerCase(),
       lesson_price_cents: payload.lessonPriceCents,
       payment_instructions: payload.paymentInstructions?.trim() || null,
+      avatar_url: payload.avatarUrl !== undefined ? payload.avatarUrl : undefined,
     })
     .eq("id", tutorId);
 
   if (error) {
     return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
+
+/** Deletes all bookings and availability slots for a tutor to clear their schedule. */
+export async function clearTutorScheduleAction(tutorId: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+
+  // 1. Delete bookings first (due to foreign key reference constraint)
+  const { error: bookingsErr } = await admin
+    .from("bookings")
+    .delete()
+    .eq("tutor_id", tutorId);
+
+  if (bookingsErr) {
+    return { ok: false as const, error: bookingsErr.message };
+  }
+
+  // 2. Delete availability slots
+  const { error: slotsErr } = await admin
+    .from("availability_slots")
+    .delete()
+    .eq("tutor_id", tutorId);
+
+  if (slotsErr) {
+    return { ok: false as const, error: slotsErr.message };
   }
 
   revalidatePath("/admin");

@@ -44,7 +44,11 @@ export function LessonCheckoutButton({
   const [bookingWithCredit, setBookingWithCredit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creditSuccess, setBookingCreditSuccess] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "account">("card");
+
+  const slotDurationMs = new Date(slot.endsAt).getTime() - new Date(slot.startsAt).getTime();
+  const durationHours = slotDurationMs / (60 * 60 * 1000);
+  const lessonPriceCents = Math.max(50, Math.round(tutor.lessonPriceCents * durationHours));
 
   const tutorAllowsCash = tutor.allowCashPayments !== false;
   const bookingUnavailable = !paymentsEnabled && !tutorAllowsCash;
@@ -138,10 +142,20 @@ export function LessonCheckoutButton({
     }
   }
 
+  const canBookOnAccount =
+    availableCredits !== null &&
+    creditLimit > 0 &&
+    availableCredits > -creditLimit;
+
   async function handleCheckout() {
     setLoading(true);
     setError(null);
     try {
+      if (paymentMethod === "account") {
+        await handleBookWithCredit();
+        return;
+      }
+
       if (paymentMethod === "cash") {
         // Direct cash booking
         const response = await fetch("/api/tutor/book-direct", {
@@ -203,9 +217,11 @@ export function LessonCheckoutButton({
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Hourly Rate</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              {Math.abs(durationHours - 1) < 0.01 ? "Lesson Price" : "Lesson Price (Prorated)"}
+            </p>
             <p className="text-sm font-black text-primary mt-0.5">
-              {getDisplayPrice(tutor.lessonPriceCents)}
+              {getDisplayPrice(lessonPriceCents)}
             </p>
           </div>
         </div>
@@ -265,62 +281,75 @@ export function LessonCheckoutButton({
       </div>
 
       {/* Payment Method Selector (only if not booking with credits) */}
-      {availableCredits === null || availableCredits === 0 ? (
+      {availableCredits === null || availableCredits <= 0 ? (
         <div className="space-y-2.5">
           {bookingUnavailable ? (
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs text-destructive leading-normal font-medium">
               ⚠️ Online booking is currently unavailable for this tutor. Direct bookings are disabled and card checkout is not set up. Please contact the tutor directly.
             </div>
-          ) : paymentsEnabled && !tutorAllowsCash ? (
-            <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded-xl border border-border/40 text-xs font-semibold text-muted-foreground">
-              <span>Payment Method</span>
-              <span className="text-primary flex items-center gap-1"><CreditCard className="size-3.5" /> Pay by Card</span>
-            </div>
-          ) : paymentsEnabled && tutorAllowsCash ? (
+          ) : (
             <div className="space-y-1.5">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Payment Method
               </span>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-xl border border-border/60">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  className={cn(
-                    "py-2 text-xs font-bold rounded-lg transition-all",
-                    paymentMethod === "card"
-                      ? "bg-background text-primary shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    <CreditCard className="size-3.5" />
-                    Pay by Card
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("cash")}
-                  className={cn(
-                    "py-2 text-xs font-bold rounded-lg transition-all",
-                    paymentMethod === "cash"
-                      ? "bg-background text-primary shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    💵
-                    Bank Transfer / Cash
-                  </span>
-                </button>
+              <div className={cn(
+                "grid gap-2 p-1 bg-muted rounded-xl border border-border/60",
+                canBookOnAccount && tutorAllowsCash ? "grid-cols-3" : (canBookOnAccount || tutorAllowsCash) ? "grid-cols-2" : "grid-cols-1"
+              )}>
+                {paymentsEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("card")}
+                    className={cn(
+                      "py-2 text-xs font-bold rounded-lg transition-all",
+                      paymentMethod === "card"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      <CreditCard className="size-3.5" />
+                      Pay by Card
+                    </span>
+                  </button>
+                )}
+                {tutorAllowsCash && (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cash")}
+                    className={cn(
+                      "py-2 text-xs font-bold rounded-lg transition-all",
+                      paymentMethod === "cash"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      💵
+                      Bank/Cash
+                    </span>
+                  </button>
+                )}
+                {canBookOnAccount && (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("account")}
+                    className={cn(
+                      "py-2 text-xs font-bold rounded-lg transition-all",
+                      paymentMethod === "account"
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      📝
+                      On Account
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
-          ) : (
-            <div className="rounded-xl border border-amber-100 bg-amber-50/40 p-3 text-xs text-amber-800 leading-normal font-medium">
-              ⚠️ Online card checkout is currently unavailable.
-              <strong> You will pay the tutor directly for this lesson.</strong>
-            </div>
           )}
-
           {/* Tutor Payment Instructions Box */}
           {paymentMethod === "cash" && tutor.paymentInstructions && !bookingUnavailable ? (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-foreground space-y-1">
@@ -347,25 +376,25 @@ export function LessonCheckoutButton({
         <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-xs text-green-700 font-semibold text-center">
           {paymentMethod === "cash"
             ? "Lesson booked successfully! Pay your tutor directly."
-            : "Lesson booked successfully using credit!"}
+            : paymentMethod === "account"
+            ? "Lesson booked successfully on account!"
+            : "Lesson booked successfully!"}
         </div>
-      ) : availableCredits !== null && creditLimit > 0 && availableCredits <= -creditLimit ? (
+      ) : availableCredits !== null && creditLimit > 0 && availableCredits <= -creditLimit && paymentMethod === "account" ? (
         <Button
           className="w-full h-11 text-sm font-semibold shadow-md cursor-not-allowed opacity-55"
           disabled
         >
           Booking Blocked (Limit Exceeded)
         </Button>
-      ) : availableCredits !== null ? (
+      ) : availableCredits !== null && availableCredits > 0 ? (
         <div className="space-y-2">
           <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg font-medium flex items-center justify-between">
             <span>
-              {availableCredits > 0
-                ? `You have ${availableCredits} prepaid credit${availableCredits === 1 ? "" : "s"} left.`
-                : `You will book on account (balance: ${Math.abs(availableCredits)} unpaid lesson${Math.abs(availableCredits) === 1 ? "" : "s"}${creditLimit > 0 ? `, limit: ${creditLimit}` : ""}).`}
+              You have {availableCredits} prepaid credit{availableCredits === 1 ? "" : "s"} left.
             </span>
             <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-800">
-              {availableCredits > 0 ? "Available" : "On Account"}
+              Available
             </span>
           </p>
           <Button
@@ -388,40 +417,56 @@ export function LessonCheckoutButton({
           </Button>
         </div>
       ) : (
-        <Button
-          className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-          disabled={loading || !email || creditChecking || bookingUnavailable}
-          onClick={handleCheckout}
-        >
-          {loading ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="size-4 animate-spin" />
-              {paymentMethod === "cash" ? "Confirming Booking…" : "Redirecting to Stripe…"}
-            </span>
-          ) : creditChecking ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="size-4 animate-spin" />
-              Checking credits…
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5">
-              {paymentMethod === "cash" ? (
-                <>
-                  Confirm Booking (Bank/Cash)
-                </>
-              ) : (
-                <>
-                  Book & Pay {getDisplayPrice(tutor.lessonPriceCents)}
-                </>
-              )}
-              <ArrowRight className="size-4" />
-            </span>
+        <div className="space-y-2">
+          {paymentMethod === "account" && availableCredits !== null && (
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-lg font-medium flex items-center justify-between">
+              <span>
+                You will book on account (balance: {Math.abs(availableCredits)} unpaid lesson{Math.abs(availableCredits) === 1 ? "" : "s"}{creditLimit > 0 ? `, limit: ${creditLimit}` : ""}).
+              </span>
+              <span className="font-bold uppercase tracking-wider text-[10px] text-emerald-800">
+                On Account
+              </span>
+            </p>
           )}
-        </Button>
+          <Button
+            className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+            disabled={loading || !email || creditChecking || bookingUnavailable}
+            onClick={handleCheckout}
+          >
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                {paymentMethod === "cash" ? "Confirming Booking…" : paymentMethod === "account" ? "Booking on Account…" : "Redirecting to Stripe…"}
+              </span>
+            ) : creditChecking ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                Checking credits…
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                {paymentMethod === "cash" ? (
+                  <>
+                    Confirm Booking (Bank/Cash)
+                  </>
+                ) : paymentMethod === "account" ? (
+                  <>
+                    Book on Account
+                  </>
+                ) : (
+                  <>
+                    Book & Pay {getDisplayPrice(lessonPriceCents)}
+                  </>
+                )}
+                <ArrowRight className="size-4" />
+              </span>
+            )}
+          </Button>
+        </div>
       )}
       {paymentMethod === "card" && currency.toLowerCase() !== tutor.currency.toLowerCase() && (
         <p className="text-[10px] text-muted-foreground text-center mt-1.5 leading-normal animate-in fade-in">
-          Billed in {tutor.currency.toUpperCase()} at checkout ({formatMoney(tutor.lessonPriceCents, tutor.currency)}).
+          Billed in {tutor.currency.toUpperCase()} at checkout ({formatMoney(lessonPriceCents, tutor.currency)}).
         </p>
       )}
 

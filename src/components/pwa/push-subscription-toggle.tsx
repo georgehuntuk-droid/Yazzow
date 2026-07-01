@@ -5,6 +5,7 @@ import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { savePushSubscription, deletePushSubscription } from "@/lib/dashboard/actions";
 import { cn } from "@/lib/utils";
+import { NotificationSettingsModal } from "./notification-settings-modal";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -21,6 +22,7 @@ export function PushSubscriptionToggle({ className }: { className?: string }) {
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -65,7 +67,7 @@ export function PushSubscriptionToggle({ className }: { className?: string }) {
         });
 
         if (requestedPermission !== "granted") {
-          alert("Notification permission denied. Please enable them in your browser/device settings.");
+          setShowSettingsModal(true);
           setLoading(false);
           return;
         }
@@ -114,26 +116,32 @@ export function PushSubscriptionToggle({ className }: { className?: string }) {
   if (!supported) return null;
 
   return (
-    <Button
-      variant="outline"
-      onClick={handleToggle}
-      disabled={loading}
-      className={cn(
-        "rounded-xl font-semibold gap-1.5 transition-all text-xs h-9 cursor-pointer",
-        subscribed
-          ? "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
-          : "border-border/80 hover:bg-muted text-muted-foreground hover:text-foreground bg-background/50",
-        className
-      )}
-    >
-      {loading ? (
-        <Loader2 className="size-3.5 animate-spin" />
-      ) : subscribed ? (
-        <Bell className="size-3.5 fill-primary" />
-      ) : (
-        <BellOff className="size-3.5" />
-      )}
-      {subscribed ? "Alerts On" : "Enable Alerts"}
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        onClick={handleToggle}
+        disabled={loading}
+        className={cn(
+          "rounded-xl font-semibold gap-1.5 transition-all text-xs h-9 cursor-pointer",
+          subscribed
+            ? "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+            : "border-border/80 hover:bg-muted text-muted-foreground hover:text-foreground bg-background/50",
+          className
+        )}
+      >
+        {loading ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : subscribed ? (
+          <Bell className="size-3.5 fill-primary" />
+        ) : (
+          <BellOff className="size-3.5" />
+        )}
+        {subscribed ? "Alerts On" : "Enable Alerts"}
+      </Button>
+      <NotificationSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
+    </>
   );
 }

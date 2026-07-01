@@ -21,6 +21,11 @@ function isMacDevice() {
   );
 }
 
+function isAndroidDevice() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
   return (
@@ -44,6 +49,7 @@ export function InstallAppButton({
 }: InstallAppButtonProps) {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -68,10 +74,12 @@ export function InstallAppButton({
     const checkStatus = async () => {
       const win = window as any;
       const isIOSUser = isIOSDevice();
+      const isAndroidUser = isAndroidDevice();
       const isMacUser = isMacDevice();
       const installed = isStandaloneMode();
 
       setIsIOS(isIOSUser);
+      setIsAndroid(isAndroidUser);
       setIsMac(isMacUser);
 
       if (installed) {
@@ -200,6 +208,22 @@ export function InstallAppButton({
                       Scroll down the list and tap{" "}
                       <strong>Add to Home Screen</strong>{" "}
                       <Plus className="inline-block size-4 mx-0.5 text-primary" />.
+                    </li>
+                  </ol>
+                </div>
+              ) : isAndroid ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-foreground">
+                    <Smartphone className="size-4 text-primary" />
+                    Android Instructions
+                  </div>
+                  <p>Add Yazzow to your Home Screen in 2 simple steps:</p>
+                  <ol className="list-decimal list-inside space-y-2.5 bg-muted/40 p-3 rounded-2xl border border-border/40 text-[13px]">
+                    <li>
+                      Tap the <strong>menu icon</strong> (three dots <span className="font-bold text-foreground">&vellip;</span>) in the top-right corner of your browser.
+                    </li>
+                    <li>
+                      Select <strong>Install app</strong> or <strong>Add to Home screen</strong>.
                     </li>
                   </ol>
                 </div>

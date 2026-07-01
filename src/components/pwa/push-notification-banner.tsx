@@ -5,6 +5,7 @@ import { Bell, BellRing, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { savePushSubscription } from "@/lib/dashboard/actions";
 import { cn } from "@/lib/utils";
+import { NotificationSettingsModal } from "./notification-settings-modal";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -20,6 +21,7 @@ function urlBase64ToUint8Array(base64String: string) {
 export function PushNotificationBanner() {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
@@ -67,7 +69,7 @@ export function PushNotificationBanner() {
         }
       });
       if (permission !== "granted") {
-        alert("Notification permission was denied. If you change your mind, you can enable them in your browser/device site settings.");
+        setShowSettingsModal(true);
         handleDismiss();
         setLoading(false);
         return;
@@ -120,57 +122,65 @@ export function PushNotificationBanner() {
     }
   };
 
-  if (!visible) return null;
+  if (!visible && !showSettingsModal) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/[0.03] to-transparent p-5 sm:p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-primary/30" />
-      <div className="flex items-start gap-4">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <BellRing className="size-5 animate-bounce" />
-        </div>
-        <div className="flex-1 space-y-1.5 pr-6">
-          <h4 className="font-heading text-sm font-bold text-foreground">
-            Enable Push Notifications
-          </h4>
-          <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
-            Stay updated instantly! Receive real-time push alerts on your phone or desktop whenever your tutor posts tasks, cancels lessons, or sends you chat messages.
-          </p>
-          <div className="flex items-center gap-2 pt-2">
-            <Button
-              size="sm"
-              onClick={handleEnable}
-              disabled={loading}
-              className="h-8 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 shadow-sm shrink-0 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="size-3 mr-1.5 animate-spin" />
-                  Enabling…
-                </>
-              ) : (
-                "Enable Alerts"
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
+    <>
+      {visible && (
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/[0.03] to-transparent p-5 sm:p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-primary/30" />
+          <div className="flex items-start gap-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <BellRing className="size-5 animate-bounce" />
+            </div>
+            <div className="flex-1 space-y-1.5 pr-6">
+              <h4 className="font-heading text-sm font-bold text-foreground">
+                Enable Push Notifications
+              </h4>
+              <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                Stay updated instantly! Receive real-time push alerts on your phone or desktop whenever your tutor posts tasks, cancels lessons, or sends you chat messages.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  size="sm"
+                  onClick={handleEnable}
+                  disabled={loading}
+                  className="h-8 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 shadow-sm shrink-0 cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="size-3 mr-1.5 animate-spin" />
+                      Enabling…
+                    </>
+                  ) : (
+                    "Enable Alerts"
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDismiss}
+                  disabled={loading}
+                  className="h-8 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Not Now
+                </Button>
+              </div>
+            </div>
+            <button
               onClick={handleDismiss}
-              disabled={loading}
-              className="h-8 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+              className="absolute right-4 top-4 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+              aria-label="Dismiss banner"
             >
-              Not Now
-            </Button>
+              <X className="size-4" />
+            </button>
           </div>
         </div>
-        <button
-          onClick={handleDismiss}
-          className="absolute right-4 top-4 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-          aria-label="Dismiss banner"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-    </div>
+      )}
+      <NotificationSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
+    </>
   );
 }

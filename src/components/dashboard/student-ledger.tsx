@@ -662,9 +662,49 @@ function StudentList({
                       <Loader2 className="size-3 animate-spin text-primary/70" />
                     )}
                   </Badge>
-                  <Badge variant="outline">
+                   <Badge variant="outline">
                     {lessons.length} lesson{lessons.length === 1 ? "" : "s"}
                   </Badge>
+                  {student.lessons.length > 0 && (() => {
+                    const totalBookings = student.lessons.length;
+                    const cancellations = student.lessons.filter((l) => l.status === "cancelled").length;
+                    const lateLessons = student.lessons.filter((l) => l.studentRunningLateSentAt !== null && l.studentRunningLateSentAt !== undefined).length;
+                    const attended = student.lessons.filter((l) => l.status === "confirmed").length;
+                    
+                    const cancellationRate = Math.round((cancellations / totalBookings) * 100);
+                    const onTimeRate = attended > 0 ? Math.round(((attended - lateLessons) / attended) * 100) : 100;
+                    
+                    return (
+                      <>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "gap-1 font-bold",
+                            onTimeRate >= 90 
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30"
+                              : onTimeRate >= 75
+                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/30"
+                          )}
+                        >
+                          🕒 {onTimeRate}% On-Time
+                        </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "gap-1 font-bold",
+                            cancellationRate <= 15 
+                              ? "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800/30"
+                              : cancellationRate <= 30
+                                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/30"
+                          )}
+                        >
+                          ❌ {cancellationRate}% Cancelled
+                        </Badge>
+                      </>
+                    );
+                  })()}
                   {student.owedAmountCents > 0 && (
                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <Badge variant="outline" className="gap-1 border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-950/40 dark:bg-rose-950/20 dark:text-rose-400 font-bold">

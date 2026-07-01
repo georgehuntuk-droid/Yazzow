@@ -25,7 +25,7 @@ export function Logo({ className, href = "/", size = "header", iconOnly = false 
       )}
     >
       <img
-        src={iconOnly ? "/yazzow-brand-icon.png?v=3" : "/yazzow-logo-transparent.png?v=3"}
+        src={iconOnly ? "/yazzow-brand-icon.png?v=4" : "/yazzow-logo-transparent.png?v=4"}
         alt="Yazzow Logo"
         className={cn(
           "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02] dark:brightness-110",

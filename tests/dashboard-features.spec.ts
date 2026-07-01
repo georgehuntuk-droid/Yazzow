@@ -34,7 +34,7 @@ test.describe('Dashboard Features & Profile Settings', () => {
 
     // 4. Verify Schedule Builder (Tutorview schedule page)
     await page.goto('/dashboard/schedule');
-    await expect(page.locator('h1:has-text("Schedule Builder")')).toBeVisible();
+    await expect(page.locator('h1:has-text("Schedule Builder")').first()).toBeVisible();
     await expect(page.locator('text=Interactive Calendar')).toBeVisible();
 
     // 5. Verify Dashboard Overview (Tutorview main page)

@@ -32,7 +32,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const backgroundColor = "#fbfbf8";
 
   // Use tutor's avatar as the icon, falling back to Yazzow logo
-  const iconUrl = tutor.avatarUrl || "/icon.png?v=3";
+  const iconUrl = tutor.avatarUrl || "/icon.png?v=4";
 
   const host = _request.headers.get("host") || "yazzow.com";
   // Check if secure connection, fallback to http on localhost/dev

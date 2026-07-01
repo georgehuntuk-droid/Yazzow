@@ -45,22 +45,25 @@ export default function TermsPage() {
 
             <section className="space-y-3">
               <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                <span className="text-primary">2.</span> Description of Service
+                <span className="text-primary">2.</span> Description of Service &amp; CRM Status
               </h2>
               <p>
-                {BRAND_NAME} provides a tutor-pupil management and scheduling platform, digital worksheet storefront, parent messaging portal, and student CRM system for independent educators and tutors. The Platform allows tutors to list availability slots, sell educational resources, manage credits, and assign tasks. We do not operate a public tutor marketplace; we provide software solutions to host your private teaching brand.
+                {BRAND_NAME} provides a tutor-pupil management and scheduling platform, digital worksheet storefront, parent messaging portal, and student CRM (Customer Relationship Management) system for independent educators and tutors. The Platform is strictly a software utility designed to help tutors manage and organize their teaching business. We do not operate a tutor agency, we do not employ tutors, and we are not party to any tutoring agreements.
               </p>
             </section>
 
             <section className="space-y-3">
               <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                <span className="text-primary">3.</span> Payment Processing
+                <span className="text-primary">3.</span> Payment Processing &amp; Collection Disclaimer
               </h2>
               <p>
                 To handle Platform subscription fees, lesson bookings, package checkouts, and worksheet purchases, we integrate with secure third-party payment processors, primarily **Stripe**.
               </p>
               <p>
-                All transactions are processed securely via Stripe. By purchasing services, packages, or digital products through the Platform, you agree to Stripe&apos;s checkout terms and conditions. Tutors connect their own bank or card accounts via Stripe Connect to receive payouts. The Platform facilitates these payouts but does not store credit card credentials on our servers.
+                Tutors connect their own bank or card accounts via Stripe Connect to receive payouts. Tutors may also choose to allow offline payment methods (such as cash or bank transfers) and configure custom student credit limits (allowing bookings on account/overdraft).
+              </p>
+              <p className="font-semibold text-foreground bg-primary/5 p-4 rounded-xl border border-primary/10">
+                ⚠️ **Strict Payment Terms &amp; Full Immunity:** All financial transactions, credit extensions, offline checkouts, and lesson pricing details are agreements made solely and privately between the tutor and the parent. {BRAND_NAME} is not responsible for, and will not participate in, chasing outstanding payments, collecting student debts, or resolving customer billing disputes. If a parent fails to pay an outstanding balance or cancels a booking, it is strictly a private matter between the tutor and the parent. {BRAND_NAME} holds full legal immunity and is entirely exempt from any liability regarding payment collection, client defaults, or financial losses.
               </p>
             </section>
 
@@ -98,10 +101,10 @@ export default function TermsPage() {
 
             <section className="space-y-3">
               <h2 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                <span className="text-primary">7.</span> Limitation of Liability
+                <span className="text-primary">7.</span> Limitation of Liability &amp; Indemnity
               </h2>
               <p>
-                In no event shall {BRAND_NAME}, its directors, employees, or partners, be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill, arising from your use of or inability to use the Platform, lesson cancellations, payout disputes, or database maintenance outages.
+                In no event shall {BRAND_NAME}, its directors, employees, or partners, be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill, arising from your use of or inability to use the Platform, lesson cancellations, payout disputes, parent non-payment, uncollected invoice amounts, or database maintenance outages. Tutors agree to indemnify and hold harmless {BRAND_NAME} against any claims, losses, or legal disputes arising from client payment disputes, defaults, or tutor-parent classroom issues.
               </p>
             </section>
 

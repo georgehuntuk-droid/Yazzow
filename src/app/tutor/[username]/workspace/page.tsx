@@ -607,7 +607,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
                 </p>
               </div>
               <Link href={`/tutor/${username}`} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-4 text-xs font-bold shadow-sm hover:bg-muted transition-colors">
-                <ArrowLeft className="size-3.5" /> Book a Lesson
+                <ArrowLeft className="size-3.5" /> Tutor Shop &amp; Bookings
               </Link>
             </div>
           </div>

@@ -34,7 +34,7 @@ export const PLATFORM_FEES = {
 } as const;
 
 /** When false, packs are listed on the portal only — tutors sell them outside Yazzow. */
-export const DIGITAL_PACK_IN_APP_CHECKOUT = false;
+export const DIGITAL_PACK_IN_APP_CHECKOUT = true;
 
 export const TUTOR_PUBLIC_PATH = "/tutor" as const;
 

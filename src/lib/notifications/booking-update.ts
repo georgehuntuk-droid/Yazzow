@@ -198,3 +198,48 @@ export async function sendNewMessageEmail(input: {
   return sendResendEmail({ to: input.to, subject, html });
 }
 
+export async function sendResourcePurchaseEmail(input: {
+  to: string;
+  tutorName: string;
+  resourceTitle: string;
+  downloadUrl: string;
+}): Promise<boolean> {
+  const subject = `Your digital download: ${input.resourceTitle} from ${input.tutorName}`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+      <!-- Logo Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 24px; font-weight: 900; color: #3b82f6; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+      </div>
+      
+      <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; text-align: center; font-family: sans-serif;">Your Purchase is Ready!</h2>
+      <p style="font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+        Thank you for purchasing <strong>${input.resourceTitle}</strong> from ${input.tutorName}.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${input.downloadUrl}" target="_blank" style="display: inline-block; padding: 12px 32px; font-size: 14px; font-weight: 700; color: #ffffff; background-color: #3b82f6; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 10px rgba(59,130,246,0.3); font-family: sans-serif;">
+          Download Worksheet Pack
+        </a>
+      </div>
+      
+      <p style="font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center; font-family: sans-serif;">
+        If the button above does not work, copy and paste this URL into your browser:<br />
+        <a href="${input.downloadUrl}" style="color: #3b82f6; text-decoration: underline;">${input.downloadUrl}</a>
+      </p>
+      
+      <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+      
+      <p style="font-size: 11px; text-align: center; color: #94a3b8; margin: 0; font-family: sans-serif;">
+        This is an automated purchase delivery from Yazzow. All storefront purchases are digital files and strictly non-refundable.
+      </p>
+    </div>
+  `;
+
+  return sendResendEmail({
+    to: input.to,
+    subject,
+    html,
+  });
+}
+

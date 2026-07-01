@@ -137,16 +137,43 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     if (!resourceId || !tutorId || !buyerEmail) return;
 
-    await admin.from("resource_purchases").insert({
-      resource_id: resourceId,
-      tutor_id: tutorId,
-      buyer_email: buyerEmail,
-      amount_cents: amountCents,
-      platform_fee_cents: platformFeeCents,
-      stripe_payment_intent_id:
-        typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : session.payment_intent?.id ?? null,
-    });
+    const { data: purchase } = await admin
+      .from("resource_purchases")
+      .insert({
+        resource_id: resourceId,
+        tutor_id: tutorId,
+        buyer_email: buyerEmail,
+        amount_cents: amountCents,
+        platform_fee_cents: platformFeeCents,
+        stripe_payment_intent_id:
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : session.payment_intent?.id ?? null,
+      })
+      .select("download_token")
+      .maybeSingle();
+
+    if (purchase?.download_token) {
+      try {
+        const [{ data: tutor }, { data: resource }] = await Promise.all([
+          admin.from("tutor_profiles").select("display_name").eq("id", tutorId).maybeSingle(),
+          admin.from("digital_resources").select("title").eq("id", resourceId).maybeSingle(),
+        ]);
+
+        const { sendResourcePurchaseEmail } = await import("@/lib/notifications/booking-update");
+        const { PUBLIC_SITE_URL } = await import("@/lib/constants");
+
+        const downloadUrl = `${PUBLIC_SITE_URL}/api/resource/download?token=${purchase.download_token}`;
+
+        await sendResourcePurchaseEmail({
+          to: buyerEmail,
+          tutorName: tutor?.display_name || "your Tutor",
+          resourceTitle: resource?.title || "Worksheet Pack",
+          downloadUrl,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send resource download email:", emailErr);
+      }
+    }
   }
 }

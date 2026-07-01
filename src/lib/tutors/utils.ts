@@ -22,6 +22,7 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     paymentInstructions: (row as any).payment_instructions ?? "",
     portalAnnouncement: (row as any).portal_announcement ?? "",
     portalAnnouncementActive: (row as any).portal_announcement_active === true,
+    portalAnnouncementUpdatedAt: (row as any).portal_announcement_updated_at ?? undefined,
     paymentReminderAmountThresholdCents: (row as any).payment_reminder_amount_threshold_cents ?? 0,
     paymentReminderDaysAfter: (row as any).payment_reminder_days_after ?? 0,
     portalBgStyle: row.portal_bg_style ?? "grid",

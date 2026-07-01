@@ -144,7 +144,14 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
   return (
     <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
-      {tutor.portalAnnouncementActive && tutor.portalAnnouncement ? (
+      {tutor.portalAnnouncementActive && tutor.portalAnnouncement && (() => {
+        if (tutor.portalAnnouncementUpdatedAt) {
+          const updatedTime = new Date(tutor.portalAnnouncementUpdatedAt).getTime();
+          const elapsedHours = (Date.now() - updatedTime) / (1000 * 60 * 60);
+          if (elapsedHours > 12) return false;
+        }
+        return true;
+      })() ? (
         <div className="bg-primary px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-primary-foreground select-none relative animate-in slide-in-from-top-full duration-300 whitespace-normal break-words">
           <div className="max-w-5xl mx-auto w-full px-2 sm:px-4 break-words whitespace-normal leading-normal">
             📢 {tutor.portalAnnouncement}

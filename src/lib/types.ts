@@ -18,6 +18,7 @@ export type TutorProfile = {
   paymentInstructions?: string;
   portalAnnouncement?: string;
   portalAnnouncementActive?: boolean;
+  portalAnnouncementUpdatedAt?: string;
   paymentReminderAmountThresholdCents?: number;
   paymentReminderDaysAfter?: number;
   portalBgStyle?: string;

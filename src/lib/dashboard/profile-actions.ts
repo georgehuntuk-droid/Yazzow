@@ -623,13 +623,25 @@ export async function updatePortalAnnouncement(input: {
   const active = input.portalAnnouncementActive;
 
   const supabase = await createClient();
-  const { error } = await supabase
+  let { error } = await supabase
     .from("tutor_profiles")
     .update({
       portal_announcement: portalAnnouncement || null,
       portal_announcement_active: active,
-    })
+      portal_announcement_updated_at: new Date().toISOString(),
+    } as any)
     .eq("id", profile.id);
+
+  if (error && (error.message.includes("does not exist") || error.code === "P0002" || error.code === "42703")) {
+    const retry = await supabase
+      .from("tutor_profiles")
+      .update({
+        portal_announcement: portalAnnouncement || null,
+        portal_announcement_active: active,
+      })
+      .eq("id", profile.id);
+    error = retry.error;
+  }
 
   if (error) {
     return { ok: false as const, error: formatSupabaseError(error.message) };

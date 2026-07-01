@@ -1,9 +1,9 @@
-const CACHE_NAME = "yazzow-cache-v9";
+const CACHE_NAME = "yazzow-cache-v10";
 const OFFLINE_URL = "/offline.html";
 
 const ASSETS_TO_CACHE = [
   OFFLINE_URL,
-  "/icon.png?v=3",
+  "/icon.png?v=4",
   "/favicon.ico"
 ];
 
@@ -76,8 +76,8 @@ self.addEventListener("push", (event) => {
     const data = event.data.json();
     const options = {
       body: data.body || "You have a new update.",
-      icon: "/icon.png?v=3",
-      badge: "/icon.png?v=3",
+      icon: "/icon.png?v=4",
+      badge: "/icon.png?v=4",
       data: {
         url: data.url || "/dashboard"
       }
@@ -91,8 +91,8 @@ self.addEventListener("push", (event) => {
     event.waitUntil(
       self.registration.showNotification("Yazzow Alert", {
         body: text,
-        icon: "/icon.png?v=3",
-        badge: "/icon.png?v=3",
+        icon: "/icon.png?v=4",
+        badge: "/icon.png?v=4",
         data: { url: "/dashboard" }
       })
     );

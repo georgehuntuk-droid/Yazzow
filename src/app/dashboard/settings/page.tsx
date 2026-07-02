@@ -11,7 +11,13 @@ export const metadata = {
   title: `Portal settings · ${BRAND_NAME}`,
 };
 
-export default async function DashboardSettingsPage() {
+type PageProps = {
+  searchParams: Promise<{ setup?: string }>;
+};
+
+export default async function DashboardSettingsPage({ searchParams }: PageProps) {
+  const { setup } = await searchParams;
+  const showSetupNotice = setup === "true";
   const { profile } = await requireTutorProfile();
   const packages = await getPackagesForTutor(profile.id);
 
@@ -26,7 +32,7 @@ export default async function DashboardSettingsPage() {
           </Button>
         }
       />
-      <PortalSettings profile={profile} initialPackages={packages} />
+      <PortalSettings profile={profile} initialPackages={packages} showSetupNotice={showSetupNotice} />
     </DashboardShell>
   );
 }

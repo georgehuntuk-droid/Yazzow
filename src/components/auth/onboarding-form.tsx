@@ -105,7 +105,7 @@ export function OnboardingForm({ defaultDisplayName }: OnboardingFormProps) {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = "/dashboard/settings?setup=true";
   }
 
   const previewUrl = `${publicSiteHost()}${TUTOR_PUBLIC_PATH}/${slugifyUsername(username) || "your-name"}`;

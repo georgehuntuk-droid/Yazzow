@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BRAND_NAME, PUBLIC_SITE_URL } from "@/lib/constants";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#4437a4",
+  colorScheme: "only light",
+};
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",

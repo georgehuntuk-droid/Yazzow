@@ -211,6 +211,7 @@ export default async function AdminDashboardPage() {
       resourceCount: pStats.count,
       resourceVolumeCents: pStats.volume,
       paymentInstructions: p.payment_instructions,
+      isBanned: p.is_banned === true,
     };
   });
 

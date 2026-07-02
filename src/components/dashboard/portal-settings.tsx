@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
-import { ExternalLink, ImageIcon, Trash2 } from "lucide-react";
+import { ExternalLink, ImageIcon, Trash2, Sparkles } from "lucide-react";
 
 import { PortalThemeWrapper } from "@/components/tutor/portal-theme-wrapper";
 import { PublicProfile } from "@/components/tutor/public-profile";
@@ -39,13 +39,18 @@ import type { TutorProfile, TutorPackage } from "@/lib/types";
 type PortalSettingsProps = {
   profile: TutorProfile;
   initialPackages?: TutorPackage[];
+  showSetupNotice?: boolean;
 };
 
 function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-export function PortalSettings({ profile, initialPackages = [] }: PortalSettingsProps) {
+export function PortalSettings({
+  profile,
+  initialPackages = [],
+  showSetupNotice = false,
+}: PortalSettingsProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -132,8 +137,17 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
     const match = PORTAL_ACCENT_PRESETS.find(
       (p) => p.oklch === profile.portalAccentOklch,
     );
-    return match?.id ?? PORTAL_ACCENT_PRESETS[0].id;
+    return match?.id ?? (profile.portalAccentOklch ? "custom" : PORTAL_ACCENT_PRESETS[0].id);
   });
+  const [customColor, setCustomColor] = useState<string>(() => {
+    const match = PORTAL_ACCENT_PRESETS.find(
+      (p) => p.oklch === profile.portalAccentOklch,
+    );
+    return match ? "#7c3aed" : (profile.portalAccentOklch ?? "#7c3aed");
+  });
+  const [portalAnnouncementDurationHours, setPortalAnnouncementDurationHours] = useState<number | null>(
+    profile.portalAnnouncementDurationHours ?? 12
+  );
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [packageLoading, setPackageLoading] = useState(false);
@@ -157,8 +171,9 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       coverUrl,
       portalWelcomeMessage: portalWelcomeMessage || undefined,
       portalAccentOklch:
-        PORTAL_ACCENT_PRESETS.find((p) => p.id === accentPresetId)?.oklch ??
-        profile.portalAccentOklch,
+        accentPresetId === "custom"
+          ? customColor
+          : (PORTAL_ACCENT_PRESETS.find((p) => p.id === accentPresetId)?.oklch ?? profile.portalAccentOklch),
       portalBgStyle: bgStyle,
       portalSideBannerUrl: sideBannerUrl || undefined,
       portalSideBannerLink: sideBannerLink || undefined,
@@ -176,6 +191,9 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       bankName,
       bankSortCode,
       bankAccountNumber,
+      portalAnnouncement,
+      portalAnnouncementActive,
+      portalAnnouncementDurationHours: portalAnnouncementDurationHours ?? undefined,
     }),
     [
       profile,
@@ -189,6 +207,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       coverUrl,
       portalWelcomeMessage,
       accentPresetId,
+      customColor,
       bgStyle,
       sideBannerUrl,
       sideBannerLink,
@@ -206,6 +225,9 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       bankName,
       bankSortCode,
       bankAccountNumber,
+      portalAnnouncement,
+      portalAnnouncementActive,
+      portalAnnouncementDurationHours,
     ],
   );
 
@@ -360,6 +382,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       portalSideBannerLink: sideBannerLink,
       portalSideWidgetTitle: sideWidgetTitle,
       portalSideWidgetContent: sideWidgetContent,
+      portalAccentOklch: accentPresetId === "custom" ? customColor : undefined,
     });
 
     if (!result.ok) {
@@ -383,6 +406,7 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
       portalAnnouncement,
       portalAnnouncementActive,
       emailAllStudents,
+      portalAnnouncementDurationHours,
     });
 
     if (!result.ok) {
@@ -638,6 +662,22 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
   return (
     <div className="grid gap-8 xl:grid-cols-[1fr_380px]">
       <div className="space-y-6">
+        {showSetupNotice ? (
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/[0.05] via-primary/[0.02] to-transparent p-5 shadow-sm backdrop-blur-sm relative overflow-hidden flex items-start gap-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary animate-pulse">
+              <Sparkles className="size-5" />
+            </div>
+            <div className="space-y-1 text-left">
+              <h3 className="font-heading text-base font-bold text-foreground">
+                Welcome to Yazzow! Your booking portal is ready.
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Take a moment to customize your **lesson rate**, upload a **profile photo**, and write a short **bio**. Parents will see these details directly on your booking page. You can preview your changes live on the right!
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         {error ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
@@ -804,8 +844,33 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                       {preset.label}
                     </option>
                   ))}
+                  <option value="custom">✨ Custom color...</option>
                 </select>
               </div>
+              {accentPresetId === "custom" && (
+                <div className="space-y-2 pt-1">
+                  <label htmlFor="portal-custom-color" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Choose custom color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      id="portal-custom-color-picker"
+                      value={customColor.startsWith("#") ? customColor : "#7c3aed"}
+                      onChange={(e) => setCustomColor(e.target.value)}
+                      className="size-9 p-0.5 border border-border rounded-lg cursor-pointer bg-background"
+                    />
+                    <Input
+                      id="portal-custom-color"
+                      type="text"
+                      value={customColor}
+                      onChange={(e) => setCustomColor(e.target.value)}
+                      placeholder="#7c3aed"
+                      className="h-9 font-mono"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <label htmlFor="portal-bg-style" className="text-sm font-medium">
                   Background style
@@ -909,6 +974,35 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
                     </p>
                   </div>
                 </label>
+
+                {portalAnnouncementActive && (
+                  <div className="pl-7 space-y-1.5">
+                    <label htmlFor="portal-announcement-duration" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                      Active Timeframe
+                    </label>
+                    <select
+                      id="portal-announcement-duration"
+                      value={portalAnnouncementDurationHours ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPortalAnnouncementDurationHours(val === "" ? null : parseInt(val, 10));
+                      }}
+                      className="flex h-8 w-full max-w-xs rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      <option value="">Always show (no time limit)</option>
+                      <option value="1">1 hour</option>
+                      <option value="3">3 hours</option>
+                      <option value="6">6 hours</option>
+                      <option value="12">12 hours</option>
+                      <option value="24">24 hours (1 day)</option>
+                      <option value="48">48 hours (2 days)</option>
+                      <option value="168">168 hours (7 days)</option>
+                    </select>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      The banner will automatically hide after this timeframe has passed since your last update.
+                    </p>
+                  </div>
+                )}
 
                 <label className="flex items-start gap-2.5 cursor-pointer text-sm">
                   <input
@@ -1552,6 +1646,11 @@ export function PortalSettings({ profile, initialPackages = [] }: PortalSettings
           </Button>
         </div>
         <PortalThemeWrapper tutor={previewProfile}>
+          {previewProfile.portalAnnouncementActive && previewProfile.portalAnnouncement ? (
+            <div className="bg-primary px-3 py-1.5 text-center text-[11px] font-bold text-primary-foreground select-none relative rounded-t-xl leading-normal break-words whitespace-normal">
+              📢 {previewProfile.portalAnnouncement}
+            </div>
+          ) : null}
           <PublicProfile tutor={previewProfile} />
         </PortalThemeWrapper>
       </div>

@@ -19,6 +19,7 @@ export type TutorProfile = {
   portalAnnouncement?: string;
   portalAnnouncementActive?: boolean;
   portalAnnouncementUpdatedAt?: string;
+  portalAnnouncementDurationHours?: number;
   paymentReminderAmountThresholdCents?: number;
   paymentReminderDaysAfter?: number;
   portalBgStyle?: string;
@@ -31,6 +32,7 @@ export type TutorProfile = {
   bankName?: string;
   bankSortCode?: string;
   bankAccountNumber?: string;
+  isBanned?: boolean;
 };
 
 export type OpenSlot = {

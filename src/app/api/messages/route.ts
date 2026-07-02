@@ -67,6 +67,9 @@ export async function GET(request: Request) {
 
     const tutor = await getTutorProfileForUser(user.id);
     if (tutor) {
+      if (tutor.isBanned) {
+        return NextResponse.json({ error: "Forbidden: Account is suspended." }, { status: 403 });
+      }
       // If viewing a specific thread
       if (parentEmailParam) {
       const parentEmail = parentEmailParam.trim().toLowerCase();
@@ -299,6 +302,9 @@ export async function POST(request: Request) {
 
     const tutor = await getTutorProfileForUser(user.id);
     if (tutor) {
+      if (tutor.isBanned) {
+        return NextResponse.json({ error: "Forbidden: Account is suspended." }, { status: 403 });
+      }
       if (!parentEmailParam?.trim()) {
       return NextResponse.json({ error: "Recipient email is required." }, { status: 400 });
     }

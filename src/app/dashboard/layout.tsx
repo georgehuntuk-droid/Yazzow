@@ -32,6 +32,10 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  if (profile.isBanned) {
+    redirect("/banned");
+  }
+
   let isAdmin = isPlatformAdminUser(user, profile);
   if (!isAdmin) {
     try {

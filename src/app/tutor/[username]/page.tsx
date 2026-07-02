@@ -77,7 +77,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
       : null;
   const tutor = liveTutor ?? demoTutor;
 
-  if (!tutor) {
+  if (!tutor || tutor.isBanned) {
     notFound();
   }
 
@@ -145,10 +145,10 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
       {tutor.portalAnnouncementActive && tutor.portalAnnouncement && (() => {
-        if (tutor.portalAnnouncementUpdatedAt) {
+        if (tutor.portalAnnouncementUpdatedAt && tutor.portalAnnouncementDurationHours && tutor.portalAnnouncementDurationHours > 0) {
           const updatedTime = new Date(tutor.portalAnnouncementUpdatedAt).getTime();
           const elapsedHours = (Date.now() - updatedTime) / (1000 * 60 * 60);
-          if (elapsedHours > 12) return false;
+          if (elapsedHours > tutor.portalAnnouncementDurationHours) return false;
         }
         return true;
       })() ? (

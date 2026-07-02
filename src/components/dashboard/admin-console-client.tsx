@@ -34,6 +34,7 @@ import {
   deleteAdminNoticeAction,
   replyToSupportTicketAction,
   clearTutorScheduleAction,
+  toggleTutorBanStatus,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -54,6 +55,7 @@ export type AdminTutorData = {
   resourceCount: number;
   resourceVolumeCents: number;
   paymentInstructions?: string | null;
+  isBanned?: boolean;
 };
 
 export type SupportTicket = {
@@ -348,6 +350,25 @@ export function AdminConsoleClient({
         const res = await updateTutorSubscriptionStatus(tutorId, nextStatus);
         if (!res.ok) {
           alert(`Failed to update subscription: ${res.error}`);
+        }
+      } catch (err) {
+        alert(`An error occurred: ${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+        setActionLoadingId(null);
+      }
+    });
+  };
+
+  const handleToggleBan = (tutorId: string, isBanned: boolean) => {
+    const actionName = isBanned ? "unban" : "ban";
+    if (!confirm(`Are you sure you want to ${actionName} this tutor account?`)) return;
+
+    setActionLoadingId(tutorId);
+    startTransition(async () => {
+      try {
+        const res = await toggleTutorBanStatus(tutorId, !isBanned);
+        if (!res.ok) {
+          alert(`Failed to ${actionName} tutor: ${res.error}`);
         }
       } catch (err) {
         alert(`An error occurred: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -882,6 +903,27 @@ export function AdminConsoleClient({
                                 "Un-Comp"
                               ) : (
                                 "Comp Sub"
+                              )}
+                            </Button>
+
+                            <Button
+                              variant={tutor.isBanned ? "default" : "outline"}
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => handleToggleBan(tutor.id, !!tutor.isBanned)}
+                              className={cn(
+                                "h-8 text-xs font-medium cursor-pointer",
+                                tutor.isBanned 
+                                  ? "bg-red-600 hover:bg-red-700 text-white border-red-600" 
+                                  : "text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                              )}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : tutor.isBanned ? (
+                                "Unban"
+                              ) : (
+                                "Ban"
                               )}
                             </Button>
 

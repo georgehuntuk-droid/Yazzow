@@ -27,5 +27,9 @@ export async function requireTutorProfile(options?: RequireUserOptions) {
     redirect("/onboarding");
   }
 
+  if (profile.isBanned) {
+    redirect("/banned");
+  }
+
   return { user, profile };
 }

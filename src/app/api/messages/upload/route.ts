@@ -71,6 +71,9 @@ export async function POST(request: Request) {
       
       const tutor = await getTutorProfileForUser(user.id);
       if (tutor) {
+        if (tutor.isBanned) {
+          return NextResponse.json({ error: "Forbidden: Account is suspended." }, { status: 403 });
+        }
         tutorId = tutor.id;
         folderName = `tutor-${tutorId}`;
       } else {

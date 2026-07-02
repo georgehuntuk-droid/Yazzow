@@ -49,6 +49,7 @@
 }
 
 :root {
+  color-scheme: only light;
   /* Yazzow — crisp blue and white theme */
   --background: oklch(0.99 0.005 250);
   --foreground: oklch(0.25 0.03 250);

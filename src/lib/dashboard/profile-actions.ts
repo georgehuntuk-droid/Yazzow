@@ -251,12 +251,13 @@ export async function updatePortalStyle(input: {
   portalSideBannerLink?: string;
   portalSideWidgetTitle?: string;
   portalSideWidgetContent?: string;
+  portalAccentOklch?: string;
 }) {
   const { profile } = await requireTutorProfile();
 
   const portalWelcomeMessage = input.portalWelcomeMessage.trim();
   const preset = PORTAL_ACCENT_PRESETS.find((p) => p.id === input.portalAccentPresetId);
-  const portalAccentOklch = preset?.oklch ?? null;
+  const portalAccentOklch = input.portalAccentOklch ?? preset?.oklch ?? null;
   const portalBgStyle = input.portalBgStyle || "grid";
   const portalSideBannerLink = input.portalSideBannerLink?.trim() || null;
   const portalSideWidgetTitle = input.portalSideWidgetTitle?.trim() || null;
@@ -616,11 +617,13 @@ export async function updatePortalAnnouncement(input: {
   portalAnnouncement: string;
   portalAnnouncementActive: boolean;
   emailAllStudents: boolean;
+  portalAnnouncementDurationHours?: number | null;
 }) {
   const { profile } = await requireTutorProfile();
 
   const portalAnnouncement = input.portalAnnouncement.trim();
   const active = input.portalAnnouncementActive;
+  const duration = input.portalAnnouncementDurationHours ?? null;
 
   const supabase = await createClient();
   let { error } = await supabase
@@ -629,6 +632,7 @@ export async function updatePortalAnnouncement(input: {
       portal_announcement: portalAnnouncement || null,
       portal_announcement_active: active,
       portal_announcement_updated_at: new Date().toISOString(),
+      portal_announcement_duration_hours: duration,
     } as any)
     .eq("id", profile.id);
 

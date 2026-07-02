@@ -49,7 +49,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     safeGetAuthUser(),
   ]);
 
-  if (!tutor) {
+  if (!tutor || tutor.isBanned) {
     notFound();
   }
 

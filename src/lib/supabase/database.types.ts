@@ -28,6 +28,7 @@ export type TutorProfileRow = {
   portal_side_widget_content: string | null;
   created_at: string;
   updated_at: string;
+  is_banned: boolean;
 };
 
 export type AvailabilitySlotRow = {

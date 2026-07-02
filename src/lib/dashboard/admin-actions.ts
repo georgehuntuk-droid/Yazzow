@@ -55,8 +55,37 @@ export async function deleteTutorProfileAndUser(tutorId: string) {
 
   const admin = createAdminClient();
   
-  // 1. Delete auth user (cascades to public.tutor_profiles via foreign key)
+  // 1. Clean up tutor's files in worksheets storage bucket
+  try {
+    const { data: files, error: listErr } = await admin.storage.from("worksheets").list(tutorId);
+    if (!listErr && files && files.length > 0) {
+      const paths = files.map((f) => `${tutorId}/${f.name}`);
+      await admin.storage.from("worksheets").remove(paths);
+    }
+  } catch (err) {
+    console.error("Worksheets storage cleanup failed for tutorId:", tutorId, err);
+  }
+
+  // 2. Delete auth user (cascades to public.tutor_profiles via foreign key)
   const { error } = await admin.auth.admin.deleteUser(tutorId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
+
+/** Toggles a tutor's administrative ban/suspension status. */
+export async function toggleTutorBanStatus(tutorId: string, isBanned: boolean) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("tutor_profiles")
+    .update({ is_banned: isBanned })
+    .eq("id", tutorId);
 
   if (error) {
     return { ok: false as const, error: error.message };

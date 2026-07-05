@@ -105,6 +105,7 @@ export async function createGoogleCalendarEvent(input: {
   description?: string;
   startsAt: string;
   endsAt: string;
+  location?: string;
 }): Promise<string | null> {
   const accessToken = await getGoogleAccessToken(input.refreshToken);
   const calendarId = encodeURIComponent(input.calendarId ?? "primary");
@@ -120,6 +121,7 @@ export async function createGoogleCalendarEvent(input: {
       body: JSON.stringify({
         summary: input.summary,
         description: input.description,
+        location: input.location,
         start: { dateTime: input.startsAt },
         end: { dateTime: input.endsAt },
       }),

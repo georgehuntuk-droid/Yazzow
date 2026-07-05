@@ -379,6 +379,7 @@ export async function addStudent(input: {
   studentName: string;
   parentEmail: string;
   notes?: string;
+  lessonType?: "online" | "visiting";
 }) {
   const { profile } = await requireTutorProfile();
 
@@ -400,6 +401,7 @@ export async function addStudent(input: {
     student_name: studentName,
     parent_email: parentEmail,
     notes: input.notes?.trim() || null,
+    lesson_type: input.lessonType || "online",
   });
 
   if (error) {
@@ -894,6 +896,7 @@ export async function updateStudentDetails(
   studentId: string,
   studentName: string,
   parentEmail: string,
+  lessonType: "online" | "visiting",
 ) {
   const { profile } = await requireTutorProfile();
 
@@ -915,6 +918,7 @@ export async function updateStudentDetails(
     .update({
       student_name: name,
       parent_email: email,
+      lesson_type: lessonType,
     })
     .eq("id", studentId)
     .eq("tutor_id", profile.id);

@@ -46,6 +46,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   const [studentName, setStudentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [lessonType, setLessonType] = useState<"online" | "visiting">("online");
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     setLoading(true);
     setError(null);
 
-    const result = await addStudent({ studentName, parentEmail, notes });
+    const result = await addStudent({ studentName, parentEmail, notes, lessonType });
     if (!result.ok) {
       setError(result.error);
       setLoading(false);
@@ -100,6 +101,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     setStudentName("");
     setParentEmail("");
     setNotes("");
+    setLessonType("online");
     router.refresh();
     setLoading(false);
   }
@@ -156,10 +158,15 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     router.refresh();
   }
 
-  async function handleSaveDetails(studentId: string, name: string, email: string) {
+  async function handleSaveDetails(
+    studentId: string,
+    name: string,
+    email: string,
+    lessonType: "online" | "visiting"
+  ) {
     setSavingDetailsId(studentId);
     const { updateStudentDetails } = await import("@/lib/dashboard/actions");
-    const result = await updateStudentDetails(studentId, name, email);
+    const result = await updateStudentDetails(studentId, name, email, lessonType);
     setSavingDetailsId(null);
 
     if (!result.ok) {
@@ -345,6 +352,20 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Year group, goals, temperament…"
               />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <label htmlFor="add-lesson-type" className="text-sm font-medium">
+                Lesson Type
+              </label>
+              <select
+                id="add-lesson-type"
+                value={lessonType}
+                onChange={(e) => setLessonType(e.target.value as "online" | "visiting")}
+                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="online">Online (receives meeting links & invites)</option>
+                <option value="visiting">Visiting (in-person, no online meeting links)</option>
+              </select>
             </div>
             <div className="sm:col-span-2">
               {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
@@ -542,7 +563,7 @@ function StudentList({
   setEditingNames: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   editingEmails: Record<string, string>;
   setEditingEmails: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  onSaveDetails: (id: string, name: string, email: string) => void;
+  onSaveDetails: (id: string, name: string, email: string, lessonType: "online" | "visiting") => void;
   onResendInvite: (id: string) => void;
   sendingInviteId: string | null;
   feedbackDraft: Record<string, { text: string; rating: number | null }>;
@@ -564,6 +585,7 @@ function StudentList({
 }) {
   const router = useRouter();
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
+  const [editingLessonTypes, setEditingLessonTypes] = useState<Record<string, "online" | "visiting">>({});
 
   async function handleSendReminder(studentId: string) {
     setSendingReminderId(studentId);
@@ -600,6 +622,7 @@ function StudentList({
         const draftNotes = editingNotes[student.id] ?? student.notes ?? "";
         const draftName = editingNames[student.id] ?? student.studentName;
         const draftEmail = editingEmails[student.id] ?? student.parentEmail;
+        const draftLessonType = editingLessonTypes[student.id] ?? student.lessonType ?? "online";
         const lessons = confirmedLessons(student);
 
         const currentCredits = optimisticCredits[student.id] !== undefined
@@ -732,7 +755,7 @@ function StudentList({
 
             {open ? (
               <CardContent className="space-y-4 border-t border-border/60 pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="grid gap-4 sm:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-5">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Student Name</label>
                     <Input
@@ -745,7 +768,7 @@ function StudentList({
                       }
                       onBlur={() => {
                         if (draftName.trim() && draftName.trim() !== student.studentName) {
-                           onSaveDetails(student.id, draftName, draftEmail);
+                           onSaveDetails(student.id, draftName, draftEmail, draftLessonType);
                         }
                       }}
                       placeholder="Student name"
@@ -765,11 +788,30 @@ function StudentList({
                       }
                       onBlur={() => {
                         if (draftEmail.trim() && draftEmail.trim() !== student.parentEmail) {
-                           onSaveDetails(student.id, draftName, draftEmail);
+                           onSaveDetails(student.id, draftName, draftEmail, draftLessonType);
                         }
                       }}
                       placeholder="parent@example.com"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lesson Type</label>
+                    <select
+                      value={draftLessonType}
+                      onChange={(e) => {
+                        const newType = e.target.value as "online" | "visiting";
+                        setEditingLessonTypes((prev) => ({
+                          ...prev,
+                          [student.id]: newType,
+                        }));
+                        onSaveDetails(student.id, draftName, draftEmail, newType);
+                      }}
+                      className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      <option value="online">Online</option>
+                      <option value="visiting">Visiting</option>
+                    </select>
                   </div>
 
                   <div className="space-y-2">

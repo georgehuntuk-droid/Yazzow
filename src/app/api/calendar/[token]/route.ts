@@ -33,7 +33,8 @@ export async function GET(_request: Request, context: RouteContext) {
       summary: event.studentName
         ? `Lesson · ${event.studentName}`
         : "Yazzow lesson",
-      description: `Parent: ${event.parentEmail}\nBooked on Yazzow`,
+      description: `Parent: ${event.parentEmail}\nLesson Format: ${event.lessonType === "visiting" ? "Visiting / In-Person" : "Online"}${event.meetingLink ? `\nMeeting Link: ${event.meetingLink}` : ""}\nBooked on Yazzow`,
+      location: event.meetingLink || (event.lessonType === "visiting" ? "Visiting / In-Person" : undefined),
     })),
   });
 

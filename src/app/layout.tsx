@@ -6,7 +6,7 @@ import { BRAND_NAME, PUBLIC_SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#4437a4",
+  themeColor: "#24487c",
   colorScheme: "only light",
 };
 

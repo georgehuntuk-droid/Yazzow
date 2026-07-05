@@ -64,6 +64,7 @@ export async function updatePortalProfile(input: {
   bio: string;
   lessonPrice: string;
   currency: string;
+  meetingLink?: string;
   allowPublicJoining: boolean;
   allowCashPayments?: boolean;
   paymentInstructions?: string;
@@ -89,6 +90,7 @@ export async function updatePortalProfile(input: {
   const lessonPriceCents = parsePriceToCents(input.lessonPrice);
   const currency = input.currency?.toLowerCase() as SupportedCurrency || "gbp";
   const paymentInstructions = input.paymentInstructions?.trim() || null;
+  const meetingLink = input.meetingLink?.trim() || null;
 
   if (!displayName) {
     return { ok: false as const, error: "Display name is required." };
@@ -130,6 +132,7 @@ export async function updatePortalProfile(input: {
     bio: bio || null,
     lesson_price_cents: lessonPriceCents,
     currency,
+    meeting_link: meetingLink,
     allow_public_joining: input.allowPublicJoining,
     allow_cash_payments: input.allowCashPayments ?? true,
     payment_instructions: paymentInstructions,

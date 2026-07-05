@@ -36,8 +36,8 @@ export default function GlobalLoading() {
         </div>
 
         {/* Sleek Line Loading Indicator */}
-        <div className="w-40 h-1 bg-[#4437a4]/10 dark:bg-slate-800 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#4437a4] to-[#6356c9] rounded-full w-1/2 animate-[loading_1.5s_infinite_ease-in-out]" />
+        <div className="w-40 h-1 bg-[#24487c]/10 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-[#24487c] to-[#38629f] rounded-full w-1/2 animate-[loading_1.5s_infinite_ease-in-out]" />
         </div>
       </div>
 

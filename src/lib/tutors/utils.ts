@@ -36,6 +36,7 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     bankSortCode: (row as any).bank_sort_code ?? "",
     bankAccountNumber: (row as any).bank_account_number ?? "",
     isBanned: row.is_banned === true,
+    meetingLink: (row as any).meeting_link ?? "",
   };
 }
 

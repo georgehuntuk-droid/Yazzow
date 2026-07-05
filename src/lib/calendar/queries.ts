@@ -12,6 +12,8 @@ export type CalendarBookingEvent = {
   endsAt: string;
   studentName: string | null;
   parentEmail: string;
+  meetingLink?: string;
+  lessonType?: string;
 };
 
 export type TutorCalendarSettings = {
@@ -83,11 +85,27 @@ export async function getCalendarEventsForFeed(
 ): Promise<{ tutorName: string; events: CalendarBookingEvent[] }> {
   const admin = createAdminClient();
 
-  const { data: profile } = await admin
-    .from("tutor_profiles")
-    .select("display_name")
-    .eq("id", tutorId)
-    .maybeSingle();
+  const [{ data: profile }, { data: students }] = await Promise.all([
+    admin
+      .from("tutor_profiles")
+      .select("display_name, meeting_link")
+      .eq("id", tutorId)
+      .maybeSingle(),
+    admin
+      .from("students")
+      .select("parent_email, student_name, lesson_type")
+      .eq("tutor_id", tutorId),
+  ]);
+
+  const meetingLink = profile?.meeting_link || "";
+
+  const studentTypeMap = new Map<string, string>();
+  for (const s of students ?? []) {
+    if (s.parent_email && s.student_name) {
+      const key = `${s.parent_email.toLowerCase()}|${s.student_name.trim().toLowerCase()}`;
+      studentTypeMap.set(key, s.lesson_type || "online");
+    }
+  }
 
   const { data: bookings } = await admin
     .from("bookings")
@@ -118,12 +136,19 @@ export async function getCalendarEventsForFeed(
     if (!slotData) continue;
     if (new Date(slotData.ends_at).getTime() < now) continue;
 
+    const sName = row.student_name || "";
+    const pEmail = row.parent_email || "";
+    const key = `${pEmail.toLowerCase()}|${sName.trim().toLowerCase()}`;
+    const lessonType = studentTypeMap.get(key) || "online";
+
     events.push({
       bookingId: row.id,
       startsAt: slotData.starts_at,
       endsAt: slotData.ends_at,
       studentName: row.student_name,
       parentEmail: row.parent_email,
+      lessonType,
+      meetingLink: lessonType === "online" ? meetingLink : "",
     });
   }
 

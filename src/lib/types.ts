@@ -33,6 +33,7 @@ export type TutorProfile = {
   bankSortCode?: string;
   bankAccountNumber?: string;
   isBanned?: boolean;
+  meetingLink?: string;
 };
 
 export type OpenSlot = {

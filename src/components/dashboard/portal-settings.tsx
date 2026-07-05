@@ -62,6 +62,7 @@ export function PortalSettings({
   const [bio, setBio] = useState(profile.bio);
   const [lessonPrice, setLessonPrice] = useState(centsToInput(profile.lessonPriceCents));
   const [currency, setCurrency] = useState(profile.currency);
+  const [meetingLink, setMeetingLink] = useState(profile.meetingLink ?? "");
   const [country, setCountry] = useState(profile.country ?? "GB");
   const [bankName, setBankName] = useState(profile.bankName ?? "");
   const [bankSortCode, setBankSortCode] = useState(profile.bankSortCode ?? "");
@@ -320,6 +321,7 @@ export function PortalSettings({
         bio,
         lessonPrice,
         currency,
+        meetingLink,
         allowPublicJoining,
         allowCashPayments,
         paymentInstructions,
@@ -1143,6 +1145,22 @@ export function PortalSettings({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2 border-t border-border/50 pt-3">
+                <label htmlFor="meeting-link" className="text-sm font-semibold text-foreground">
+                  Online Lesson Meeting Link (Zoom, Google Meet, Teams)
+                </label>
+                <Input
+                  id="meeting-link"
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  placeholder="e.g. https://zoom.us/j/1234567890 or https://meet.google.com/abc-defg-hij"
+                  className="h-10"
+                />
+                <p className="text-xs text-muted-foreground leading-normal">
+                  Your permanent online classroom link. Online students will automatically receive this link in calendar invites, feeds, and confirmation emails.
+                </p>
               </div>
 
               <div className="flex items-start gap-3.5 pt-2 pb-2">

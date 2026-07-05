@@ -7,6 +7,7 @@ export async function sendResendEmail(input: {
   to: string;
   subject: string;
   html: string;
+  attachments?: { filename: string; content: string }[];
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
@@ -26,6 +27,7 @@ export async function sendResendEmail(input: {
         to: input.to,
         subject: input.subject,
         html: input.html,
+        attachments: input.attachments,
       }),
     });
 

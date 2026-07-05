@@ -19,13 +19,29 @@ export async function syncBookingToGoogleCalendar(bookingId: string): Promise<vo
       student_name,
       parent_email,
       google_calendar_event_id,
-      availability_slots (starts_at, ends_at)
+      availability_slots (starts_at, ends_at),
+      tutor_profiles (meeting_link)
     `,
     )
     .eq("id", bookingId)
     .maybeSingle();
 
   if (!booking || booking.google_calendar_event_id) return;
+
+  let lessonType = "online";
+  const { data: student } = await admin
+    .from("students")
+    .select("lesson_type")
+    .eq("tutor_id", booking.tutor_id)
+    .eq("parent_email", booking.parent_email)
+    .eq("student_name", booking.student_name || "")
+    .maybeSingle();
+
+  if (student?.lesson_type) {
+    lessonType = student.lesson_type;
+  }
+  const meetingLink = (booking.tutor_profiles as any)?.meeting_link || "";
+  const isOnline = lessonType === "online" && Boolean(meetingLink);
 
   const slot = booking.availability_slots as
     | { starts_at: string; ends_at: string }
@@ -42,14 +58,17 @@ export async function syncBookingToGoogleCalendar(bookingId: string): Promise<vo
   const description = [
     `Student: ${studentLabel}`,
     `Parent: ${booking.parent_email}`,
+    `Lesson Format: ${lessonType === "visiting" ? "Visiting / In-Person" : "Online"}`,
+    isOnline ? `Meeting Link: ${meetingLink}` : "",
     `Booked via ${BRAND_NAME}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 
   const eventId = await createGoogleCalendarEvent({
     refreshToken: credentials.refreshToken,
     calendarId: credentials.calendarId,
     summary,
     description,
+    location: isOnline ? meetingLink : "Visiting / In-Person",
     startsAt: slotData.starts_at,
     endsAt: slotData.ends_at,
   });

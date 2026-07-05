@@ -40,6 +40,7 @@ export type StudentWithLessons = {
   tasks: StudentTaskRecord[];
   hasAccount: boolean;
   owedAmountCents: number;
+  lessonType: "online" | "visiting";
 };
 
 type BookingWithSlot = BookingRow & {
@@ -104,6 +105,7 @@ export async function getStudentsWithLessonsForTutor(
           tasks: [],
           hasAccount: true,
           owedAmountCents: 0,
+          lessonType: "online",
         },
       ],
       archived: [],
@@ -264,6 +266,7 @@ export async function getStudentsWithLessonsForTutor(
       tasks: studentTasks,
       hasAccount: student.parent_email ? authEmails.has(student.parent_email.toLowerCase()) : false,
       owedAmountCents,
+      lessonType: ((student as any).lesson_type as "online" | "visiting") ?? "online",
     };
   });
 

@@ -28,7 +28,7 @@ export async function GET(_request: Request, context: RouteContext) {
     : `Private booking portal and workspace for ${tutor.displayName}`;
 
   // Default color fallback
-  const themeColor = "#4437a4"; 
+  const themeColor = "#24487c"; 
   const backgroundColor = "#fbfbf8";
 
   // Use tutor's avatar as the icon, falling back to Yazzow logo
@@ -54,13 +54,13 @@ export async function GET(_request: Request, context: RouteContext) {
         src: iconUrl,
         sizes: "512x512",
         type: "image/png",
-        purpose: "any maskable"
+        purpose: "any"
       },
       {
         src: iconUrl,
         sizes: "192x192",
         type: "image/png",
-        purpose: "any maskable"
+        purpose: "any"
       }
     ],
     prefer_related_applications: true,

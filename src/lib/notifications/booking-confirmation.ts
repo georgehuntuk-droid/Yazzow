@@ -33,6 +33,63 @@ export async function sendBookingConfirmationEmail(input: {
   const formattedAmount = formatMoney(input.amountCents, input.currency);
   const workspaceUrl = `${PUBLIC_SITE_URL}/tutor/${input.tutorUsername}/workspace`;
 
+  let lessonType = "online";
+  let meetingLink = "";
+
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    const { data: booking } = await admin
+      .from("bookings")
+      .select("tutor_id, parent_email, student_name, tutor_profiles(meeting_link)")
+      .eq("id", input.bookingId)
+      .maybeSingle();
+
+    if (booking) {
+      meetingLink = (booking.tutor_profiles as any)?.meeting_link || "";
+      const { data: student } = await admin
+        .from("students")
+        .select("lesson_type")
+        .eq("tutor_id", booking.tutor_id)
+        .eq("parent_email", booking.parent_email)
+        .eq("student_name", booking.student_name || "")
+        .maybeSingle();
+
+      if (student?.lesson_type) {
+        lessonType = student.lesson_type;
+      }
+    }
+  } catch (err) {
+    console.error("[sendBookingConfirmationEmail] Failed to fetch lesson type or meeting link:", err);
+  }
+
+  const isOnline = lessonType === "online" && Boolean(meetingLink);
+
+  const attachments = [];
+  try {
+    const { buildIcsCalendar } = await import("@/lib/calendar/ics");
+    const icsString = buildIcsCalendar({
+      calendarName: `Lesson with ${input.tutorName}`,
+      events: [
+        {
+          uid: `booking-${input.bookingId}@yazzow.com`,
+          startsAt: starts,
+          endsAt: ends,
+          summary: input.studentName ? `Lesson · ${input.studentName}` : "Yazzow lesson",
+          description: `Parent: ${recipient}\nLesson Type: ${lessonType === "visiting" ? "Visiting / In-Person" : "Online"}${meetingLink ? `\nMeeting Link: ${meetingLink}` : ""}\nBooked on Yazzow`,
+          location: isOnline ? meetingLink : "Visiting / In-Person",
+        }
+      ]
+    });
+
+    attachments.push({
+      filename: "lesson-invite.ics",
+      content: Buffer.from(icsString).toString("base64"),
+    });
+  } catch (icsErr) {
+    console.error("Failed to generate ICS attachment:", icsErr);
+  }
+
   const subject = `Booking Confirmed: Lesson with ${input.tutorName}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
@@ -46,6 +103,19 @@ export async function sendBookingConfirmationEmail(input: {
       <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
         Your lesson booking with <strong>${input.tutorName}</strong> is confirmed.
       </p>
+
+      ${isOnline ? `
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #166534;">Online Lesson Meeting Link</p>
+        <a href="${meetingLink}" target="_blank" style="background-color: #15803d; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 13px; box-shadow: 0 2px 4px rgba(21, 128, 61, 0.15); font-family: sans-serif;">Join Zoom / Meet / Teams</a>
+        <p style="margin: 8px 0 0 0; font-size: 11px; color: #166534; opacity: 0.8;">A calendar invite (.ics) has been attached to this email.</p>
+      </div>
+      ` : `
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center; font-family: sans-serif;">
+        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #475569;">Lesson Format: Visiting / In-Person</p>
+        <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">A calendar invite (.ics) has been attached to this email.</p>
+      </div>
+      `}
       
       <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; font-family: sans-serif;">
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -75,5 +145,5 @@ export async function sendBookingConfirmationEmail(input: {
       </p>
     </div>
   `;
-  return sendResendEmail({ to: recipient, subject, html });
+  return sendResendEmail({ to: recipient, subject, html, attachments });
 }

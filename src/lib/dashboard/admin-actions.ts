@@ -205,7 +205,23 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
     .eq("id", tutorId);
 
   if (error) {
-    return { ok: false as const, error: error.message };
+    if (
+      error.message.includes("subscription_tier") ||
+      error.message.includes("schema cache") ||
+      error.code === "42703"
+    ) {
+      delete updatePayload.subscription_tier;
+      const { error: retryError } = await admin
+        .from("tutor_profiles")
+        .update(updatePayload)
+        .eq("id", tutorId);
+
+      if (retryError) {
+        return { ok: false as const, error: retryError.message };
+      }
+    } else {
+      return { ok: false as const, error: error.message };
+    }
   }
 
   revalidatePath("/admin");

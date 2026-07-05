@@ -11,6 +11,7 @@ import { requireTutorProfile } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
 import { DashboardShell } from "@/components/layout/page-header";
 import { BRAND_NAME, TUTOR_SUBSCRIPTION, tutorPublicUrl } from "@/lib/constants";
+import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import {
   getDigitalSalesForTutor,
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
   let recentMessages: any[] = [];
   let tutorRating: any = { averageRating: 0, ratingCount: 0 };
   let notices: any[] = [];
+  let subState: any = { subscriptionTier: "starter" };
 
   try {
     const [
@@ -49,6 +51,7 @@ export default async function DashboardPage() {
       recentMessagesRes,
       tutorRatingRes,
       noticesRes,
+      subStateRes,
     ] = await Promise.all([
       getSlotsForTutorOwner(profile.id).catch((err) => {
         console.error("Error in getSlotsForTutorOwner:", err);
@@ -82,6 +85,10 @@ export default async function DashboardPage() {
         console.error("Error in getLatestAdminNotices:", err);
         return [];
       }),
+      getTutorSubscriptionState(profile.id).catch((err) => {
+        console.error("Error in getTutorSubscriptionState:", err);
+        return { subscriptionTier: "starter" };
+      }),
     ]);
 
     slots = slotsRes;
@@ -92,6 +99,7 @@ export default async function DashboardPage() {
     recentMessages = recentMessagesRes;
     tutorRating = tutorRatingRes;
     notices = noticesRes;
+    subState = subStateRes;
   } catch (err) {
     console.error("Failed to execute Promise.all in dashboard page:", err);
   }
@@ -156,6 +164,46 @@ export default async function DashboardPage() {
           </div>
           <CopyLinkButton url={publicLink} variant="outline" size="sm" className="self-start sm:self-auto bg-background text-[11px] font-bold" />
         </div>
+
+        {/* Subscription Tier Info Card */}
+        {(() => {
+          const tier = subState?.subscriptionTier || "starter";
+          const { SUBSCRIPTION_TIERS } = require("@/lib/constants");
+          const config = SUBSCRIPTION_TIERS[tier];
+          
+          let badgeText = "🥉 Bronze Member (Starter)";
+          let badgeColor = "bg-amber-700/10 border-amber-700/25 text-amber-800 dark:text-amber-500";
+          if (tier === "growth") {
+            badgeText = "🥈 Silver Member (Growth)";
+            badgeColor = "bg-slate-300/20 border-slate-300/40 text-slate-700 dark:text-slate-300 font-bold";
+          } else if (tier === "agency") {
+            badgeText = "🏆 Gold Member (Agency)";
+            badgeColor = "bg-yellow-500/10 border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold";
+          }
+          
+          return (
+            <div className="rounded-2xl border border-border/80 bg-muted/20 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="font-black text-foreground flex items-center gap-2 text-sm sm:text-base">
+                  <span>Membership Rank:</span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeColor}`}>
+                    {badgeText}
+                  </span>
+                </p>
+                <p className="mt-1.5 text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed">
+                  Active Students: <strong className="text-foreground">{activeStudentsCount}</strong> / {config.maxStudents === null ? "Unlimited" : config.maxStudents}
+                  {" · "}
+                  {config.maxStudents === null 
+                    ? "You have unlimited active students on the Gold plan."
+                    : `Your plan supports up to ${config.maxStudents} active students. Upgrade in Payments to increase student capacity.`}
+                </p>
+              </div>
+              <Button size="sm" render={<Link href="/dashboard/payments#subscription" />}>
+                View / Upgrade Plan
+              </Button>
+            </div>
+          );
+        })()}
 
         {/* Notice Board Announcements Feed */}
         {notices && notices.length > 0 && (

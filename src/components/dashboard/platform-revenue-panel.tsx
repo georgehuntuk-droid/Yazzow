@@ -27,8 +27,13 @@ export function PlatformRevenuePanel({ stats }: PlatformRevenuePanelProps) {
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <dt className="text-xs text-muted-foreground">Active tutor subscriptions</dt>
-            <dd className="text-2xl font-semibold">{stats.activeSubscriptions}</dd>
-            <dd className="text-sm text-primary">
+            <dd className="text-2xl font-semibold">
+              {stats.activeSubscriptions}{" "}
+              <span className="text-xs font-semibold text-muted-foreground">
+                ({stats.payingSubscriptions || 0} paying, {stats.compedSubscriptions || 0} comp'd)
+              </span>
+            </dd>
+            <dd className="text-sm text-primary font-bold">
               ≈ {formatMoney(stats.estimatedSubscriptionMrrCents)}/month MRR
             </dd>
           </div>

@@ -1,11 +1,12 @@
 import "server-only";
 
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSubscriptionActive } from "@/lib/stripe/subscription";
 
 export type PlatformRevenueStats = {
   activeSubscriptions: number;
+  payingSubscriptions: number;
+  compedSubscriptions: number;
   estimatedSubscriptionMrrCents: number;
   digitalSales30d: number;
   digitalSales30dGrossCents: number;
@@ -20,7 +21,7 @@ export async function getPlatformRevenueStats(): Promise<PlatformRevenueStats> {
   const sinceIso = since.toISOString();
 
   const [tutorsRes, purchasesRes, bookingsRes] = await Promise.all([
-    admin.from("tutor_profiles").select("subscription_status"),
+    admin.from("tutor_profiles").select("subscription_status, stripe_subscription_id, subscription_tier"),
     admin
       .from("resource_purchases")
       .select("amount_cents, platform_fee_cents")
@@ -32,17 +33,36 @@ export async function getPlatformRevenueStats(): Promise<PlatformRevenueStats> {
       .gte("created_at", sinceIso),
   ]);
 
-  const activeSubscriptions = (tutorsRes.data ?? []).filter((row) =>
-    isSubscriptionActive(row.subscription_status),
-  ).length;
+  const { SUBSCRIPTION_TIERS } = await import("@/lib/constants");
+
+  const tutors = tutorsRes.data ?? [];
+  let activeSubscriptions = 0;
+  let payingSubscriptions = 0;
+  let compedSubscriptions = 0;
+  let estimatedSubscriptionMrrCents = 0;
+
+  tutors.forEach((row) => {
+    if (isSubscriptionActive(row.subscription_status)) {
+      activeSubscriptions++;
+      if (row.stripe_subscription_id) {
+        payingSubscriptions++;
+        const tierKey = (row.subscription_tier || "growth") as keyof typeof SUBSCRIPTION_TIERS;
+        const tier = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.growth;
+        estimatedSubscriptionMrrCents += tier.amountCents;
+      } else {
+        compedSubscriptions++;
+      }
+    }
+  });
 
   const purchases = purchasesRes.data ?? [];
   const bookings = bookingsRes.data ?? [];
 
   return {
     activeSubscriptions,
-    estimatedSubscriptionMrrCents:
-      activeSubscriptions * TUTOR_SUBSCRIPTION.amountCents,
+    payingSubscriptions,
+    compedSubscriptions,
+    estimatedSubscriptionMrrCents,
     digitalSales30d: purchases.length,
     digitalSales30dGrossCents: purchases.reduce((sum, row) => sum + row.amount_cents, 0),
     lessonBookings30d: bookings.length,

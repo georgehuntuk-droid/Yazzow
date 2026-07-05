@@ -1292,7 +1292,7 @@ export function AdminConsoleClient({
               </button>
             </div>
 
-            <form onSubmit={handleSaveTutorDetails} className="space-y-4">
+            <form onSubmit={handleSaveTutorDetails} className="space-y-4 max-h-[75vh] overflow-y-auto pr-2 pb-2">
               <div className="space-y-1">
                 <label htmlFor="edit-display-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Display Name

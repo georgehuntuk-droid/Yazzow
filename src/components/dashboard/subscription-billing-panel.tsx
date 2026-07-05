@@ -276,7 +276,7 @@ export function SubscriptionBillingPanel({
                 </div>
 
                 <div className="pt-4 mt-auto">
-                  {subscribed ? (
+                  {subscribed && subscription.stripeCustomerId ? (
                     <Button
                       type="button"
                       variant={isCurrent ? "outline" : "secondary"}
@@ -290,7 +290,7 @@ export function SubscriptionBillingPanel({
                     <Button
                       type="button"
                       variant={isGrowth ? "default" : "outline"}
-                      disabled={loading || blocked}
+                      disabled={(isCurrent && subscribed) || loading || blocked}
                       onClick={() => openCheckout(tierKey)}
                       className="w-full h-9 text-xs font-semibold rounded-xl cursor-pointer"
                     >
@@ -299,6 +299,8 @@ export function SubscriptionBillingPanel({
                           <Loader2 className="size-3 animate-spin" />
                           Opening…
                         </span>
+                      ) : isCurrent && subscribed ? (
+                        "Active Plan"
                       ) : (
                         `Choose ${tier.name}`
                       )}

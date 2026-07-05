@@ -24,7 +24,7 @@ export async function sendResendEmail(input: {
       },
       body: JSON.stringify({
         from: getResendFromAddress(),
-        to: input.to,
+        to: input.to.trim(),
         subject: input.subject,
         html: input.html,
         attachments: input.attachments,

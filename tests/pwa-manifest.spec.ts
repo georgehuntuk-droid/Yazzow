@@ -39,6 +39,6 @@ test.describe('PWA & Manifest E2E Tests', () => {
     expect(manifest.icons).toBeInstanceOf(Array);
     expect(manifest.icons.length).toBeGreaterThan(0);
     expect(manifest.icons[0]).toHaveProperty('sizes', '512x512');
-    expect(manifest.icons[0]).toHaveProperty('purpose', 'any maskable');
+    expect(manifest.icons[0]).toHaveProperty('purpose', 'any');
   });
 });

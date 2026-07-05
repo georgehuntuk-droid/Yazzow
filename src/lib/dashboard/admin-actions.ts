@@ -54,6 +54,26 @@ export async function deleteTutorProfileAndUser(tutorId: string) {
   await requireAdmin();
 
   const admin = createAdminClient();
+
+  // Retrieve stripe customer & subscription ID from profile before deleting
+  const { data: tutor } = await admin
+    .from("tutor_profiles")
+    .select("stripe_subscription_id")
+    .eq("id", tutorId)
+    .maybeSingle();
+
+  // Cancel Stripe Subscription immediately if active
+  if (tutor?.stripe_subscription_id) {
+    try {
+      const { getStripe, isStripeConfigured } = await import("@/lib/stripe/server");
+      if (isStripeConfigured()) {
+        const stripe = getStripe();
+        await stripe.subscriptions.cancel(tutor.stripe_subscription_id);
+      }
+    } catch (err) {
+      console.error("Failed to cancel Stripe subscription immediately during tutor deletion:", tutorId, err);
+    }
+  }
   
   // 1. Clean up tutor's files in worksheets storage bucket
   try {
@@ -82,6 +102,38 @@ export async function toggleTutorBanStatus(tutorId: string, isBanned: boolean) {
   await requireAdmin();
 
   const admin = createAdminClient();
+
+  if (isBanned) {
+    // Retrieve stripe subscription ID from profile to cancel it
+    const { data: tutor } = await admin
+      .from("tutor_profiles")
+      .select("stripe_subscription_id")
+      .eq("id", tutorId)
+      .maybeSingle();
+
+    // Cancel Stripe Subscription immediately if active
+    if (tutor?.stripe_subscription_id) {
+      try {
+        const { getStripe, isStripeConfigured } = await import("@/lib/stripe/server");
+        if (isStripeConfigured()) {
+          const stripe = getStripe();
+          await stripe.subscriptions.cancel(tutor.stripe_subscription_id);
+        }
+      } catch (err) {
+        console.error("Failed to cancel Stripe subscription immediately during tutor ban:", tutorId, err);
+      }
+    }
+
+    // Mark subscription status as cancelled in database when banned
+    await admin
+      .from("tutor_profiles")
+      .update({ 
+        subscription_status: "canceled",
+        stripe_subscription_id: null
+      })
+      .eq("id", tutorId);
+  }
+
   const { error } = await admin
     .from("tutor_profiles")
     .update({ is_banned: isBanned })

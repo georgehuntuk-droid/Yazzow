@@ -389,6 +389,28 @@ export async function addStudent(input: {
 }) {
   const { profile } = await requireTutorProfile();
 
+  const { getTutorSubscriptionState } = await import("@/lib/stripe/subscription");
+  const { SUBSCRIPTION_TIERS } = await import("@/lib/constants");
+  
+  const subState = await getTutorSubscriptionState(profile.id);
+  const tierConfig = SUBSCRIPTION_TIERS[subState.subscriptionTier];
+
+  if (tierConfig.maxStudents !== null) {
+    const supabase = await createClient();
+    const { count, error: countErr } = await supabase
+      .from("students")
+      .select("*", { count: "exact", head: true })
+      .eq("tutor_id", profile.id)
+      .eq("status", "active");
+
+    if (!countErr && count !== null && count >= tierConfig.maxStudents) {
+      return {
+        ok: false as const,
+        error: `Active student limit reached. Your current plan (${tierConfig.name}) allows up to ${tierConfig.maxStudents} active students. Please upgrade your subscription on the Payments page.`,
+      };
+    }
+  }
+
   const studentName = input.studentName.trim();
   const parentEmail = input.parentEmail.trim().toLowerCase();
 
@@ -1357,6 +1379,27 @@ export async function approveStudentApplication(studentId: string) {
   const { profile } = await requireTutorProfile();
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const admin = createAdminClient();
+
+  const { getTutorSubscriptionState } = await import("@/lib/stripe/subscription");
+  const { SUBSCRIPTION_TIERS } = await import("@/lib/constants");
+
+  const subState = await getTutorSubscriptionState(profile.id);
+  const tierConfig = SUBSCRIPTION_TIERS[subState.subscriptionTier];
+
+  if (tierConfig.maxStudents !== null) {
+    const { count, error: countErr } = await admin
+      .from("students")
+      .select("*", { count: "exact", head: true })
+      .eq("tutor_id", profile.id)
+      .eq("status", "active");
+
+    if (!countErr && count !== null && count >= tierConfig.maxStudents) {
+      return {
+        ok: false as const,
+        error: `Active student limit reached. Your current plan (${tierConfig.name}) allows up to ${tierConfig.maxStudents} active students. Please upgrade your subscription on the Payments page.`,
+      };
+    }
+  }
 
   const { data: student, error: fetchError } = await admin
     .from("students")

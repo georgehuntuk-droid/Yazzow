@@ -50,6 +50,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // Check if tutor active student limit is reached
+  const { checkStudentLimitBeforeBooking } = await import("@/lib/bookings/limits");
+  const limitCheck = await checkStudentLimitBeforeBooking({
+    tutorId: tutor.id,
+    parentEmail,
+    studentName,
+  });
+  if (!limitCheck.ok) {
+    return NextResponse.json({ error: limitCheck.error }, { status: 403 });
+  }
+
   const { data: slot } = await admin
     .from("availability_slots")
     .select("*")

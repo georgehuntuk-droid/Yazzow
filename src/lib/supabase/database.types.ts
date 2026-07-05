@@ -35,6 +35,7 @@ export type TutorProfileRow = {
   portal_announcement_active: boolean;
   portal_announcement_updated_at: string | null;
   portal_announcement_duration_hours: number | null;
+  subscription_tier: string;
 };
 
 export type AvailabilitySlotRow = {

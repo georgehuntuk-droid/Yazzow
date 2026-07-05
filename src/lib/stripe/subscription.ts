@@ -18,6 +18,7 @@ export type TutorSubscriptionState = {
   /** Database migration 004 not applied — subscription cannot be tracked yet. */
   subscriptionTrackingUnavailable: boolean;
   cancelAtPeriodEnd: boolean;
+  subscriptionTier: "starter" | "growth" | "agency";
 };
 
 export function isSubscriptionActive(status: string | null | undefined): boolean {
@@ -49,6 +50,7 @@ export async function getTutorSubscriptionState(
       stripeSubscriptionId: isDash ? "mock-subscription-id-123" : null,
       subscriptionTrackingUnavailable: false,
       cancelAtPeriodEnd: false,
+      subscriptionTier: "growth",
     };
   }
 
@@ -59,17 +61,16 @@ export async function getTutorSubscriptionState(
   const res = await admin
     .from("tutor_profiles")
     .select(
-      "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id, subscription_cancel_at_period_end",
+      "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id, subscription_cancel_at_period_end, subscription_tier",
     )
     .eq("id", tutorId)
     .maybeSingle();
 
-  if (res.error && (res.error.code === "42703" || res.error.message.includes("subscription_cancel_at_period_end"))) {
-    // Fallback if migration 022 has not been applied yet
+  if (res.error && (res.error.message.includes("subscription_tier") || res.error.code === "42703")) {
     const retryRes = await admin
       .from("tutor_profiles")
       .select(
-        "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id",
+        "subscription_status, subscription_current_period_end, stripe_customer_id, stripe_subscription_id, subscription_cancel_at_period_end",
       )
       .eq("id", tutorId)
       .maybeSingle();
@@ -93,6 +94,7 @@ export async function getTutorSubscriptionState(
       stripeSubscriptionId: null,
       subscriptionTrackingUnavailable: true,
       cancelAtPeriodEnd: false,
+      subscriptionTier: "starter",
     };
   }
 
@@ -105,6 +107,7 @@ export async function getTutorSubscriptionState(
       stripeSubscriptionId: null,
       subscriptionTrackingUnavailable: false,
       cancelAtPeriodEnd: false,
+      subscriptionTier: "starter",
     };
   }
 
@@ -119,6 +122,7 @@ export async function getTutorSubscriptionState(
     stripeSubscriptionId,
     subscriptionTrackingUnavailable: false,
     cancelAtPeriodEnd: data?.subscription_cancel_at_period_end ?? false,
+    subscriptionTier: (data?.subscription_tier as any) || "starter",
   };
   state.active = isTutorSubscriptionLive(state);
   return state;
@@ -138,6 +142,28 @@ export async function syncTutorSubscriptionFromStripe(
 
   const periodEndUnix = getSubscriptionPeriodEndUnix(subscription);
 
+  const priceId = subscription.items?.data?.[0]?.price?.id;
+  let resolvedTier = "starter";
+
+  const starterPrice = process.env.STRIPE_PRICE_STARTER?.trim();
+  const growthPrice = process.env.STRIPE_PRICE_GROWTH?.trim();
+  const agencyPrice = process.env.STRIPE_PRICE_AGENCY?.trim();
+
+  if (priceId === growthPrice) {
+    resolvedTier = "growth";
+  } else if (priceId === agencyPrice) {
+    resolvedTier = "agency";
+  } else if (priceId === starterPrice) {
+    resolvedTier = "starter";
+  } else {
+    const amount = subscription.items?.data?.[0]?.plan?.amount;
+    if (amount) {
+      if (amount >= 4000) resolvedTier = "agency";
+      else if (amount >= 1500) resolvedTier = "growth";
+      else resolvedTier = "starter";
+    }
+  }
+
   const updatePayload: any = {
     stripe_subscription_id: subscription.id,
     stripe_customer_id: customerId,
@@ -146,6 +172,7 @@ export async function syncTutorSubscriptionFromStripe(
       ? new Date(periodEndUnix * 1000).toISOString()
       : null,
     subscription_cancel_at_period_end: subscription.cancel_at_period_end,
+    subscription_tier: resolvedTier,
   };
 
   const { error: updateErr } = await admin
@@ -153,8 +180,13 @@ export async function syncTutorSubscriptionFromStripe(
     .update(updatePayload)
     .eq("id", tutorId);
 
-  if (updateErr && (updateErr.code === "42703" || updateErr.message.includes("subscription_cancel_at_period_end"))) {
-    delete updatePayload.subscription_cancel_at_period_end;
+  if (updateErr) {
+    if (updateErr.message.includes("subscription_tier") || updateErr.code === "42703") {
+      delete updatePayload.subscription_tier;
+    }
+    if (updateErr.message.includes("subscription_cancel_at_period_end") || updateErr.code === "42703") {
+      delete updatePayload.subscription_cancel_at_period_end;
+    }
     await admin
       .from("tutor_profiles")
       .update(updatePayload)
@@ -177,21 +209,37 @@ function getSubscriptionPeriodEndUnix(subscription: Stripe.Subscription): number
   return null;
 }
 
-function subscriptionLineItems(): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  const priceId = process.env.STRIPE_SUBSCRIPTION_PRICE_ID?.trim();
+function subscriptionLineItems(tier: "starter" | "growth" | "agency" = "growth"): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  let priceId = "";
+  if (tier === "growth") {
+    priceId = process.env.STRIPE_PRICE_GROWTH?.trim() || "";
+  } else if (tier === "agency") {
+    priceId = process.env.STRIPE_PRICE_AGENCY?.trim() || "";
+  } else {
+    priceId = process.env.STRIPE_PRICE_STARTER?.trim() || "";
+  }
+
+  // Fallback to legacy price ID if none set for this tier
+  if (!priceId && tier === "growth") {
+    priceId = process.env.STRIPE_SUBSCRIPTION_PRICE_ID?.trim() || "";
+  }
+
   if (priceId) {
     return [{ price: priceId, quantity: 1 }];
   }
 
+  const { SUBSCRIPTION_TIERS } = require("@/lib/constants");
+  const tierConfig = SUBSCRIPTION_TIERS[tier];
+
   return [
     {
       price_data: {
-        currency: TUTOR_SUBSCRIPTION.currency,
-        unit_amount: TUTOR_SUBSCRIPTION.amountCents,
+        currency: "gbp",
+        unit_amount: tierConfig.amountCents,
         recurring: { interval: "month" },
         product_data: {
-          name: `${BRAND_NAME} tutor plan`,
-          description: "Portal, bookings, and dashboard — billed monthly",
+          name: `${BRAND_NAME} ${tierConfig.name} plan`,
+          description: tierConfig.description,
         },
       },
       quantity: 1,
@@ -203,6 +251,7 @@ export async function createTutorSubscriptionCheckout(input: {
   tutorId: string;
   email: string;
   existingCustomerId?: string | null;
+  tier?: "starter" | "growth" | "agency";
 }): Promise<string> {
   const stripe = getStripe();
 
@@ -211,7 +260,7 @@ export async function createTutorSubscriptionCheckout(input: {
     ...(input.existingCustomerId
       ? { customer: input.existingCustomerId }
       : { customer_email: input.email }),
-    line_items: subscriptionLineItems(),
+    line_items: subscriptionLineItems(input.tier),
     allow_promotion_codes: true,
     metadata: {
       type: "tutor_subscription",

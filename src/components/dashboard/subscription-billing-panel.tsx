@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, AlertCircle, Loader2, CreditCard } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, CreditCard, Sparkles, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 import type { TutorSubscriptionState } from "@/lib/stripe/subscription";
 
 type SubscriptionBillingPanelProps = {
@@ -32,6 +32,7 @@ export function SubscriptionBillingPanel({
 }: SubscriptionBillingPanelProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const subscribed = subscription.active;
@@ -50,12 +51,17 @@ export function SubscriptionBillingPanel({
     }
   }, [isSuccess, subscribed, router]);
 
-  async function openCheckout() {
+  async function openCheckout(tier: "starter" | "growth" | "agency") {
     setLoading(true);
+    setLoadingTier(tier);
     setError(null);
     try {
       const response = await fetch("/api/stripe/subscription/checkout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tier }),
       });
       const data = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !data.url) {
@@ -67,6 +73,7 @@ export function SubscriptionBillingPanel({
       setError("Network error. Try again.");
     } finally {
       setLoading(false);
+      setLoadingTier(null);
     }
   }
 
@@ -130,27 +137,28 @@ export function SubscriptionBillingPanel({
   const blocked =
     !configured || subscription.subscriptionTrackingUnavailable;
 
+  const currentTier = subscription.subscriptionTier || "starter";
+
   return (
     <Card id="subscription" className="yazz-surface border-primary/20 scroll-mt-8 overflow-hidden relative">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
       <CardHeader>
         <CardTitle className="font-heading flex items-center gap-2">
           <CreditCard className="size-5 text-primary" />
-          Your Yazzow plan
+          Subscription Plans & Billing
         </CardTitle>
         <CardDescription>
-          {TUTOR_SUBSCRIPTION.label} — portal, schedule, and student tools. Paid securely through
-          Stripe Checkout on Yazzow&apos;s billing (not a separate Stripe account for you).
+          Unlock all core features (slot alerts, automated reminders, and private portals) with tiers sized exactly for your business.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {/* Success / Pending / Cancelled Banners */}
         {isSuccess && subscribed && (
           <div className="rounded-xl bg-primary/10 border border-primary/20 p-4 flex items-start gap-3">
             <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-primary">Subscription activated successfully!</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Thank you for subscribing. Your portal is now fully active.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Thank you for subscribing. Your plan is now fully active.</p>
             </div>
           </div>
         )}
@@ -175,8 +183,8 @@ export function SubscriptionBillingPanel({
           </div>
         )}
 
-        {subscribed ? (
-          <div className="space-y-4 pt-2">
+        {subscribed && (
+          <div className="space-y-2 pb-2">
             <div className="flex items-center gap-2">
               {subscription.cancelAtPeriodEnd ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
@@ -186,7 +194,7 @@ export function SubscriptionBillingPanel({
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                   <span className="size-1.5 rounded-full bg-primary animate-ping" />
-                  Active Subscription
+                  Active {SUBSCRIPTION_TIERS[currentTier]?.name} Plan
                 </span>
               )}
               {!subscription.stripeCustomerId && (
@@ -197,7 +205,7 @@ export function SubscriptionBillingPanel({
             </div>
             {renewsLabel && !subscription.cancelAtPeriodEnd ? (
               <p className="text-sm text-muted-foreground">
-                Next billing date is <span className="text-foreground font-semibold">{renewsLabel}</span>.
+                Current plan: <strong>{SUBSCRIPTION_TIERS[currentTier]?.name}</strong>. Next billing date is <span className="text-foreground font-semibold">{renewsLabel}</span>.
               </p>
             ) : !subscription.stripeCustomerId ? (
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -217,87 +225,133 @@ export function SubscriptionBillingPanel({
                 </div>
               </div>
             )}
-
-            {subscribed && !subscription.cancelAtPeriodEnd ? (
-              <div className="flex flex-wrap items-center gap-3">
-                {subscription.stripeCustomerId && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={openPortal}
-                    disabled={loading}
-                    className="h-9 text-xs font-semibold border-border/80 hover:bg-muted text-foreground rounded-xl cursor-pointer"
-                  >
-                    {loading ? "Opening…" : "Manage billing & invoices"}
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleCancelSubscription}
-                  disabled={loading}
-                  className="h-9 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-xl cursor-pointer font-semibold"
-                >
-                  {loading ? "Cancelling…" : "Cancel Membership"}
-                </Button>
-              </div>
-            ) : null}
           </div>
-        ) : (
-          <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Subscribe to keep your portal fully active. You&apos;ll enter card details on Stripe&apos;s
-              secure checkout page — same flow as any SaaS subscription.
-            </p>
+        )}
 
-            {subscription.subscriptionTrackingUnavailable && (
-              showDevHints ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-800 dark:border-amber-950/30 dark:bg-amber-950/10 dark:text-amber-300">
-                  <p className="font-semibold mb-1">Developer Notice (Admin/Dev only):</p>
-                  <p>
-                    Subscription billing is not set up in the database yet. Run Supabase migration{" "}
-                    <code className="text-xs font-mono">004_tutor_subscription.sql</code>, then refresh.
+        {/* Pricing Tiers Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          {(Object.keys(SUBSCRIPTION_TIERS) as Array<keyof typeof SUBSCRIPTION_TIERS>).map((tierKey) => {
+            const tier = SUBSCRIPTION_TIERS[tierKey];
+            const isCurrent = subscribed && currentTier === tierKey;
+            const isGrowth = tierKey === "growth";
+
+            return (
+              <div
+                key={tierKey}
+                className={`relative rounded-2xl p-5 border flex flex-col justify-between transition-all ${
+                  isCurrent
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : isGrowth
+                    ? "border-primary/40 bg-muted/40 shadow-sm hover:border-primary/70"
+                    : "border-border bg-muted/20 hover:border-border-hover"
+                }`}
+              >
+                {isGrowth && (
+                  <span className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                    <Sparkles className="size-3" />
+                    Popular
+                  </span>
+                )}
+                
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-heading text-lg font-bold text-foreground">{tier.name}</h3>
+                    {isCurrent && (
+                      <span className="text-[10px] bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-3">
+                    <span className="text-2xl font-bold font-heading">{tier.priceLabel}</span>
+                  </div>
+                  
+                  <p className="text-xs font-semibold text-primary mb-3">
+                    {tier.maxStudents ? `Up to ${tier.maxStudents} active students` : "Unlimited active students"}
+                  </p>
+                  
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                    {tier.description}
                   </p>
                 </div>
-              ) : (
-                <p className="rounded-xl border border-amber-200/60 bg-amber-50/50 px-4 py-3 text-sm text-muted-foreground dark:bg-amber-950/20">
-                  Billing services are currently undergoing maintenance. Please check back in a few minutes or contact support.
-                </p>
-              )
-            )}
 
-            {!configured && (
-              showDevHints ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-800 dark:border-amber-950/30 dark:bg-amber-950/10 dark:text-amber-300">
-                  <p className="font-semibold mb-1">Developer Notice (Admin/Dev only):</p>
-                  <p>
-                    Stripe is not configured on this site yet (<code className="text-xs font-mono">STRIPE_SECRET_KEY</code> missing). Ask the site owner to add it and redeploy.
-                  </p>
+                <div className="pt-4 mt-auto">
+                  {subscribed ? (
+                    <Button
+                      type="button"
+                      variant={isCurrent ? "outline" : "secondary"}
+                      disabled={isCurrent || loading}
+                      onClick={openPortal}
+                      className="w-full h-9 text-xs font-semibold rounded-xl cursor-pointer"
+                    >
+                      {isCurrent ? "Active Plan" : "Change via Portal"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant={isGrowth ? "default" : "outline"}
+                      disabled={loading || blocked}
+                      onClick={() => openCheckout(tierKey)}
+                      className="w-full h-9 text-xs font-semibold rounded-xl cursor-pointer"
+                    >
+                      {loadingTier === tierKey ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Loader2 className="size-3 animate-spin" />
+                          Opening…
+                        </span>
+                      ) : (
+                        `Choose ${tier.name}`
+                      )}
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <p className="rounded-xl border border-amber-200/60 bg-amber-50/50 px-4 py-3 text-sm text-muted-foreground dark:bg-amber-950/20">
-                  Online checkout is temporarily unavailable. Please contact support to complete your subscription.
-                </p>
-              )
+              </div>
+            );
+          })}
+        </div>
+
+        {subscribed && !subscription.cancelAtPeriodEnd && (
+          <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-border">
+            {subscription.stripeCustomerId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={openPortal}
+                disabled={loading}
+                className="h-9 text-xs font-semibold border-border/80 hover:bg-muted text-foreground rounded-xl cursor-pointer"
+              >
+                {loading ? "Opening…" : "Manage billing & invoices"}
+              </Button>
             )}
-
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
             <Button
-              size="lg"
-              className="w-full sm:w-auto h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-              onClick={openCheckout}
-              disabled={loading || blocked}
+              type="button"
+              variant="ghost"
+              onClick={handleCancelSubscription}
+              disabled={loading}
+              className="h-9 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-xl cursor-pointer font-semibold"
             >
-              {loading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin" />
-                  Opening Stripe…
-                </span>
-              ) : (
-                `Subscribe now · ${TUTOR_SUBSCRIPTION.label}`
-              )}
+              {loading ? "Cancelling…" : "Cancel Membership"}
             </Button>
+          </div>
+        )}
+
+        {/* Dev / Config Banners */}
+        {subscription.subscriptionTrackingUnavailable && showDevHints && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-800 dark:border-amber-950/30 dark:bg-amber-950/10 dark:text-amber-300">
+            <p className="font-semibold mb-1">Developer Notice (Admin/Dev only):</p>
+            <p>
+              Subscription billing is not set up in the database yet. Run Supabase migration{" "}
+              <code className="text-xs font-mono">004_tutor_subscription.sql</code>, then refresh.
+            </p>
+          </div>
+        )}
+
+        {!configured && showDevHints && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-sm text-amber-800 dark:border-amber-950/30 dark:bg-amber-950/10 dark:text-amber-300">
+            <p className="font-semibold mb-1">Developer Notice (Admin/Dev only):</p>
+            <p>
+              Stripe is not configured on this site yet (<code className="text-xs font-mono">STRIPE_SECRET_KEY</code> missing). Ask the site owner to add it and redeploy.
+            </p>
           </div>
         )}
       </CardContent>

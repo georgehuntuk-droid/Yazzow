@@ -50,6 +50,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // Check if tutor active student limit is reached
+  const { checkStudentLimitBeforeBooking } = await import("@/lib/bookings/limits");
+  const limitCheck = await checkStudentLimitBeforeBooking({
+    tutorId: tutor.id,
+    parentEmail,
+    studentName,
+  });
+  if (!limitCheck.ok) {
+    return NextResponse.json({ error: limitCheck.error }, { status: 403 });
+  }
+
   let lessonsCount = tutor.block_package_lessons_count ?? 10;
   let amountCents = 0;
   let packageName = `${lessonsCount}x Lesson Credits Package`;

@@ -5,7 +5,7 @@ import { createTutorSubscriptionCheckout } from "@/lib/stripe/subscription";
 import { isStripeConfigured } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
   }
@@ -13,6 +13,14 @@ export async function POST() {
   const user = await getApiUser();
   if (!user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let tier: "starter" | "growth" | "agency" | undefined = undefined;
+  try {
+    const body = await request.json();
+    tier = body.tier;
+  } catch {
+    // ignore
   }
 
   const supabase = await createClient();
@@ -38,6 +46,7 @@ export async function POST() {
       tutorId: user.id,
       email: user.email,
       existingCustomerId: profile.stripe_customer_id,
+      tier,
     });
     return NextResponse.json({ url });
   } catch (error) {

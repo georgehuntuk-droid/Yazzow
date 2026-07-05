@@ -26,6 +26,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That slot is no longer available." }, { status: 409 });
     }
 
+    // Check if tutor active student limit is reached
+    const { checkStudentLimitBeforeBooking } = await import("@/lib/bookings/limits");
+    const limitCheck = await checkStudentLimitBeforeBooking({
+      tutorId,
+      parentEmail: email,
+      studentName,
+    });
+    if (!limitCheck.ok) {
+      return NextResponse.json({ error: limitCheck.error }, { status: 403 });
+    }
+
     // 2. Fetch student records matching this parent-tutor relationship
     const { data: students } = await admin
       .from("students")

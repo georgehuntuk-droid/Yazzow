@@ -103,6 +103,24 @@ export async function signUpAction(
   const supabase = await createClient();
   const normalizedEmail = email.trim().toLowerCase();
 
+  // Explicitly check if email is already registered to prevent silent success (Supabase Auth default behavior)
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    const { data: usersList } = await admin.auth.admin.listUsers();
+    const userExists = usersList?.users?.some(
+      (u) => u.email?.toLowerCase() === normalizedEmail
+    );
+    if (userExists) {
+      return {
+        ok: false,
+        error: "An account with this email address already exists. Please log in instead.",
+      };
+    }
+  } catch (err) {
+    console.error("[signUpAction] Error checking existing user:", err);
+  }
+
   const confirmUrl = authConfirmUrl(origin, next);
 
   const { data, error } = await supabase.auth.signUp({

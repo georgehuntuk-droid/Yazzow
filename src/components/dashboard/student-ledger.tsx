@@ -25,6 +25,7 @@ import {
   sendManualPaymentReminder,
   approveStudentApplication,
   rejectStudentApplication,
+  updateLessonAttendance,
 } from "@/lib/dashboard/actions";
 import { formatMoney, formatSlotRange } from "@/lib/format";
 import type { StudentWithLessons } from "@/lib/tutors/student-lessons";
@@ -700,7 +701,10 @@ function StudentList({
                   {student.lessons.length > 0 && (() => {
                     const totalBookings = student.lessons.length;
                     const cancellations = student.lessons.filter((l) => l.status === "cancelled").length;
-                    const lateLessons = student.lessons.filter((l) => l.studentRunningLateSentAt !== null && l.studentRunningLateSentAt !== undefined).length;
+                    const lateLessons = student.lessons.filter((l) => 
+                      (l.studentRunningLateSentAt !== null && l.studentRunningLateSentAt !== undefined) ||
+                      l.attendanceStatus === "late"
+                    ).length;
                     const attended = student.lessons.filter((l) => l.status === "confirmed").length;
                     
                     const cancellationRate = Math.round((cancellations / totalBookings) * 100);
@@ -917,7 +921,11 @@ function StudentList({
                 {student.lessons.length > 0 && (() => {
                   const total = student.lessons.length;
                   const cancellations = student.lessons.filter((l) => l.status === "cancelled").length;
-                  const late = student.lessons.filter((l) => l.studentRunningLateSentAt !== null && l.studentRunningLateSentAt !== undefined).length;
+                  const late = student.lessons.filter((l) => 
+                    (l.studentRunningLateSentAt !== null && l.studentRunningLateSentAt !== undefined) ||
+                    l.attendanceStatus === "late"
+                  ).length;
+                  const absences = student.lessons.filter((l) => l.attendanceStatus === "absent").length;
                   const attended = student.lessons.filter((l) => l.status === "confirmed").length;
                   const cancellationRate = Math.round((cancellations / total) * 100);
                   const onTimeRate = attended > 0 ? Math.round(((attended - late) / attended) * 100) : 100;
@@ -925,22 +933,26 @@ function StudentList({
                   return (
                     <div className="rounded-xl border border-border/70 bg-muted/5 p-4 space-y-2 text-xs">
                       <p className="font-bold text-foreground uppercase tracking-wider text-[10px] text-muted-foreground">Attendance & Booking Statistics</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-1">
                         <div>
                           <p className="text-muted-foreground font-medium">Total Bookings</p>
                           <p className="text-sm font-bold text-foreground mt-0.5">{total} lesson{total === 1 ? "" : "s"}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground font-medium">Attended Lessons</p>
+                          <p className="text-muted-foreground font-medium">Attended</p>
                           <p className="text-sm font-bold text-foreground mt-0.5 text-emerald-600 dark:text-emerald-400">{attended}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground font-medium">Cancellations</p>
-                          <p className="text-sm font-bold text-foreground mt-0.5 text-rose-600 dark:text-rose-400">{cancellations} ({cancellationRate}% rate)</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5 text-rose-600 dark:text-rose-400">{cancellations} ({cancellationRate}%)</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground font-medium">Late Arrivals</p>
-                          <p className="text-sm font-bold text-foreground mt-0.5 text-amber-600 dark:text-amber-400">{late} ({onTimeRate}% on-time rate)</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5 text-amber-600 dark:text-amber-400">{late} ({onTimeRate}% on-time)</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-medium">Absences</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5 text-red-600 dark:text-red-400">{absences}</p>
                         </div>
                       </div>
                     </div>
@@ -1178,7 +1190,29 @@ function StudentList({
                                 )}
                               </div>
                             </div>
-                            <div className="mt-3 flex flex-wrap gap-1">
+
+                            <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2 pb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-semibold text-muted-foreground">Attendance status:</span>
+                                <select
+                                  value={lesson.attendanceStatus || "attended"}
+                                  onChange={async (e) => {
+                                    const nextStatus = e.target.value as "attended" | "late" | "absent";
+                                    const res = await updateLessonAttendance(lesson.id, nextStatus);
+                                    if (!res.ok) {
+                                      alert(res.error);
+                                    }
+                                  }}
+                                  className="flex h-6.5 rounded-md border border-input bg-background px-1.5 py-0 text-[10px] outline-none focus-visible:border-ring text-foreground font-bold cursor-pointer"
+                                >
+                                  <option value="attended">🕒 Attended On-Time</option>
+                                  <option value="late">⏳ Late</option>
+                                  <option value="absent">❌ Absent</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="mt-2 flex flex-wrap gap-1">
                               {[1, 2, 3, 4, 5].map((n) => (
                                 <button
                                   key={n}

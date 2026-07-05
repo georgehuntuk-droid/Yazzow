@@ -14,6 +14,7 @@ export type StudentLessonRecord = {
   isPaid: boolean;
   stripePaymentIntentId: string | null;
   studentRunningLateSentAt?: string | null;
+  attendanceStatus?: "attended" | "late" | "absent" | null;
 };
 
 export type StudentTaskRecord = {
@@ -128,8 +129,8 @@ export async function getStudentsWithLessonsForTutor(
   const features = await getSchemaFeatures();
 
   let bookingSelect = features.lessonFeedback
-    ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, is_paid, stripe_payment_intent_id, student_running_late_sent_at, availability_slots (starts_at, ends_at)"
-    : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, is_paid, stripe_payment_intent_id, student_running_late_sent_at, availability_slots (starts_at, ends_at)";
+    ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, is_paid, stripe_payment_intent_id, student_running_late_sent_at, attendance_status, availability_slots (starts_at, ends_at)"
+    : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, is_paid, stripe_payment_intent_id, student_running_late_sent_at, attendance_status, availability_slots (starts_at, ends_at)";
 
   const [
     { data: students, error: studentsError },
@@ -160,7 +161,7 @@ export async function getStudentsWithLessonsForTutor(
   let bookings = bookingsRes.data;
   let bookingsError = bookingsRes.error;
 
-  if (bookingsError && (bookingsError.code === "42703" || bookingsError.message.includes("is_paid"))) {
+  if (bookingsError && (bookingsError.code === "42703" || bookingsError.message.includes("attendance_status") || bookingsError.message.includes("is_paid"))) {
     bookingSelect = features.lessonFeedback
       ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, stripe_payment_intent_id, student_running_late_sent_at, availability_slots (starts_at, ends_at)"
       : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, stripe_payment_intent_id, student_running_late_sent_at, availability_slots (starts_at, ends_at)";
@@ -237,6 +238,7 @@ export async function getStudentsWithLessonsForTutor(
           isPaid,
           stripePaymentIntentId: b.stripe_payment_intent_id ?? null,
           studentRunningLateSentAt: (b as any).student_running_late_sent_at ?? null,
+          attendanceStatus: (b as any).attendance_status ?? "attended",
         };
       });
 

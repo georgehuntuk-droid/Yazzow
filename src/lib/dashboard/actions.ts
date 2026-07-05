@@ -1102,6 +1102,26 @@ export async function toggleBookingPaidStatus(bookingId: string, isPaid: boolean
   return { ok: true as const };
 }
 
+export async function updateLessonAttendance(bookingId: string, attendanceStatus: "attended" | "late" | "absent") {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ attendance_status: attendanceStatus })
+    .eq("id", bookingId)
+    .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidateTutor(profile.username);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/students");
+  return { ok: true as const };
+}
+
 export async function sendManualPaymentReminder(studentId: string) {
   const { profile } = await requireTutorProfile();
   const supabase = await createClient();

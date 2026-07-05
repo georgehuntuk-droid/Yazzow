@@ -117,7 +117,7 @@ export function TutorOnboardingAssistant({ status }: TutorOnboardingAssistantPro
     // Default dashboard tip
     return {
       title: "Quick Welcome Guide",
-      tip: "Welcome to Yazzow! Work through this 5-step checklist to launch your tutoring workspace. You can keep this panel open as you navigate to different pages for context-specific tips.",
+      tip: "Welcome to Yazzow! Work through this 4-step checklist to launch your tutoring workspace. You can keep this panel open as you navigate to different pages for context-specific tips.",
     };
   };
 
@@ -139,14 +139,6 @@ export function TutorOnboardingAssistant({ status }: TutorOnboardingAssistantPro
       completed: status.isScheduleSetup,
       href: "/dashboard/schedule",
       icon: CalendarRange,
-    },
-    {
-      id: "calendar",
-      title: "Sync External Calendar",
-      desc: "Subscribe to calendar feed on your phone",
-      completed: status.isCalendarSynced,
-      href: "/dashboard/schedule",
-      icon: Calendar,
     },
     {
       id: "stripe",

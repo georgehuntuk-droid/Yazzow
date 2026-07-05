@@ -155,7 +155,6 @@ export async function getPackagesForTutor(tutorId: string): Promise<TutorPackage
 export type OnboardingProgress = {
   isProfileCustomized: boolean;
   isScheduleSetup: boolean;
-  isCalendarSynced: boolean;
   isStripeConnected: boolean;
   isStorefrontSetup: boolean;
   totalSteps: number;
@@ -171,11 +170,10 @@ export async function getTutorOnboardingStatus(
     return {
       isProfileCustomized: true,
       isScheduleSetup: true,
-      isCalendarSynced: true,
       isStripeConnected: false,
       isStorefrontSetup: false,
-      totalSteps: 5,
-      completedSteps: 3,
+      totalSteps: 4,
+      completedSteps: 2,
     };
   }
 
@@ -183,10 +181,9 @@ export async function getTutorOnboardingStatus(
     return {
       isProfileCustomized: false,
       isScheduleSetup: false,
-      isCalendarSynced: false,
       isStripeConnected: false,
       isStorefrontSetup: false,
-      totalSteps: 5,
+      totalSteps: 4,
       completedSteps: 0,
     };
   }
@@ -197,7 +194,7 @@ export async function getTutorOnboardingStatus(
     // Query profile details
     const { data: profile } = await supabase
       .from("tutor_profiles")
-      .select("bio, avatar_url, stripe_account_id, google_refresh_token")
+      .select("bio, avatar_url, stripe_account_id")
       .eq("id", tutorId)
       .maybeSingle();
 
@@ -215,14 +212,12 @@ export async function getTutorOnboardingStatus(
 
     const isProfileCustomized = !!(profile?.bio && profile.bio.trim().length > 0) || !!profile?.avatar_url;
     const isScheduleSetup = (slotsCount ?? 0) > 0;
-    const isCalendarSynced = !!profile?.google_refresh_token;
     const isStripeConnected = !!profile?.stripe_account_id;
     const isStorefrontSetup = (resourcesCount ?? 0) > 0;
 
     const completedSteps = [
       isProfileCustomized,
       isScheduleSetup,
-      isCalendarSynced,
       isStripeConnected,
       isStorefrontSetup,
     ].filter(Boolean).length;
@@ -230,10 +225,9 @@ export async function getTutorOnboardingStatus(
     return {
       isProfileCustomized,
       isScheduleSetup,
-      isCalendarSynced,
       isStripeConnected,
       isStorefrontSetup,
-      totalSteps: 5,
+      totalSteps: 4,
       completedSteps,
     };
   } catch (err) {
@@ -241,10 +235,9 @@ export async function getTutorOnboardingStatus(
     return {
       isProfileCustomized: false,
       isScheduleSetup: false,
-      isCalendarSynced: false,
       isStripeConnected: false,
       isStorefrontSetup: false,
-      totalSteps: 5,
+      totalSteps: 4,
       completedSteps: 0,
     };
   }

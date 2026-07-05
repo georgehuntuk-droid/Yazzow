@@ -34,12 +34,11 @@ test.describe('Tutor Onboarding Assistant & Google Login E2E Tests', () => {
     // Check checklist items are displayed
     await expect(page.locator('span:has-text("Customize Tutor Portal")')).toBeVisible();
     await expect(page.locator('span:has-text("Define Availability")')).toBeVisible();
-    await expect(page.locator('span:has-text("Sync External Calendar")')).toBeVisible();
     await expect(page.locator('span:has-text("Connect Stripe Payouts")')).toBeVisible();
 
     // Verify default welcome tip is shown on /dashboard
     await expect(page.locator('span:has-text("Quick Welcome Guide")')).toBeVisible();
-    await expect(page.locator('text=Welcome to Yazzow! Work through this 5-step checklist')).toBeVisible();
+    await expect(page.locator('text=Welcome to Yazzow! Work through this 4-step checklist')).toBeVisible();
 
     // 5. Navigate to Settings and verify tip updates
     await page.goto('/dashboard/settings');

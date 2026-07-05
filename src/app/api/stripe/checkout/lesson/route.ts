@@ -11,6 +11,7 @@ type LessonCheckoutBody = {
   tutorUsername: string;
   parentEmail: string;
   studentName?: string;
+  subscribeToAlerts?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as LessonCheckoutBody;
-  const { slotId, tutorUsername, parentEmail, studentName } = body;
+  const { slotId, tutorUsername, parentEmail, studentName, subscribeToAlerts } = body;
 
   if (!slotId || !tutorUsername || !parentEmail) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
         parent_email: parentEmail,
         student_name: studentName ?? "",
         platform_fee_cents: "0",
+        subscribe_to_alerts: String(subscribeToAlerts !== false),
       },
       success_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?booked=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?cancelled=1`,

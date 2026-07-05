@@ -11,6 +11,7 @@ type PackageCheckoutBody = {
   parentEmail: string;
   studentName?: string;
   packageId?: string;
+  subscribeToAlerts?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as PackageCheckoutBody;
-  const { tutorUsername, parentEmail, studentName, packageId } = body;
+  const { tutorUsername, parentEmail, studentName, packageId, subscribeToAlerts } = body;
 
   if (!tutorUsername || !parentEmail) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
         lessons_count: String(lessonsCount),
         discount_percent: "0",
         platform_fee_cents: "0",
+        subscribe_to_alerts: String(subscribeToAlerts !== false),
       },
       success_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?package_booked=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${PUBLIC_SITE_URL}/tutor/${tutorUsername}?cancelled=1`,

@@ -30,6 +30,7 @@ export async function fulfillLessonBookingFromSession(
   const studentName = metadata.student_name?.trim() || null;
   const platformFeeCents = Number(metadata.platform_fee_cents ?? 0);
   const amountCents = session.amount_total ?? 0;
+  const subscribeToAlerts = metadata.subscribe_to_alerts !== "false";
 
   if (!slotId || !tutorId || !parentEmail) {
     return { ok: false };
@@ -105,14 +106,22 @@ export async function fulfillLessonBookingFromSession(
     );
   }
 
-  await admin.from("slot_alert_subscribers").upsert(
-    {
-      tutor_id: tutorId,
-      parent_email: parentEmail,
-      student_name: studentName,
-    },
-    { onConflict: "tutor_id,parent_email" },
-  );
+  if (subscribeToAlerts) {
+    await admin.from("slot_alert_subscribers").upsert(
+      {
+        tutor_id: tutorId,
+        parent_email: parentEmail,
+        student_name: studentName,
+      },
+      { onConflict: "tutor_id,parent_email" },
+    );
+  } else {
+    await admin
+      .from("slot_alert_subscribers")
+      .delete()
+      .eq("tutor_id", tutorId)
+      .eq("parent_email", parentEmail);
+  }
 
   if (slotRow && tutorRow) {
     const { sendBookingConfirmationEmail } = await import(

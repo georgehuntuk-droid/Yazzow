@@ -652,6 +652,15 @@ function StudentList({
                     <MessageSquare className="size-3 text-primary" />
                     Chat on Website
                   </Link>
+                  {student.alertsEnabled ? (
+                    <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-950/40 border border-blue-200/50 dark:border-blue-800/30 px-2 py-0.5 text-[10px] font-semibold text-blue-800 dark:text-blue-300">
+                      Alerts Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                      Alerts Opted Out
+                    </span>
+                  )}
                   {student.hasAccount ? (
                     <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300">
                       Linked

@@ -4,7 +4,7 @@ import { syncBookingToGoogleCalendar } from "@/lib/calendar/sync-booking";
 
 export async function POST(request: Request) {
   try {
-    const { slotId, tutorId, parentEmail, studentName } = await request.json();
+    const { slotId, tutorId, parentEmail, studentName, subscribeToAlerts } = await request.json();
 
     if (!slotId || !tutorId || !parentEmail) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -91,15 +91,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Subscribe parent to slot alerts (optional fallback)
-    await admin.from("slot_alert_subscribers").upsert(
-      {
-        tutor_id: tutorId,
-        parent_email: email,
-        student_name: studentName?.trim() || null,
-      },
-      { onConflict: "tutor_id,parent_email" }
-    );
+    // 7. Subscribe/Unsubscribe parent to slot alerts
+    if (subscribeToAlerts !== false) {
+      await admin.from("slot_alert_subscribers").upsert(
+        {
+          tutor_id: tutorId,
+          parent_email: email,
+          student_name: studentName?.trim() || null,
+        },
+        { onConflict: "tutor_id,parent_email" }
+      );
+    } else {
+      await admin
+        .from("slot_alert_subscribers")
+        .delete()
+        .eq("tutor_id", tutorId)
+        .eq("parent_email", email);
+    }
 
     // 8. Trigger confirmation email
     try {

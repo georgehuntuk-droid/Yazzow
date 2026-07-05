@@ -45,6 +45,7 @@ export function LessonCheckoutButton({
   const [error, setError] = useState<string | null>(null);
   const [creditSuccess, setBookingCreditSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "account">("card");
+  const [subscribeToAlerts, setSubscribeToAlerts] = useState(true);
 
   const slotDurationMs = new Date(slot.endsAt).getTime() - new Date(slot.startsAt).getTime();
   const durationHours = slotDurationMs / (60 * 60 * 1000);
@@ -122,6 +123,7 @@ export function LessonCheckoutButton({
           tutorId: tutor.id,
           parentEmail: email,
           studentName: studentName || undefined,
+          subscribeToAlerts,
         }),
       });
 
@@ -166,6 +168,7 @@ export function LessonCheckoutButton({
             tutorId: tutor.id,
             parentEmail: email,
             studentName: studentName || undefined,
+            subscribeToAlerts,
           }),
         });
 
@@ -189,6 +192,7 @@ export function LessonCheckoutButton({
             tutorUsername: tutor.username,
             parentEmail: email,
             studentName: studentName || undefined,
+            subscribeToAlerts,
           }),
         });
         const data = (await response.json()) as { url?: string; error?: string };
@@ -278,6 +282,19 @@ export function LessonCheckoutButton({
             className="h-10 bg-background"
           />
         </div>
+      </div>
+
+      <div className="flex items-start gap-2.5 pt-1 pb-1">
+        <input
+          id="subscribe-to-alerts"
+          type="checkbox"
+          checked={subscribeToAlerts}
+          onChange={(e) => setSubscribeToAlerts(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+        />
+        <label htmlFor="subscribe-to-alerts" className="text-xs text-muted-foreground leading-normal cursor-pointer select-none">
+          Email me when new lesson slots open up
+        </label>
       </div>
 
       {/* Payment Method Selector (only if not booking with credits) */}

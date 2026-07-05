@@ -41,6 +41,7 @@ export type StudentWithLessons = {
   hasAccount: boolean;
   owedAmountCents: number;
   lessonType: "online" | "visiting";
+  alertsEnabled: boolean;
 };
 
 type BookingWithSlot = BookingRow & {
@@ -106,6 +107,7 @@ export async function getStudentsWithLessonsForTutor(
           hasAccount: true,
           owedAmountCents: 0,
           lessonType: "online",
+          alertsEnabled: true,
         },
       ],
       archived: [],
@@ -176,6 +178,11 @@ export async function getStudentsWithLessonsForTutor(
   const admin = createAdminClient();
   const authEmails = new Set<string>();
   const nowTime = Date.now();
+
+  const { data: subscribers } = await admin
+    .from("slot_alert_subscribers")
+    .select("parent_email, student_name")
+    .eq("tutor_id", tutorId);
   
   if (cachedAuthEmails && (nowTime - cachedAuthEmails.timestamp < CACHE_TTL)) {
     cachedAuthEmails.emails.forEach((email) => authEmails.add(email));
@@ -252,6 +259,14 @@ export async function getStudentsWithLessonsForTutor(
       .filter((l) => l.status === "confirmed" && !l.isPaid)
       .reduce((sum, l) => sum + l.amountCents, 0);
 
+    const parentEmailLower = student.parent_email?.trim().toLowerCase();
+    const studentNameLower = student.student_name?.trim().toLowerCase();
+    const alertsEnabled = (subscribers ?? []).some(
+      (sub) => 
+        sub.parent_email.trim().toLowerCase() === parentEmailLower && 
+        (!studentNameLower || (sub.student_name || "").trim().toLowerCase() === studentNameLower)
+    );
+
     return {
       id: student.id,
       studentName: student.student_name,
@@ -267,6 +282,7 @@ export async function getStudentsWithLessonsForTutor(
       hasAccount: student.parent_email ? authEmails.has(student.parent_email.toLowerCase()) : false,
       owedAmountCents,
       lessonType: ((student as any).lesson_type as "online" | "visiting") ?? "online",
+      alertsEnabled,
     };
   });
 

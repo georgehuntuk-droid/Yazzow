@@ -42,6 +42,7 @@ export function LessonPackagesTab({
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subscribeToAlerts, setSubscribeToAlerts] = useState(true);
 
   useEffect(() => {
     async function checkSession() {
@@ -109,6 +110,7 @@ export function LessonPackagesTab({
           parentEmail: email,
           studentName: studentName || undefined,
           packageId: selectedPackageId || undefined,
+          subscribeToAlerts,
         }),
       });
 
@@ -285,6 +287,19 @@ export function LessonPackagesTab({
                   className="h-10 bg-background"
                 />
               </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 pt-1.5 pb-1">
+              <input
+                id="package-subscribe-to-alerts"
+                type="checkbox"
+                checked={subscribeToAlerts}
+                onChange={(e) => setSubscribeToAlerts(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+              />
+              <label htmlFor="package-subscribe-to-alerts" className="text-xs text-muted-foreground leading-normal cursor-pointer select-none">
+                Email me when new lesson slots open up
+              </label>
             </div>
 
             {error ? (

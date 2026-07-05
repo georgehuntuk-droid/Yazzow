@@ -12,7 +12,7 @@ export async function cancelLessonBooking(input: {
 
   const { data: booking, error: fetchError } = await admin
     .from("bookings")
-    .select("id, slot_id, tutor_id, parent_email, student_name, status, stripe_payment_intent_id")
+    .select("id, slot_id, tutor_id, parent_email, student_name, status, stripe_payment_intent_id, created_at")
     .eq("id", input.bookingId)
     .eq("tutor_id", input.tutorId)
     .maybeSingle();
@@ -161,16 +161,24 @@ export async function cancelLessonBooking(input: {
     }
   }
 
-  // 3. Notify other alert subscribers that a slot has reopened
+  // 3. Notify other alert subscribers that a slot has reopened (only if booked for more than 24 hours to avoid booking-cancel spam)
   if (profile) {
-    await notifyFamiliesSlotOpened({
-      tutorId: input.tutorId,
-      tutorUsername: profile.username,
-      tutorDisplayName: profile.display_name,
-      slotStartsAt: slotRow.starts_at,
-      slotEndsAt: slotRow.ends_at,
-      excludeParentEmail: booking.parent_email,
-    });
+    const createdTime = booking.created_at ? new Date(booking.created_at).getTime() : Date.now();
+    const durationMs = Date.now() - createdTime;
+    const hoursSinceBooking = durationMs / (1000 * 60 * 60);
+
+    if (hoursSinceBooking >= 24) {
+      await notifyFamiliesSlotOpened({
+        tutorId: input.tutorId,
+        tutorUsername: profile.username,
+        tutorDisplayName: profile.display_name,
+        slotStartsAt: slotRow.starts_at,
+        slotEndsAt: slotRow.ends_at,
+        excludeParentEmail: booking.parent_email,
+      });
+    } else {
+      console.log(`[cancelLessonBooking] Skipping reopened slot alert because booking was created only ${hoursSinceBooking.toFixed(1)} hours ago.`);
+    }
   }
 
   return { ok: true };

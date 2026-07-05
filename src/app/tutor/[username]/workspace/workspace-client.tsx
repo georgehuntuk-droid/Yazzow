@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, MessageCircle, X, Calendar, BookOpen, FileText, Loader2 } from "lucide-react";
 
@@ -33,6 +33,19 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [studentFeedbackInput, setStudentFeedbackInput] = useState("");
   const [isSavingFeedback, setIsSavingFeedback] = useState(false);
+  const [optimisticTaskStatuses, setOptimisticTaskStatuses] = useState<Record<string, "pending" | "completed">>({});
+
+  useEffect(() => {
+    setOptimisticTaskStatuses((prev) => {
+      const next = { ...prev };
+      initialTasks.forEach((t) => {
+        if (next[t.id] === t.status) {
+          delete next[t.id];
+        }
+      });
+      return next;
+    });
+  }, [initialTasks]);
 
   const handleOpenTask = (task: Task) => {
     setSelectedTask(task);
@@ -56,19 +69,31 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
   }
 
   async function handleToggleStatus(taskId: string, currentStatus: "pending" | "completed") {
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+    setOptimisticTaskStatuses((prev) => ({ ...prev, [taskId]: newStatus }));
+    if (selectedTask && selectedTask.id === taskId) {
+      setSelectedTask({
+        ...selectedTask,
+        status: newStatus,
+        completedAt: newStatus === "completed" ? new Date().toISOString() : null,
+      });
+    }
+
     setUpdatingId(taskId);
     startTransition(async () => {
-      const newStatus = currentStatus === "completed" ? "pending" : "completed";
       const res = await toggleTaskStatus(taskId, newStatus);
       if (!res.ok) {
         alert(res.error);
-      } else {
-        // If the toggled task is currently opened in the modal, update its local state too
+        setOptimisticTaskStatuses((prev) => {
+          const next = { ...prev };
+          delete next[taskId];
+          return next;
+        });
         if (selectedTask && selectedTask.id === taskId) {
           setSelectedTask({
             ...selectedTask,
-            status: newStatus,
-            completedAt: newStatus === "completed" ? new Date().toISOString() : null,
+            status: currentStatus,
+            completedAt: currentStatus === "completed" ? new Date().toISOString() : null,
           });
         }
       }
@@ -77,8 +102,9 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
     });
   }
 
-  const pendingTasks = initialTasks.filter((t) => t.status === "pending");
-  const completedTasks = initialTasks.filter((t) => t.status === "completed");
+  const getTaskStatus = (t: Task) => optimisticTaskStatuses[t.id] !== undefined ? optimisticTaskStatuses[t.id] : t.status;
+  const pendingTasks = initialTasks.filter((t) => getTaskStatus(t) === "pending");
+  const completedTasks = initialTasks.filter((t) => getTaskStatus(t) === "completed");
 
   return (
     <div className="space-y-6">
@@ -108,7 +134,7 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
                       disabled={isUpdating}
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent opening modal when checking box
-                        handleToggleStatus(task.id, task.status);
+                        handleToggleStatus(task.id, getTaskStatus(task));
                       }}
                       className="mt-0.5 shrink-0 text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer relative z-10"
                     >
@@ -166,7 +192,7 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
                       disabled={isUpdating}
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent opening modal when checking box
-                        handleToggleStatus(task.id, task.status);
+                        handleToggleStatus(task.id, getTaskStatus(task));
                       }}
                       className="mt-0.5 shrink-0 text-emerald-500 hover:text-muted-foreground/60 transition-colors cursor-pointer relative z-10"
                     >

@@ -111,6 +111,9 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   const [optimisticLimits, setOptimisticLimits] = useState<Record<string, number>>({});
   const [savingCredits, setSavingCredits] = useState<Record<string, boolean>>({});
   const [savingLimits, setSavingLimits] = useState<Record<string, boolean>>({});
+  const [optimisticPaidStatus, setOptimisticPaidStatus] = useState<Record<string, boolean>>({});
+  const [optimisticAttendanceStatus, setOptimisticAttendanceStatus] = useState<Record<string, "attended" | "late" | "absent">>({});
+  const [optimisticTaskStatus, setOptimisticTaskStatus] = useState<Record<string, "pending" | "completed">>({});
 
   const saveTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const baselineCreditsRef = useRef<Record<string, number>>({});
@@ -119,7 +122,7 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   useEffect(() => {
     setOptimisticCredits((prev) => {
       const next = { ...prev };
-      students.active.concat(students.archived).forEach((s) => {
+      students.active.concat(students.archived, students.pending).forEach((s) => {
         if (next[s.id] === s.lessonCredits) {
           delete next[s.id];
         }
@@ -128,9 +131,39 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
     });
     setOptimisticLimits((prev) => {
       const next = { ...prev };
-      students.active.concat(students.archived).forEach((s) => {
+      students.active.concat(students.archived, students.pending).forEach((s) => {
         if (next[s.id] === s.creditLimit) {
           delete next[s.id];
+        }
+      });
+      return next;
+    });
+    setOptimisticPaidStatus((prev) => {
+      const next = { ...prev };
+      const allLessons = students.active.concat(students.archived, students.pending).flatMap((s) => s.lessons);
+      allLessons.forEach((l) => {
+        if (next[l.id] === l.isPaid) {
+          delete next[l.id];
+        }
+      });
+      return next;
+    });
+    setOptimisticAttendanceStatus((prev) => {
+      const next = { ...prev };
+      const allLessons = students.active.concat(students.archived, students.pending).flatMap((s) => s.lessons);
+      allLessons.forEach((l) => {
+        if (next[l.id] === l.attendanceStatus) {
+          delete next[l.id];
+        }
+      });
+      return next;
+    });
+    setOptimisticTaskStatus((prev) => {
+      const next = { ...prev };
+      const allTasks = students.active.concat(students.archived, students.pending).flatMap((s) => s.tasks || []);
+      allTasks.forEach((t) => {
+        if (next[t.id] === t.status) {
+          delete next[t.id];
         }
       });
       return next;
@@ -483,6 +516,12 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             optimisticLimits={optimisticLimits}
             savingCredits={savingCredits}
             savingLimits={savingLimits}
+            optimisticPaidStatus={optimisticPaidStatus}
+            setOptimisticPaidStatus={setOptimisticPaidStatus}
+            optimisticAttendanceStatus={optimisticAttendanceStatus}
+            setOptimisticAttendanceStatus={setOptimisticAttendanceStatus}
+            optimisticTaskStatus={optimisticTaskStatus}
+            setOptimisticTaskStatus={setOptimisticTaskStatus}
           />
         </TabsContent>
         <TabsContent value="archived" className="mt-4 space-y-3">
@@ -518,6 +557,12 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             optimisticLimits={optimisticLimits}
             savingCredits={savingCredits}
             savingLimits={savingLimits}
+            optimisticPaidStatus={optimisticPaidStatus}
+            setOptimisticPaidStatus={setOptimisticPaidStatus}
+            optimisticAttendanceStatus={optimisticAttendanceStatus}
+            setOptimisticAttendanceStatus={setOptimisticAttendanceStatus}
+            optimisticTaskStatus={optimisticTaskStatus}
+            setOptimisticTaskStatus={setOptimisticTaskStatus}
           />
         </TabsContent>
       </Tabs>
@@ -553,6 +598,12 @@ function StudentList({
   optimisticLimits,
   savingCredits,
   savingLimits,
+  optimisticPaidStatus,
+  setOptimisticPaidStatus,
+  optimisticAttendanceStatus,
+  setOptimisticAttendanceStatus,
+  optimisticTaskStatus,
+  setOptimisticTaskStatus,
 }: {
   list: StudentWithLessons[];
   currency: string;
@@ -583,6 +634,12 @@ function StudentList({
   optimisticLimits: Record<string, number>;
   savingCredits: Record<string, boolean>;
   savingLimits: Record<string, boolean>;
+  optimisticPaidStatus: Record<string, boolean>;
+  setOptimisticPaidStatus: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  optimisticAttendanceStatus: Record<string, "attended" | "late" | "absent">;
+  setOptimisticAttendanceStatus: React.Dispatch<React.SetStateAction<Record<string, "attended" | "late" | "absent">>>;
+  optimisticTaskStatus: Record<string, "pending" | "completed">;
+  setOptimisticTaskStatus: React.Dispatch<React.SetStateAction<Record<string, "pending" | "completed">>>;
 }) {
   const router = useRouter();
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
@@ -972,63 +1029,75 @@ function StudentList({
 
                   {student.tasks && student.tasks.length > 0 ? (
                     <div className="space-y-2">
-                      {student.tasks.map((task) => (
-                        <div key={task.id} className="flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/10 p-3 text-sm">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="space-y-0.5">
-                              <span className={cn(
-                                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                                task.status === "completed"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-amber-100 text-amber-800"
-                              )}>
-                                {task.status === "completed" ? "Completed" : "Pending"}
-                              </span>
-                              <p className={cn("font-semibold", task.status === "completed" && "line-through text-muted-foreground")}>
-                                {task.title}
-                              </p>
-                              {task.description && (
-                                <p className="text-xs text-muted-foreground leading-normal mt-0.5">
-                                  {task.description}
+                       {student.tasks.map((task) => {
+                        const taskStatus = optimisticTaskStatus[task.id] !== undefined ? optimisticTaskStatus[task.id] : task.status;
+                        return (
+                          <div key={task.id} className="flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/10 p-3 text-sm">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="space-y-0.5">
+                                <span className={cn(
+                                  "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                  taskStatus === "completed"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-amber-100 text-amber-800"
+                                )}>
+                                  {taskStatus === "completed" ? "Completed" : "Pending"}
+                                </span>
+                                <p className={cn("font-semibold", taskStatus === "completed" && "line-through text-muted-foreground")}>
+                                  {task.title}
                                 </p>
-                              )}
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground leading-normal mt-0.5">
+                                    {task.description}
+                                  </p>
+                                )}
 
-                              {/* Attachment URL display */}
-                              {task.attachmentUrl && (
-                                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-primary font-medium">
-                                  <span>📁 Attachment:</span>
-                                  <a 
-                                    href={task.attachmentUrl} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
-                                    className="underline hover:text-primary/80 font-bold"
-                                  >
-                                    {task.attachmentName || "View Attachment"}
-                                  </a>
-                                </div>
-                              )}
+                                {/* Attachment URL display */}
+                                {task.attachmentUrl && (
+                                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-primary font-medium">
+                                    <span>📁 Attachment:</span>
+                                    <a 
+                                      href={task.attachmentUrl} 
+                                      target="_blank" 
+                                      rel="noreferrer" 
+                                      className="underline hover:text-primary/80 font-bold"
+                                    >
+                                      {task.attachmentName || "View Attachment"}
+                                    </a>
+                                  </div>
+                                )}
 
-                              {/* Student feedback display */}
-                              {task.studentFeedback && (
-                                <div className="mt-2.5 flex items-start gap-2 rounded-lg bg-blue-50/50 border border-blue-100 p-2.5 text-xs dark:bg-blue-950/10 dark:border-blue-900/30">
-                                  <span className="text-primary font-bold">💬 Student Feedback:</span>
-                                  <span className="text-muted-foreground italic leading-relaxed">&ldquo;{task.studentFeedback}&rdquo;</span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground">
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  const newStatus = task.status === "completed" ? "pending" : "completed";
-                                  await toggleTaskStatus(task.id, newStatus);
-                                  router.refresh();
-                                }}
-                                className="font-semibold hover:text-primary transition-colors cursor-pointer"
-                              >
-                                Mark {task.status === "completed" ? "Pending" : "Completed"}
-                              </button>
+                                {/* Student feedback display */}
+                                {task.studentFeedback && (
+                                  <div className="mt-2.5 flex items-start gap-2 rounded-lg bg-blue-50/50 border border-blue-100 p-2.5 text-xs dark:bg-blue-950/10 dark:border-blue-900/30">
+                                    <span className="text-primary font-bold">💬 Student Feedback:</span>
+                                    <span className="text-muted-foreground italic leading-relaxed">&ldquo;{task.studentFeedback}&rdquo;</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const newStatus = taskStatus === "completed" ? "pending" : "completed";
+                                    setOptimisticTaskStatus((prev) => ({ ...prev, [task.id]: newStatus }));
+                                    const res = await toggleTaskStatus(task.id, newStatus);
+                                    if (!res.ok) {
+                                      setOptimisticTaskStatus((prev) => {
+                                        const next = { ...prev };
+                                        delete next[task.id];
+                                        return next;
+                                      });
+                                      alert(res.error);
+                                    } else {
+                                      router.refresh();
+                                    }
+                                  }}
+                                  className="font-semibold hover:text-primary transition-colors cursor-pointer"
+                                >
+                                  Mark {taskStatus === "completed" ? "Pending" : "Completed"}
+                                </button>
                               <span className="text-muted-foreground/30">|</span>
                               <button
                                 type="button"
@@ -1061,7 +1130,8 @@ function StudentList({
                             />
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">No tasks assigned yet.</p>
@@ -1140,6 +1210,8 @@ function StudentList({
                           text: lesson.tutorLessonFeedback ?? "",
                           rating: lesson.lessonRating,
                         };
+                        const isPaid = optimisticPaidStatus[lesson.id] !== undefined ? optimisticPaidStatus[lesson.id] : lesson.isPaid;
+                        const attendanceStatus = optimisticAttendanceStatus[lesson.id] !== undefined ? optimisticAttendanceStatus[lesson.id] : (lesson.attendanceStatus || "attended");
 
                         return (
                           <li
@@ -1152,7 +1224,7 @@ function StudentList({
                                   {formatSlotRange(lesson.startsAt, lesson.endsAt)}
                                 </p>
                                 {lesson.stripePaymentIntentId === "cash" && (
-                                  lesson.isPaid ? (
+                                  isPaid ? (
                                     <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
                                       Paid
                                     </span>
@@ -1172,20 +1244,36 @@ function StudentList({
                                     type="button"
                                     onClick={async () => {
                                       try {
-                                        const res = await toggleBookingPaidStatus(lesson.id, !lesson.isPaid);
-                                        if (!res.ok) alert(`Failed to update status: ${res.error}`);
+                                        const nextPaid = !isPaid;
+                                        setOptimisticPaidStatus((prev) => ({ ...prev, [lesson.id]: nextPaid }));
+                                        const res = await toggleBookingPaidStatus(lesson.id, nextPaid);
+                                        if (!res.ok) {
+                                          setOptimisticPaidStatus((prev) => {
+                                            const next = { ...prev };
+                                            delete next[lesson.id];
+                                            return next;
+                                          });
+                                          alert(`Failed to update status: ${res.error}`);
+                                        } else {
+                                          router.refresh();
+                                        }
                                       } catch (err) {
+                                        setOptimisticPaidStatus((prev) => {
+                                          const next = { ...prev };
+                                          delete next[lesson.id];
+                                          return next;
+                                        });
                                         alert("Failed to update status.");
                                       }
                                     }}
                                     className={cn(
                                       "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold transition-all border",
-                                      lesson.isPaid 
+                                      isPaid 
                                         ? "border-amber-200 text-amber-700 hover:bg-amber-50"
                                         : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                                     )}
                                   >
-                                    {lesson.isPaid ? "Mark Owed" : "Mark Paid"}
+                                    {isPaid ? "Mark Owed" : "Mark Paid"}
                                   </button>
                                 )}
                               </div>
@@ -1195,12 +1283,20 @@ function StudentList({
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[11px] font-semibold text-muted-foreground">Attendance status:</span>
                                 <select
-                                  value={lesson.attendanceStatus || "attended"}
+                                  value={attendanceStatus}
                                   onChange={async (e) => {
                                     const nextStatus = e.target.value as "attended" | "late" | "absent";
+                                    setOptimisticAttendanceStatus((prev) => ({ ...prev, [lesson.id]: nextStatus }));
                                     const res = await updateLessonAttendance(lesson.id, nextStatus);
                                     if (!res.ok) {
+                                      setOptimisticAttendanceStatus((prev) => {
+                                        const next = { ...prev };
+                                        delete next[lesson.id];
+                                        return next;
+                                      });
                                       alert(res.error);
+                                    } else {
+                                      router.refresh();
                                     }
                                   }}
                                   className="flex h-6.5 rounded-md border border-input bg-background px-1.5 py-0 text-[10px] outline-none focus-visible:border-ring text-foreground font-bold cursor-pointer"

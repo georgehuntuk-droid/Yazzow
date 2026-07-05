@@ -205,11 +205,13 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
     .eq("id", tutorId);
 
   if (error) {
-    if (
+    const isTierError =
       error.message.includes("subscription_tier") ||
       error.message.includes("schema cache") ||
-      error.code === "42703"
-    ) {
+      error.code === "42703";
+
+    if (isTierError && payload.subscriptionTier === undefined) {
+      // Safe to retry without tier as it wasn't requested anyway
       delete updatePayload.subscription_tier;
       const { error: retryError } = await admin
         .from("tutor_profiles")
@@ -220,7 +222,12 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
         return { ok: false as const, error: retryError.message };
       }
     } else {
-      return { ok: false as const, error: error.message };
+      // If tier was explicitly requested, or it is a different error, do not fail silently
+      let errMsg = error.message;
+      if (isTierError) {
+        errMsg = `${error.message}. Please run the query "NOTIFY pgrst, 'reload schema';" in your Supabase SQL Editor to refresh the cache.`;
+      }
+      return { ok: false as const, error: errMsg };
     }
   }
 

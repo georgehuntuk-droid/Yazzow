@@ -24,6 +24,9 @@ export type StudentTaskRecord = {
   tutorFeedback: string | null;
   createdAt: string;
   completedAt: string | null;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  studentFeedback?: string | null;
 };
 
 export type StudentWithLessons = {
@@ -247,6 +250,9 @@ export async function getStudentsWithLessonsForTutor(
         tutorFeedback: t.tutor_feedback,
         createdAt: t.created_at,
         completedAt: t.completed_at,
+        attachmentUrl: t.attachment_url ?? null,
+        attachmentName: t.attachment_name ?? null,
+        studentFeedback: t.student_feedback ?? null,
       }));
 
     let status: "active" | "archived" | "pending" = "active";

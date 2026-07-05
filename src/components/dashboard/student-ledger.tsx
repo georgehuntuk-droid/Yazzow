@@ -913,6 +913,40 @@ function StudentList({
                   />
                 </div>
 
+                {/* Attendance & Statistics Summary */}
+                {student.lessons.length > 0 && (() => {
+                  const total = student.lessons.length;
+                  const cancellations = student.lessons.filter((l) => l.status === "cancelled").length;
+                  const late = student.lessons.filter((l) => l.studentRunningLateSentAt !== null && l.studentRunningLateSentAt !== undefined).length;
+                  const attended = student.lessons.filter((l) => l.status === "confirmed").length;
+                  const cancellationRate = Math.round((cancellations / total) * 100);
+                  const onTimeRate = attended > 0 ? Math.round(((attended - late) / attended) * 100) : 100;
+                  
+                  return (
+                    <div className="rounded-xl border border-border/70 bg-muted/5 p-4 space-y-2 text-xs">
+                      <p className="font-bold text-foreground uppercase tracking-wider text-[10px] text-muted-foreground">Attendance & Booking Statistics</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
+                        <div>
+                          <p className="text-muted-foreground font-medium">Total Bookings</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5">{total} lesson{total === 1 ? "" : "s"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-medium">Attended Lessons</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5 text-emerald-600 dark:text-emerald-400">{attended}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-medium">Cancellations</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5 text-rose-600 dark:text-rose-400">{cancellations} ({cancellationRate}% rate)</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-medium">Late Arrivals</p>
+                          <p className="text-sm font-bold text-foreground mt-0.5 text-amber-600 dark:text-amber-400">{late} ({onTimeRate}% on-time rate)</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Assigned Work & Tasks */}
                 <div className="space-y-3 border-t border-border/60 pt-4">
                   <div className="flex items-center justify-between">
@@ -945,6 +979,29 @@ function StudentList({
                                 <p className="text-xs text-muted-foreground leading-normal mt-0.5">
                                   {task.description}
                                 </p>
+                              )}
+
+                              {/* Attachment URL display */}
+                              {task.attachmentUrl && (
+                                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-primary font-medium">
+                                  <span>📁 Attachment:</span>
+                                  <a 
+                                    href={task.attachmentUrl} 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    className="underline hover:text-primary/80 font-bold"
+                                  >
+                                    {task.attachmentName || "View Attachment"}
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* Student feedback display */}
+                              {task.studentFeedback && (
+                                <div className="mt-2.5 flex items-start gap-2 rounded-lg bg-blue-50/50 border border-blue-100 p-2.5 text-xs dark:bg-blue-950/10 dark:border-blue-900/30">
+                                  <span className="text-primary font-bold">💬 Student Feedback:</span>
+                                  <span className="text-muted-foreground italic leading-relaxed">&ldquo;{task.studentFeedback}&rdquo;</span>
+                                </div>
                               )}
                             </div>
                             
@@ -1005,10 +1062,18 @@ function StudentList({
                       const formData = new FormData(form);
                       const title = String(formData.get("taskTitle") ?? "").trim();
                       const desc = String(formData.get("taskDesc") ?? "").trim();
+                      const attachUrl = String(formData.get("taskAttachmentUrl") ?? "").trim();
+                      const attachName = String(formData.get("taskAttachmentName") ?? "").trim();
                       
                       if (!title) return;
                       
-                      const res = await assignStudentTask({ studentId: student.id, title, description: desc });
+                      const res = await assignStudentTask({ 
+                        studentId: student.id, 
+                        title, 
+                        description: desc,
+                        attachmentUrl: attachUrl || undefined,
+                        attachmentName: attachName || undefined
+                      });
                       if (res.ok) {
                         form.reset();
                         router.refresh();
@@ -1030,6 +1095,16 @@ function StudentList({
                         name="taskDesc"
                         placeholder="Description / instructions (optional)"
                         className="h-8 text-xs rounded-lg"
+                      />
+                      <Input
+                        name="taskAttachmentUrl"
+                        placeholder="Attachment URL (optional link / worksheets)"
+                        className="h-8 text-xs rounded-lg col-span-1"
+                      />
+                      <Input
+                        name="taskAttachmentName"
+                        placeholder="Attachment Name (optional display name)"
+                        className="h-8 text-xs rounded-lg col-span-1"
                       />
                     </div>
                     <Button type="submit" size="xs" className="self-start text-[11px] h-7 px-3 font-semibold rounded-lg mt-1">

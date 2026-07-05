@@ -744,26 +744,46 @@ export async function assignStudentTask(input: {
   studentId: string;
   title: string;
   description?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }) {
   const { profile } = await requireTutorProfile();
   const title = input.title.trim();
   const description = input.description?.trim() || null;
+  const attachmentUrl = input.attachmentUrl?.trim() || null;
+  const attachmentName = input.attachmentName?.trim() || null;
 
   if (!title) {
     return { ok: false as const, error: "Task title is required." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("student_tasks").insert({
+  const payload: any = {
     student_id: input.studentId,
     tutor_id: profile.id,
     title,
     description,
     status: "pending",
-  });
+  };
+
+  // Safe checks if columns don't exist in staging database yet
+  if (attachmentUrl !== null) payload.attachment_url = attachmentUrl;
+  if (attachmentName !== null) payload.attachment_name = attachmentName;
+
+  const { error } = await supabase.from("student_tasks").insert(payload);
 
   if (error) {
-    return { ok: false as const, error: formatSupabaseError(error.message) };
+    if (error.message.includes("attachment_url") || error.code === "42703") {
+      // Fallback retry without columns
+      delete payload.attachment_url;
+      delete payload.attachment_name;
+      const { error: retryError } = await supabase.from("student_tasks").insert(payload);
+      if (retryError) {
+        return { ok: false as const, error: formatSupabaseError(retryError.message) };
+      }
+    } else {
+      return { ok: false as const, error: formatSupabaseError(error.message) };
+    }
   }
 
   revalidatePath("/dashboard");
@@ -856,6 +876,51 @@ export async function saveTaskFeedback(taskId: string, feedback: string) {
     .update({ tutor_feedback: feedback.trim() || null })
     .eq("id", taskId)
     .eq("tutor_id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function submitStudentTaskFeedback(taskId: string, feedback: string) {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false as const, error: "Unauthorized." };
+  }
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+
+  const { data: task } = await admin
+    .from("student_tasks")
+    .select("student_id")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (!task) {
+    return { ok: false as const, error: "Task not found." };
+  }
+
+  // Check authorization (matching parent_email)
+  const { data: student } = await admin
+    .from("students")
+    .select("parent_email")
+    .eq("id", task.student_id)
+    .maybeSingle();
+
+  if (!student || student.parent_email.toLowerCase() !== user.email?.toLowerCase()) {
+    return { ok: false as const, error: "Unauthorized to comment on this task." };
+  }
+
+  const { error } = await admin
+    .from("student_tasks")
+    .update({ student_feedback: feedback.trim() || null })
+    .eq("id", taskId);
 
   if (error) {
     return { ok: false as const, error: formatSupabaseError(error.message) };

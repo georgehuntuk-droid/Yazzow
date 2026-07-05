@@ -510,6 +510,9 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     feedback: t.tutor_feedback,
     createdAt: t.created_at,
     completedAt: t.completed_at,
+    attachmentUrl: t.attachment_url ?? null,
+    attachmentName: t.attachment_name ?? null,
+    studentFeedback: t.student_feedback ?? null,
   }));
 
   const worksheets = (rawResources ?? []).map((r) => ({

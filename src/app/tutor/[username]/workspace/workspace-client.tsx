@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Circle, MessageCircle, X, Calendar, BookOpen } from "lucide-react";
+import { CheckCircle2, Circle, MessageCircle, X, Calendar, BookOpen, FileText, Loader2 } from "lucide-react";
 
-import { toggleTaskStatus } from "@/lib/dashboard/actions";
+import { toggleTaskStatus, submitStudentTaskFeedback } from "@/lib/dashboard/actions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,9 @@ type Task = {
   feedback: string | null;
   createdAt: string;
   completedAt: string | null;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  studentFeedback?: string | null;
 };
 
 type WorkspaceClientProps = {
@@ -28,6 +31,29 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
   const [, startTransition] = useTransition();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [studentFeedbackInput, setStudentFeedbackInput] = useState("");
+  const [isSavingFeedback, setIsSavingFeedback] = useState(false);
+
+  const handleOpenTask = (task: Task) => {
+    setSelectedTask(task);
+    setStudentFeedbackInput(task.studentFeedback ?? "");
+  };
+
+  async function handleSaveFeedback() {
+    if (!selectedTask) return;
+    setIsSavingFeedback(true);
+    const res = await submitStudentTaskFeedback(selectedTask.id, studentFeedbackInput);
+    setIsSavingFeedback(false);
+    if (!res.ok) {
+      alert(res.error);
+    } else {
+      setSelectedTask({
+        ...selectedTask,
+        studentFeedback: studentFeedbackInput.trim() || null,
+      });
+      router.refresh();
+    }
+  }
 
   async function handleToggleStatus(taskId: string, currentStatus: "pending" | "completed") {
     setUpdatingId(taskId);
@@ -70,7 +96,7 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
               return (
                 <div
                   key={task.id}
-                  onClick={() => setSelectedTask(task)}
+                  onClick={() => handleOpenTask(task)}
                   className={cn(
                     "rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:shadow-md hover:border-primary/20 hover:scale-[1.005] cursor-pointer group relative",
                     isUpdating && "opacity-60"
@@ -128,7 +154,7 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
               return (
                 <div
                   key={task.id}
-                  onClick={() => setSelectedTask(task)}
+                  onClick={() => handleOpenTask(task)}
                   className={cn(
                     "rounded-xl border border-border bg-card/60 p-4 transition-all duration-200 hover:shadow-md hover:border-primary/20 hover:scale-[1.005] cursor-pointer group relative",
                     isUpdating && "opacity-60"
@@ -234,12 +260,33 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
                   <BookOpen className="size-3.5" />
                   Instructions / Description
                 </h4>
-                <div className="bg-muted/40 p-4 rounded-2xl border border-border/40 text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed max-h-[180px] overflow-y-auto">
+                <div className="bg-muted/40 p-4 rounded-2xl border border-border/40 text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed max-h-[120px] overflow-y-auto">
                   {selectedTask.description ? selectedTask.description : (
                     <span className="italic text-muted-foreground">No additional instructions provided.</span>
                   )}
                 </div>
               </div>
+
+              {/* Attachment Display */}
+              {selectedTask.attachmentUrl && (
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="size-3.5" />
+                    Task Attachment / Worksheet
+                  </h4>
+                  <div className="bg-primary/5 p-3 rounded-2xl border border-primary/15 text-xs text-foreground/95 flex items-center justify-between">
+                    <span className="font-semibold truncate max-w-[200px]">{selectedTask.attachmentName || "Attached Worksheet"}</span>
+                    <a
+                      href={selectedTask.attachmentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 bg-primary text-white text-[11px] font-bold px-3 py-1.5 rounded-lg hover:bg-primary/95 shadow-sm shrink-0"
+                    >
+                      📁 Open Attachment
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {/* Tutor Hint / Feedback */}
               {selectedTask.feedback && (
@@ -253,6 +300,29 @@ export function WorkspaceClient({ initialTasks }: WorkspaceClientProps) {
                   </div>
                 </div>
               )}
+
+              {/* Student Feedback / Thoughts on this task */}
+              <div className="space-y-2 pt-3 border-t border-border/40">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <MessageCircle className="size-3.5 text-primary" />
+                  Your Feedback / Thoughts
+                </h4>
+                <textarea
+                  value={studentFeedbackInput}
+                  onChange={(e) => setStudentFeedbackInput(e.target.value)}
+                  placeholder="How did you find this homework? Leave feedback for your tutor..."
+                  className="flex min-h-[50px] w-full rounded-xl border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring text-foreground leading-normal resize-y"
+                />
+                <Button
+                  type="button"
+                  size="xs"
+                  disabled={isSavingFeedback || studentFeedbackInput.trim() === (selectedTask.studentFeedback ?? "")}
+                  onClick={handleSaveFeedback}
+                  className="self-start text-[11px] h-7 px-3 font-semibold rounded-lg shadow-sm"
+                >
+                  {isSavingFeedback ? "Saving..." : "Save Feedback"}
+                </Button>
+              </div>
             </div>
 
             {/* Footer with Complete/Uncomplete action button */}

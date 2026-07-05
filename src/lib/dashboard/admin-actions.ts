@@ -181,20 +181,27 @@ export async function adminUpdateTutorProfile(tutorId: string, payload: {
   lessonPriceCents: number;
   paymentInstructions?: string | null;
   avatarUrl?: string | null;
+  subscriptionTier?: string;
 }) {
   await requireAdmin();
 
   const admin = createAdminClient();
+  const updatePayload: any = {
+    display_name: payload.displayName.trim(),
+    username: payload.username.trim().toLowerCase(),
+    currency: payload.currency.trim().toLowerCase(),
+    lesson_price_cents: payload.lessonPriceCents,
+    payment_instructions: payload.paymentInstructions?.trim() || null,
+    avatar_url: payload.avatarUrl !== undefined ? payload.avatarUrl : undefined,
+  };
+
+  if (payload.subscriptionTier !== undefined) {
+    updatePayload.subscription_tier = payload.subscriptionTier;
+  }
+
   const { error } = await admin
     .from("tutor_profiles")
-    .update({
-      display_name: payload.displayName.trim(),
-      username: payload.username.trim().toLowerCase(),
-      currency: payload.currency.trim().toLowerCase(),
-      lesson_price_cents: payload.lessonPriceCents,
-      payment_instructions: payload.paymentInstructions?.trim() || null,
-      avatar_url: payload.avatarUrl !== undefined ? payload.avatarUrl : undefined,
-    })
+    .update(updatePayload)
     .eq("id", tutorId);
 
   if (error) {

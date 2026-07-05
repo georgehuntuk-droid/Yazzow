@@ -56,6 +56,7 @@ export type AdminTutorData = {
   resourceVolumeCents: number;
   paymentInstructions?: string | null;
   isBanned?: boolean;
+  subscriptionTier?: string;
 };
 
 export type SupportTicket = {
@@ -138,6 +139,7 @@ export function AdminConsoleClient({
   const [editPrice, setEditPrice] = useState("");
   const [editPaymentInstructions, setEditPaymentInstructions] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editSubscriptionTier, setEditSubscriptionTier] = useState("starter");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isClearingSchedule, setIsClearingSchedule] = useState(false);
 
@@ -149,6 +151,7 @@ export function AdminConsoleClient({
     setEditPrice((tutor.lessonPriceCents / 100).toFixed(2));
     setEditPaymentInstructions(tutor.paymentInstructions ?? "");
     setEditAvatarUrl(tutor.avatarUrl ?? "");
+    setEditSubscriptionTier(tutor.subscriptionTier ?? "starter");
   };
 
   const handleSaveTutorDetails = async (e: React.FormEvent) => {
@@ -177,6 +180,7 @@ export function AdminConsoleClient({
         lessonPriceCents: priceCents,
         paymentInstructions: editPaymentInstructions.trim() || null,
         avatarUrl: editAvatarUrl.trim() || null,
+        subscriptionTier: editSubscriptionTier,
       });
 
       if (res.ok) {
@@ -856,17 +860,42 @@ export function AdminConsoleClient({
                           )}
 
                           {/* Subscription Badge */}
-                          {hasActiveSub ? (
-                            <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/10">
-                              <ShieldCheck className="size-3.5" />
-                              Subscribed
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="gap-1 text-muted-foreground">
-                              <XCircle className="size-3.5" />
-                              No Subscription
-                            </Badge>
-                          )}
+                           {/* Tier Badge */}
+                           {(() => {
+                             const tier = tutor.subscriptionTier || "starter";
+                             if (tier === "agency") {
+                               return (
+                                 <Badge className="gap-1 bg-yellow-500/10 border border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold hover:bg-yellow-500/10">
+                                   🏆 Gold (Agency)
+                                 </Badge>
+                               );
+                             }
+                             if (tier === "growth") {
+                               return (
+                                 <Badge className="gap-1 bg-slate-300/20 border border-slate-300/40 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-300/20">
+                                   🥈 Silver (Growth)
+                                 </Badge>
+                               );
+                             }
+                             return (
+                               <Badge className="gap-1 bg-amber-700/10 border border-amber-700/20 text-amber-800 dark:text-amber-500 font-semibold hover:bg-amber-700/10">
+                                 🥉 Bronze (Starter)
+                               </Badge>
+                             );
+                           })()}
+
+                           {/* Active/Inactive Billing Status */}
+                           {hasActiveSub ? (
+                             <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10">
+                               <ShieldCheck className="size-3.5" />
+                               Active billing
+                             </Badge>
+                           ) : (
+                             <Badge variant="outline" className="gap-1 text-muted-foreground">
+                               <XCircle className="size-3.5" />
+                               No active billing
+                             </Badge>
+                           )}
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
@@ -1410,6 +1439,18 @@ export function AdminConsoleClient({
                     <p className="font-semibold text-foreground mt-0.5">
                       {formatDate(editingTutor.subscriptionCurrentPeriodEnd)}
                     </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground font-medium mb-1.5">Subscription Tier</p>
+                    <select
+                      value={editSubscriptionTier}
+                      onChange={(e) => setEditSubscriptionTier(e.target.value)}
+                      className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
+                    >
+                      <option value="starter">🥉 Bronze (Starter - max 5 active students)</option>
+                      <option value="growth">🥈 Silver (Growth - max 25 active students)</option>
+                      <option value="agency">🏆 Gold (Agency - unlimited active students)</option>
+                    </select>
                   </div>
                   <div>
                     <p className="text-muted-foreground font-medium">Lesson volume (Gross)</p>

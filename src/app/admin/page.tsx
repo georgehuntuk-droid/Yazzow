@@ -205,6 +205,7 @@ export default async function AdminDashboardPage() {
       stripeAccountId: p.stripe_account_id,
       subscriptionStatus: p.subscription_status,
       subscriptionCurrentPeriodEnd: p.subscription_current_period_end,
+      subscriptionTier: p.subscription_tier || "starter",
       createdAt: p.created_at,
       lessonCount: bStats.count,
       lessonVolumeCents: bStats.volume,

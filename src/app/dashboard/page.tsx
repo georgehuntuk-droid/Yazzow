@@ -197,7 +197,7 @@ export default async function DashboardPage() {
               Activate Online Booking Checkout
             </p>
             <p className="mt-1 text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed">
-              Your schedule is open, but families cannot checkout lessons online until you complete {TUTOR_SUBSCRIPTION.label} billing.
+              Your schedule is open, but families cannot checkout lessons online until you choose a subscription plan in Payments.
             </p>
             <Button size="sm" className="mt-3.5" render={<Link href="/dashboard/payments#subscription" />}>
               Subscribe in Payments

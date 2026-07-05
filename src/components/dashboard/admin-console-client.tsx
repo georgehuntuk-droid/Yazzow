@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle,
@@ -110,6 +111,7 @@ export function AdminConsoleClient({
   studentsList = [],
   pendingOnboardingUsers = []
 }: AdminConsoleClientProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
   const [isPending, startTransition] = useTransition();
@@ -185,6 +187,7 @@ export function AdminConsoleClient({
 
       if (res.ok) {
         setEditingTutor(null);
+        router.refresh();
       } else {
         alert(`Failed to update tutor details: ${res.error}`);
       }

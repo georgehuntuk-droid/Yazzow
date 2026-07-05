@@ -31,6 +31,10 @@ export type TutorProfileRow = {
   is_banned: boolean;
   meeting_link: string | null;
   send_meeting_links: boolean;
+  portal_announcement: string | null;
+  portal_announcement_active: boolean;
+  portal_announcement_updated_at: string | null;
+  portal_announcement_duration_hours: number | null;
 };
 
 export type AvailabilitySlotRow = {

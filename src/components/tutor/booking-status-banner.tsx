@@ -11,8 +11,23 @@ export function BookingStatusBanner({ manageUrl }: BookingStatusBannerProps) {
   const searchParams = useSearchParams();
   const booked = searchParams.get("booked") === "1";
   const cancelled = searchParams.get("cancelled") === "1";
+  const packageBooked = searchParams.get("package_booked") === "1";
 
-  if (!booked && !cancelled) return null;
+  if (!booked && !cancelled && !packageBooked) return null;
+
+  if (packageBooked) {
+    return (
+      <div
+        role="status"
+        className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3.5 text-sm text-foreground"
+      >
+        <p className="font-bold text-emerald-800">Lesson Bundle purchased successfully!</p>
+        <p className="mt-1 text-muted-foreground leading-relaxed">
+          Your credits have been added straight to your student account. You can log in using your email to book lessons without checking out each time.
+        </p>
+      </div>
+    );
+  }
 
   if (booked) {
     return (

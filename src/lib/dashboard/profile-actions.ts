@@ -75,6 +75,7 @@ export async function updatePortalProfile(input: {
   bankName?: string;
   bankSortCode?: string;
   bankAccountNumber?: string;
+  sendMeetingLinks?: boolean;
 }) {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
@@ -133,6 +134,7 @@ export async function updatePortalProfile(input: {
     lesson_price_cents: lessonPriceCents,
     currency,
     meeting_link: meetingLink,
+    send_meeting_links: input.sendMeetingLinks ?? true,
     allow_public_joining: input.allowPublicJoining,
     allow_cash_payments: input.allowCashPayments ?? true,
     payment_instructions: paymentInstructions,

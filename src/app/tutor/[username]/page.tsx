@@ -41,7 +41,12 @@ export { generateMetadata };
 
 type TutorPortalPageProps = {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ booked?: string; cancelled?: string; session_id?: string }>;
+  searchParams: Promise<{
+    booked?: string;
+    cancelled?: string;
+    session_id?: string;
+    package_booked?: string;
+  }>;
 };
 
 const DEMO_USERNAMES = new Set(["demo", "maya-chen"]);
@@ -83,12 +88,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
 
   let bookingManageUrl: string | null = null;
 
-  if (
-    liveTutor &&
-    query.booked === "1" &&
-    query.session_id &&
-    isStripeConfigured()
-  ) {
+  if (liveTutor && query.session_id && isStripeConfigured()) {
     const admin = createAdminClient();
     const { data: tutorRow } = await admin
       .from("tutor_profiles")
@@ -100,16 +100,30 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
       ?.stripe_account_id;
 
     if (stripeAccountId) {
-      try {
-        const fulfilled = await fulfillLessonBookingFromCheckoutSessionId(
-          query.session_id,
-          stripeAccountId,
-        );
-        if (fulfilled.ok && fulfilled.bookingId) {
-          bookingManageUrl = buildBookingManageUrl(fulfilled.bookingId);
+      if (query.booked === "1") {
+        try {
+          const fulfilled = await fulfillLessonBookingFromCheckoutSessionId(
+            query.session_id,
+            stripeAccountId,
+          );
+          if (fulfilled.ok && fulfilled.bookingId) {
+            bookingManageUrl = buildBookingManageUrl(fulfilled.bookingId);
+          }
+        } catch (err) {
+          console.error("Checkout return fulfillment failed:", err);
         }
-      } catch (err) {
-        console.error("Checkout return fulfillment failed:", err);
+      } else if (query.package_booked === "1") {
+        try {
+          const { fulfillPackageCheckoutFromCheckoutSessionId } = await import(
+            "@/lib/stripe/fulfill-package"
+          );
+          await fulfillPackageCheckoutFromCheckoutSessionId(
+            query.session_id,
+            stripeAccountId,
+          );
+        } catch (err) {
+          console.error("Package checkout return fulfillment failed:", err);
+        }
       }
     }
   }

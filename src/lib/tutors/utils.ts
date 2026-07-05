@@ -37,6 +37,7 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     bankAccountNumber: (row as any).bank_account_number ?? "",
     isBanned: row.is_banned === true,
     meetingLink: (row as any).meeting_link ?? "",
+    sendMeetingLinks: (row as any).send_meeting_links !== false,
   };
 }
 

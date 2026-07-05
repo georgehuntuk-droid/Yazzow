@@ -35,18 +35,20 @@ export async function sendBookingConfirmationEmail(input: {
 
   let lessonType = "online";
   let meetingLink = "";
+  let sendMeetingLinks = true;
 
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const admin = createAdminClient();
     const { data: booking } = await admin
       .from("bookings")
-      .select("tutor_id, parent_email, student_name, tutor_profiles(meeting_link)")
+      .select("tutor_id, parent_email, student_name, tutor_profiles(meeting_link, send_meeting_links)")
       .eq("id", input.bookingId)
       .maybeSingle();
 
     if (booking) {
       meetingLink = (booking.tutor_profiles as any)?.meeting_link || "";
+      sendMeetingLinks = (booking.tutor_profiles as any)?.send_meeting_links !== false;
       const { data: student } = await admin
         .from("students")
         .select("lesson_type")
@@ -63,7 +65,7 @@ export async function sendBookingConfirmationEmail(input: {
     console.error("[sendBookingConfirmationEmail] Failed to fetch lesson type or meeting link:", err);
   }
 
-  const isOnline = lessonType === "online" && Boolean(meetingLink);
+  const isOnline = lessonType === "online" && Boolean(meetingLink) && sendMeetingLinks;
 
   const attachments = [];
   try {
@@ -76,8 +78,8 @@ export async function sendBookingConfirmationEmail(input: {
           startsAt: starts,
           endsAt: ends,
           summary: input.studentName ? `Lesson · ${input.studentName}` : "Yazzow lesson",
-          description: `Parent: ${recipient}\nLesson Type: ${lessonType === "visiting" ? "Visiting / In-Person" : "Online"}${meetingLink ? `\nMeeting Link: ${meetingLink}` : ""}\nBooked on Yazzow`,
-          location: isOnline ? meetingLink : "Visiting / In-Person",
+          description: `Parent: ${recipient}\nLesson Type: ${lessonType === "visiting" ? "Visiting / In-Person" : "Online"}${isOnline ? `\nMeeting Link: ${meetingLink}` : ""}\nBooked on Yazzow`,
+          location: isOnline ? meetingLink : (lessonType === "visiting" ? "Visiting / In-Person" : "Online"),
         }
       ]
     });

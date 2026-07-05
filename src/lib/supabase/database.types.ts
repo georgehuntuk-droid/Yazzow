@@ -30,6 +30,7 @@ export type TutorProfileRow = {
   updated_at: string;
   is_banned: boolean;
   meeting_link: string | null;
+  send_meeting_links: boolean;
 };
 
 export type AvailabilitySlotRow = {
@@ -66,6 +67,7 @@ export type StudentRow = {
   lesson_credits?: number;
   credit_limit?: number;
   lesson_type: string;
+  processed_sessions?: string[];
 };
 
 export type BookingRow = {

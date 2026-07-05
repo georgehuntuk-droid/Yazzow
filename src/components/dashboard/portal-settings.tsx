@@ -63,6 +63,7 @@ export function PortalSettings({
   const [lessonPrice, setLessonPrice] = useState(centsToInput(profile.lessonPriceCents));
   const [currency, setCurrency] = useState(profile.currency);
   const [meetingLink, setMeetingLink] = useState(profile.meetingLink ?? "");
+  const [sendMeetingLinks, setSendMeetingLinks] = useState(profile.sendMeetingLinks !== false);
   const [country, setCountry] = useState(profile.country ?? "GB");
   const [bankName, setBankName] = useState(profile.bankName ?? "");
   const [bankSortCode, setBankSortCode] = useState(profile.bankSortCode ?? "");
@@ -322,6 +323,7 @@ export function PortalSettings({
         lessonPrice,
         currency,
         meetingLink,
+        sendMeetingLinks,
         allowPublicJoining,
         allowCashPayments,
         paymentInstructions,
@@ -1161,6 +1163,24 @@ export function PortalSettings({
                 <p className="text-xs text-muted-foreground leading-normal">
                   Your permanent online classroom link. Online students will automatically receive this link in calendar invites, feeds, and confirmation emails.
                 </p>
+              </div>
+ 
+              <div className="flex items-start gap-3.5 pt-2 pb-2">
+                <input
+                  id="send-meeting-links"
+                  type="checkbox"
+                  checked={sendMeetingLinks}
+                  onChange={(e) => setSendMeetingLinks(e.target.checked)}
+                  className="mt-0.5 h-4.5 w-4.5 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                />
+                <div className="space-y-0.5">
+                  <label htmlFor="send-meeting-links" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Attach meeting links to confirmation emails & invites
+                  </label>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    When enabled, online students automatically receive your online lesson link in confirmation emails and calendar attachments (.ics).
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-start gap-3.5 pt-2 pb-2">

@@ -85,46 +85,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   if (type === "package") {
-    const tutorId = metadata.tutor_id;
-    const parentEmail = metadata.parent_email?.trim().toLowerCase();
-    const studentName = metadata.student_name?.trim() || "Bulk Pupil";
-    const lessonsCount = Number(metadata.lessons_count ?? 10);
-
-    if (tutorId && parentEmail) {
-      // 1. Fetch or create student record and increment credits
-      const { data: existingStudent } = await admin
-        .from("students")
-        .select("id, lesson_credits")
-        .eq("tutor_id", tutorId)
-        .eq("parent_email", parentEmail)
-        .eq("student_name", studentName)
-        .maybeSingle();
-
-      if (existingStudent) {
-        const currentCredits = existingStudent.lesson_credits ?? 0;
-        await admin
-          .from("students")
-          .update({ lesson_credits: currentCredits + lessonsCount })
-          .eq("id", existingStudent.id);
-      } else {
-        await admin.from("students").insert({
-          tutor_id: tutorId,
-          parent_email: parentEmail,
-          student_name: studentName,
-          lesson_credits: lessonsCount,
-        });
-      }
-
-      // Add to alert list automatically to receive opening updates
-      await admin.from("slot_alert_subscribers").upsert(
-        {
-          tutor_id: tutorId,
-          parent_email: parentEmail,
-          student_name: studentName,
-        },
-        { onConflict: "tutor_id,parent_email" }
-      );
-    }
+    const { fulfillPackageCheckoutFromSession } = await import(
+      "@/lib/stripe/fulfill-package"
+    );
+    await fulfillPackageCheckoutFromSession(session);
     return;
   }
 

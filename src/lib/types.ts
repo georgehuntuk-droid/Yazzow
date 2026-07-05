@@ -34,6 +34,7 @@ export type TutorProfile = {
   bankAccountNumber?: string;
   isBanned?: boolean;
   meetingLink?: string;
+  sendMeetingLinks?: boolean;
 };
 
 export type OpenSlot = {

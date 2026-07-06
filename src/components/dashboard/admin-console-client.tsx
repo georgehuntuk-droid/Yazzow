@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle,
+  CreditCard,
   Edit,
   Globe,
   Loader2,
@@ -38,6 +39,7 @@ import {
   toggleTutorBanStatus,
   toggleUserBanStatusAction,
   deleteUserAction,
+  getTutorPaymentHistoryAction,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -60,6 +62,7 @@ export type AdminTutorData = {
   paymentInstructions?: string | null;
   isBanned?: boolean;
   subscriptionTier?: string;
+  stripeCustomerId?: string | null;
 };
 
 export type SupportTicket = {
@@ -158,6 +161,35 @@ export function AdminConsoleClient({
   const [editSubscriptionTier, setEditSubscriptionTier] = useState("starter");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isClearingSchedule, setIsClearingSchedule] = useState(false);
+
+  const [stripePayments, setStripePayments] = useState<any[]>([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editingTutor) {
+      setStripePayments([]);
+      setPaymentsError(null);
+      
+      if (editingTutor.stripeCustomerId) {
+        setIsLoadingPayments(true);
+        getTutorPaymentHistoryAction(editingTutor.id)
+          .then((res) => {
+            if (res.ok && res.payments) {
+              setStripePayments(res.payments);
+            } else {
+              setPaymentsError(res.error || "Failed to load payment history.");
+            }
+          })
+          .catch((err) => {
+            setPaymentsError(err instanceof Error ? err.message : "An error occurred.");
+          })
+          .finally(() => {
+            setIsLoadingPayments(false);
+          });
+      }
+    }
+  }, [editingTutor]);
 
   const handleOpenEditModal = (tutor: AdminTutorData) => {
     setEditingTutor(tutor);
@@ -1688,6 +1720,67 @@ export function AdminConsoleClient({
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Stripe Membership Payments History */}
+              <div className="border-t border-border/40 pt-5 mt-5">
+                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-3 flex items-center gap-1.5">
+                  <CreditCard className="size-3.5" />
+                  Membership Invoice History (Stripe)
+                </h4>
+                
+                {!editingTutor.stripeCustomerId ? (
+                  <p className="text-[11px] text-muted-foreground italic">No Stripe Customer ID associated with this account. (Free/Comped Tier)</p>
+                ) : isLoadingPayments ? (
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground py-2">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Fetching payment invoices from Stripe...
+                  </div>
+                ) : paymentsError ? (
+                  <p className="text-[11px] text-rose-500 bg-rose-500/10 border border-rose-500/20 p-2 rounded-lg">{paymentsError}</p>
+                ) : stripePayments.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground italic">No successful payments found in Stripe invoice history.</p>
+                ) : (
+                  <div className="rounded-lg border border-border/60 bg-muted/20 overflow-hidden text-xs max-h-48 overflow-y-auto">
+                    <table className="min-w-full divide-y divide-border/60">
+                      <thead className="bg-muted/40 text-[9px] font-bold uppercase text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Date</th>
+                          <th className="px-3 py-2 text-left">Invoice No.</th>
+                          <th className="px-3 py-2 text-right">Amount</th>
+                          <th className="px-3 py-2 text-center">Receipt</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40 text-[11px] text-foreground font-medium">
+                        {stripePayments.map((payment) => (
+                          <tr key={payment.id} className="hover:bg-muted/30">
+                            <td className="px-3 py-1.5 text-muted-foreground">
+                              {formatDate(payment.date)}
+                            </td>
+                            <td className="px-3 py-1.5 font-mono text-[10px]">
+                              {payment.number || payment.id.slice(0, 10) + "..."}
+                            </td>
+                            <td className="px-3 py-1.5 text-right font-semibold">
+                              {formatMoney(payment.amountCents, payment.currency)}
+                            </td>
+                            <td className="px-3 py-1.5 text-center">
+                              {payment.hostedInvoiceUrl ? (
+                                <a 
+                                  href={payment.hostedInvoiceUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline font-bold"
+                                >
+                                  View
+                                </a>
+                              ) : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-4 mt-6">

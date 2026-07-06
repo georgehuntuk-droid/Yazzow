@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { isPlatformAdmin } from "@/lib/auth/platform-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getStripe } from "@/lib/stripe/server";
 
 /** Guards any administrative action to ensure the current session is an admin. */
 async function requireAdmin() {
@@ -476,6 +477,51 @@ export async function deleteUserAction(userId: string | null, email: string) {
 
   revalidatePath("/admin");
   return { ok: true as const };
+}
+
+/** Fetches a tutor's Stripe membership billing history (successful invoices) directly from Stripe. */
+export async function getTutorPaymentHistoryAction(tutorId: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const { data: tutor } = await admin
+    .from("tutor_profiles")
+    .select("stripe_customer_id")
+    .eq("id", tutorId)
+    .maybeSingle();
+
+  if (!tutor?.stripe_customer_id) {
+    return { ok: true as const, payments: [] };
+  }
+
+  try {
+    const stripe = getStripe();
+    // Retrieve last 10 successful invoices for this customer
+    const invoices = await stripe.invoices.list({
+      customer: tutor.stripe_customer_id,
+      status: "paid",
+      limit: 10,
+    });
+
+    const payments = invoices.data.map((inv) => ({
+      id: inv.id,
+      amountCents: inv.amount_paid,
+      currency: inv.currency,
+      status: inv.status,
+      hostedInvoiceUrl: inv.hosted_invoice_url,
+      pdfUrl: inv.invoice_pdf,
+      date: new Date((inv.status_transitions.paid_at || inv.created) * 1000).toISOString(),
+      number: inv.number,
+    }));
+
+    return { ok: true as const, payments };
+  } catch (err) {
+    console.error("Error fetching stripe invoices:", err);
+    return { 
+      ok: false as const, 
+      error: err instanceof Error ? err.message : "Failed to fetch invoices from Stripe" 
+    };
+  }
 }
 
 

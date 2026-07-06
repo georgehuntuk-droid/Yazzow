@@ -241,6 +241,7 @@ export default async function AdminDashboardPage() {
       resourceVolumeCents: pStats.volume,
       paymentInstructions: p.payment_instructions,
       isBanned: p.is_banned === true,
+      stripeCustomerId: p.stripe_customer_id,
     };
   });
 

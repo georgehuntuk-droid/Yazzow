@@ -35,6 +35,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
   }
 
+  const { isUserBanned } = await import("@/lib/auth/ban-check");
+  if (await isUserBanned(buyerEmail)) {
+    return NextResponse.json({ error: "This email is suspended." }, { status: 403 });
+  }
+
   const admin = createAdminClient();
   const { data: tutorData } = await admin
     .from("tutor_profiles")

@@ -122,7 +122,7 @@ export default async function AdminDashboardPage() {
   const admin = createAdminClient();
 
   // 3. Fetch all raw data in parallel using service role
-  const [profilesRes, usersRes, stats, bookingsRes, purchasesRes, ticketsRes, noticesRes, studentsRes] = await Promise.all([
+  const [profilesRes, usersRes, stats, bookingsRes, purchasesRes, ticketsRes, noticesRes, studentsRes, bannedUsersRes] = await Promise.all([
     admin.from("tutor_profiles").select("*").order("created_at", { ascending: false }),
     admin.auth.admin.listUsers(),
     getPlatformRevenueStats(),
@@ -131,6 +131,7 @@ export default async function AdminDashboardPage() {
     admin.from("support_tickets").select("*").order("created_at", { ascending: false }),
     admin.from("admin_notices").select("*").order("created_at", { ascending: false }),
     admin.from("students").select("parent_email, student_name"),
+    admin.from("banned_users").select("email"),
   ]);
 
   if (profilesRes.error) {
@@ -144,6 +145,7 @@ export default async function AdminDashboardPage() {
   const rawTickets = ticketsRes?.error ? [] : (ticketsRes?.data ?? []);
   const rawNotices = noticesRes?.error ? [] : (noticesRes?.data ?? []);
   const rawStudents = studentsRes?.error ? [] : (studentsRes?.data ?? []);
+  const rawBanned = bannedUsersRes?.error ? [] : (bannedUsersRes?.data ?? []);
 
   const studentsList = rawStudents.map((s) => ({
     parentEmail: s.parent_email,
@@ -151,6 +153,7 @@ export default async function AdminDashboardPage() {
   }));
 
   const studentEmails = new Set(rawStudents.map((s) => s.parent_email?.toLowerCase()).filter(Boolean));
+  const bannedEmails = new Set(rawBanned.map((b) => b.email?.toLowerCase()).filter(Boolean));
 
   const pendingOnboardingUsers = authUsers.filter((u) => {
     const email = u.email?.toLowerCase();
@@ -163,7 +166,32 @@ export default async function AdminDashboardPage() {
     email: u.email || "No email",
     createdAt: u.created_at,
     name: u.user_metadata?.display_name || u.user_metadata?.full_name || "New SignUp",
+    isBanned: bannedEmails.has(u.email?.toLowerCase() || ""),
   }));
+
+  // Group student records by parent_email
+  const parentStudentsMap = new Map<string, string[]>();
+  for (const s of rawStudents) {
+    if (!s.parent_email) continue;
+    const emailLower = s.parent_email.toLowerCase();
+    const current = parentStudentsMap.get(emailLower) ?? [];
+    if (!current.includes(s.student_name)) {
+      current.push(s.student_name);
+    }
+    parentStudentsMap.set(emailLower, current);
+  }
+
+  // Cross-reference with auth users
+  const studentAccounts = Array.from(parentStudentsMap.entries()).map(([email, studentNames]) => {
+    const authUser = authUsers.find((u) => u.email?.toLowerCase() === email);
+    return {
+      email,
+      studentNames,
+      id: authUser?.id || null,
+      createdAt: authUser?.created_at || null,
+      isBanned: bannedEmails.has(email),
+    };
+  });
 
   // Create helper structures for fast lookups
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email]));
@@ -253,6 +281,7 @@ export default async function AdminDashboardPage() {
             notices={rawNotices}
             studentsList={studentsList}
             pendingOnboardingUsers={pendingOnboardingUsers}
+            studentAccounts={studentAccounts}
           />
         </div>
 

@@ -36,6 +36,8 @@ import {
   replyToSupportTicketAction,
   clearTutorScheduleAction,
   toggleTutorBanStatus,
+  toggleUserBanStatusAction,
+  deleteUserAction,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -86,11 +88,20 @@ type AdminStudentData = {
   studentName: string;
 };
 
+export type AdminStudentAccountData = {
+  email: string;
+  studentNames: string[];
+  id: string | null;
+  createdAt: string | null;
+  isBanned: boolean;
+};
+
 type AdminPendingUserData = {
   id: string;
   email: string;
   createdAt: string;
   name: string;
+  isBanned?: boolean;
 };
 
 type AdminConsoleClientProps = {
@@ -101,6 +112,7 @@ type AdminConsoleClientProps = {
   notices: AdminNotice[];
   studentsList?: AdminStudentData[];
   pendingOnboardingUsers?: AdminPendingUserData[];
+  studentAccounts?: AdminStudentAccountData[];
 };
 
 export function AdminConsoleClient({ 
@@ -109,10 +121,12 @@ export function AdminConsoleClient({
   supportTickets = [], 
   notices = [],
   studentsList = [],
-  pendingOnboardingUsers = []
+  pendingOnboardingUsers = [],
+  studentAccounts = []
 }: AdminConsoleClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active_sub" | "no_sub" | "stripe_ok" | "stripe_missing">("all");
   const [isPending, startTransition] = useTransition();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -409,6 +423,49 @@ export function AdminConsoleClient({
     });
   };
 
+  const handleToggleUserBan = (email: string, isBanned: boolean) => {
+    const actionName = isBanned ? "unban" : "ban";
+    if (!confirm(`Are you sure you want to ${actionName} this user account?`)) return;
+
+    setActionLoadingId(email);
+    startTransition(async () => {
+      try {
+        const res = await toggleUserBanStatusAction(email, !isBanned);
+        if (!res.ok) {
+          alert(`Failed to ${actionName} user: ${res.error}`);
+        }
+      } catch (err) {
+        alert(`An error occurred: ${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+        setActionLoadingId(null);
+      }
+    });
+  };
+
+  const handleDeleteUser = (userId: string | null, email: string) => {
+    if (
+      !confirm(
+        `CRITICAL WARNING: Are you absolutely sure you want to delete ${email}'s account?\n\nThis will completely delete all student profiles, bookings, and their registered authentication account. This action is permanent and cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setActionLoadingId(userId || email);
+    startTransition(async () => {
+      try {
+        const res = await deleteUserAction(userId, email);
+        if (!res.ok) {
+          alert(`Failed to delete user: ${res.error}`);
+        }
+      } catch (err) {
+        alert(`An error occurred: ${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+        setActionLoadingId(null);
+      }
+    });
+  };
+
   const formatDate = (isoString?: string | null) => {
     if (!isoString) return "—";
     const d = new Date(isoString);
@@ -453,6 +510,16 @@ export function AdminConsoleClient({
       u.email.toLowerCase().includes(pendingSearch.toLowerCase()) ||
       u.name.toLowerCase().includes(pendingSearch.toLowerCase()) ||
       u.id.toLowerCase().includes(pendingSearch.toLowerCase())
+    );
+  });
+
+  // Student Accounts filter
+  const filteredStudents = (studentAccounts ?? []).filter((s) => {
+    const term = studentSearch.toLowerCase();
+    return (
+      s.email.toLowerCase().includes(term) ||
+      s.studentNames.some((name) => name.toLowerCase().includes(term)) ||
+      (s.id && s.id.toLowerCase().includes(term))
     );
   });
 
@@ -677,6 +744,9 @@ export function AdminConsoleClient({
           </TabsTrigger>
           <TabsTrigger value="pending" className="rounded-lg px-4 font-semibold">
             Pending Onboarding ({pendingOnboardingUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="students" className="rounded-lg px-4 font-semibold">
+            Student Accounts ({studentAccounts.length})
           </TabsTrigger>
           <TabsTrigger value="notices" className="rounded-lg px-4 font-semibold">
             Notice Board ({notices.length})
@@ -1160,14 +1230,158 @@ export function AdminConsoleClient({
                               {user.id}
                             </code>
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                            <Button
+                              variant={user.isBanned ? "default" : "outline"}
+                              size="xs"
+                              disabled={isLoading}
+                              onClick={() => handleToggleUserBan(user.email, !!user.isBanned)}
+                              className={cn(
+                                "h-7 px-2.5 text-[11px] font-medium cursor-pointer rounded-lg",
+                                user.isBanned 
+                                  ? "bg-red-600 hover:bg-red-700 text-white border-red-600" 
+                                  : "text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                              )}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="size-3 animate-spin" />
+                              ) : user.isBanned ? (
+                                "Unban"
+                              ) : (
+                                "Ban"
+                              )}
+                            </Button>
+
                             <Button
                               variant="ghost"
                               size="sm"
                               disabled={isLoading}
-                              onClick={() => handleDeleteTutor(user.id, user.email)}
-                              className="h-8 size-8 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
+                              onClick={() => handleDeleteUser(user.id, user.email)}
+                              className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
                               title="Delete user completely"
+                            >
+                              {isLoading ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="size-4" />
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="students" className="space-y-6 outline-none">
+        <div className="space-y-6">
+          {/* Search bar */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search students by parent email, student name, or ID..."
+                className="pl-10"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Students Accounts list */}
+          <div className="space-y-4">
+            {filteredStudents.length === 0 ? (
+              <Card className="yazz-surface border-dashed p-10 text-center">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-muted-foreground">No student/parent accounts match your search.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <table className="min-w-full divide-y divide-border text-sm leading-normal">
+                  <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-6 py-3.5 text-left">Parent Email</th>
+                      <th className="px-6 py-3.5 text-left">Students</th>
+                      <th className="px-6 py-3.5 text-left">Supabase Auth ID</th>
+                      <th className="px-6 py-3.5 text-left">Status</th>
+                      <th className="px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border text-foreground font-medium bg-card">
+                    {filteredStudents.map((account) => {
+                      const isLoading = actionLoadingId === (account.id || account.email) && isPending;
+                      return (
+                        <tr key={account.email} className="hover:bg-muted/10 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-semibold">{account.email}</div>
+                            {account.createdAt && (
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                Registered: {formatDate(account.createdAt)}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1">
+                              {account.studentNames.map((name) => (
+                                <Badge key={name} variant="secondary" className="text-[10px] py-0 px-1.5 font-bold">
+                                  {name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {account.id ? (
+                              <code className="text-xs bg-muted px-1.5 py-0.5 rounded select-all font-mono">
+                                {account.id}
+                              </code>
+                            ) : (
+                              <span className="text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded font-semibold border border-amber-500/20">
+                                Not Registered (Invite Pending)
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {account.isBanned ? (
+                              <Badge variant="destructive" className="font-bold text-[10px]">Banned</Badge>
+                            ) : (
+                              <Badge variant="outline" className="font-bold text-[10px] text-green-600 border-green-200 bg-green-50/50">Active</Badge>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                            <Button
+                              variant={account.isBanned ? "default" : "outline"}
+                              size="xs"
+                              disabled={isLoading}
+                              onClick={() => handleToggleUserBan(account.email, account.isBanned)}
+                              className={cn(
+                                "h-7 px-2.5 text-[11px] font-medium cursor-pointer rounded-lg",
+                                account.isBanned 
+                                  ? "bg-red-600 hover:bg-red-700 text-white border-red-600" 
+                                  : "text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                              )}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="size-3 animate-spin" />
+                              ) : account.isBanned ? (
+                                "Unban"
+                              ) : (
+                                "Ban"
+                              )}
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => handleDeleteUser(account.id, account.email)}
+                              className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
+                              title="Delete student and auth account completely"
                             >
                               {isLoading ? (
                                 <Loader2 className="size-3.5 animate-spin" />

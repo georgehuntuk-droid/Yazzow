@@ -55,6 +55,12 @@ export async function signInAction(
   const supabase = await createClient();
   const normalizedEmail = email.trim().toLowerCase();
 
+  const { isUserBanned } = await import("@/lib/auth/ban-check");
+  const banned = await isUserBanned(normalizedEmail);
+  if (banned) {
+    return { ok: false, error: "This account has been suspended." };
+  }
+
   const { error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
     password,
@@ -102,6 +108,12 @@ export async function signUpAction(
   const origin = await getAuthRedirectOrigin();
   const supabase = await createClient();
   const normalizedEmail = email.trim().toLowerCase();
+
+  const { isUserBanned } = await import("@/lib/auth/ban-check");
+  const banned = await isUserBanned(normalizedEmail);
+  if (banned) {
+    return { ok: false, error: "This email address is suspended from registering." };
+  }
 
   // Explicitly check if email is already registered to prevent silent success (Supabase Auth default behavior)
   try {

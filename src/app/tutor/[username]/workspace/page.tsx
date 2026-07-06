@@ -57,6 +57,12 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     redirect(`/auth/login?next=/tutor/${username}/workspace`);
   }
 
+  const { isUserBanned } = await import("@/lib/auth/ban-check");
+  const banned = await isUserBanned(user.email, user.id);
+  if (banned) {
+    redirect("/banned");
+  }
+
   // If the logged-in user is the tutor of this workspace, redirect them to the tutor dashboard messages thread
   const { getTutorProfileForUser } = await import("@/lib/tutors/queries");
   const userTutorProfile = await getTutorProfileForUser(user.id);

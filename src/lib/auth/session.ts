@@ -16,6 +16,14 @@ export async function requireUser(options?: RequireUserOptions) {
     redirect(`/auth/login?next=${encodeURIComponent(next)}`);
   }
 
+  if (user.email) {
+    const { isUserBanned } = await import("@/lib/auth/ban-check");
+    const banned = await isUserBanned(user.email, user.id);
+    if (banned) {
+      redirect("/banned");
+    }
+  }
+
   return user;
 }
 

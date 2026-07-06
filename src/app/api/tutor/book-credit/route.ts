@@ -11,6 +11,12 @@ export async function POST(request: Request) {
     }
 
     const email = parentEmail.trim().toLowerCase();
+    
+    const { isUserBanned } = await import("@/lib/auth/ban-check");
+    if (await isUserBanned(email)) {
+      return NextResponse.json({ error: "This email is suspended from making bookings." }, { status: 403 });
+    }
+
     const admin = createAdminClient();
 
     // 1. Double check slot availability

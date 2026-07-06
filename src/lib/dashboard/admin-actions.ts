@@ -407,3 +407,75 @@ export async function replyToSupportTicketAction(payload: {
   return { ok: true as const };
 }
 
+/** Toggles globally banned status for any user by their email address. */
+export async function toggleUserBanStatusAction(email: string, isBanned: boolean) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (isBanned) {
+    // 1. Fetch auth user if they exist to link their ID in banned_users
+    const { data: usersList } = await admin.auth.admin.listUsers();
+    const authUser = usersList?.users?.find(
+      (u) => u.email?.toLowerCase() === normalizedEmail
+    );
+
+    // 2. Insert email and ID into banned_users
+    const { error } = await admin.from("banned_users").insert({
+      id: authUser?.id || null,
+      email: normalizedEmail,
+    });
+
+    if (error && !error.message.includes("duplicate key")) {
+      return { ok: false as const, error: error.message };
+    }
+  } else {
+    // 3. Delete from banned_users
+    const { error } = await admin
+      .from("banned_users")
+      .delete()
+      .ilike("email", normalizedEmail);
+
+    if (error) {
+      return { ok: false as const, error: error.message };
+    }
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
+
+/** Deletes a student/parent or pending onboarding user completely from the platform. */
+export async function deleteUserAction(userId: string | null, email: string) {
+  await requireAdmin();
+
+  const admin = createAdminClient();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // 1. Delete from banned_users first
+  await admin.from("banned_users").delete().ilike("email", normalizedEmail);
+
+  // 2. If the user is registered in Supabase Auth, delete their auth account (cascades to other tables via trigger/foreign keys)
+  if (userId) {
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (error) {
+      return { ok: false as const, error: error.message };
+    }
+  } else {
+    // 3. If they are not registered in Auth yet, delete their student records manually by parent_email
+    const { error } = await admin
+      .from("students")
+      .delete()
+      .ilike("parent_email", normalizedEmail);
+
+    if (error) {
+      return { ok: false as const, error: error.message };
+    }
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
+
+

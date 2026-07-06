@@ -36,7 +36,18 @@ export async function updateSession(request: NextRequest) {
   });
 
   try {
-    await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const allCookies = request.cookies.getAll();
+      const hasSbCookie = allCookies.some((c) => c.name.startsWith("sb-"));
+      if (hasSbCookie) {
+        allCookies.forEach((c) => {
+          if (c.name.startsWith("sb-")) {
+            supabaseResponse.cookies.set(c.name, "", { maxAge: -1, path: "/" });
+          }
+        });
+      }
+    }
   } catch (err) {
     console.warn("[middleware] Supabase connection is offline, skipping user refresh.", err instanceof Error ? err.message : err);
   }

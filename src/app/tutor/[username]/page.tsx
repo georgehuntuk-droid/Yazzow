@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DEMO_OPEN_SLOTS,
   DEMO_RESOURCES,
+  DEMO_PACKAGES,
   getDemoTutorByUsername,
 } from "@/lib/demo-data";
 import { fulfillLessonBookingFromCheckoutSessionId } from "@/lib/stripe/fulfill-lesson-booking";
@@ -132,7 +133,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     activeStudentsPromise,
     liveTutor ? getOpenSlotsForTutor(liveTutor.id) : Promise.resolve(DEMO_OPEN_SLOTS),
     liveTutor ? getPublishedResourcesForTutor(liveTutor.id) : Promise.resolve(DEMO_RESOURCES),
-    liveTutor ? getPackagesForTutor(liveTutor.id) : Promise.resolve([]),
+    liveTutor ? getPackagesForTutor(liveTutor.id) : Promise.resolve(DEMO_PACKAGES),
     liveTutor ? getPortalBookingStatus(liveTutor.id) : getPortalBookingStatus("", { isDemo: true }),
   ]);
 
@@ -153,19 +154,23 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
         : portalBooking.blockedReason
           ? "stripe"
           : undefined;
-  const paymentsBlockedMessage = portalBooking.parentMessage;
+  let showAnnouncement = false;
+  if (tutor.portalAnnouncementActive && tutor.portalAnnouncement) {
+    showAnnouncement = true;
+    if (tutor.portalAnnouncementUpdatedAt && tutor.portalAnnouncementDurationHours && tutor.portalAnnouncementDurationHours > 0) {
+      const updatedTime = new Date(tutor.portalAnnouncementUpdatedAt).getTime();
+      // eslint-disable-next-line react-hooks/purity
+      const elapsedHours = (Date.now() - updatedTime) / (1000 * 60 * 60);
+      if (elapsedHours > tutor.portalAnnouncementDurationHours) {
+        showAnnouncement = false;
+      }
+    }
+  }
 
   return (
     <PortalThemeWrapper tutor={tutor}>
     <div className="min-h-full">
-      {tutor.portalAnnouncementActive && tutor.portalAnnouncement && (() => {
-        if (tutor.portalAnnouncementUpdatedAt && tutor.portalAnnouncementDurationHours && tutor.portalAnnouncementDurationHours > 0) {
-          const updatedTime = new Date(tutor.portalAnnouncementUpdatedAt).getTime();
-          const elapsedHours = (Date.now() - updatedTime) / (1000 * 60 * 60);
-          if (elapsedHours > tutor.portalAnnouncementDurationHours) return false;
-        }
-        return true;
-      })() ? (
+      {showAnnouncement ? (
         <div className="bg-primary px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-primary-foreground select-none relative animate-in slide-in-from-top-full duration-300 whitespace-normal break-words">
           <div className="max-w-5xl mx-auto w-full px-2 sm:px-4 break-words whitespace-normal leading-normal">
             📢 {tutor.portalAnnouncement}

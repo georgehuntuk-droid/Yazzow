@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/format";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 type FeeSummaryProps = {
   tutorId: string;
@@ -45,8 +44,8 @@ export async function FeeSummary({ tutorId }: FeeSummaryProps) {
       <CardHeader>
         <CardTitle className="font-heading">This week&apos;s activity</CardTitle>
         <CardDescription>
-          Paid lesson bookings on your portal (Stripe processing applies). Your{" "}
-          {TUTOR_SUBSCRIPTION.label} subscription is billed separately. Pack sales are handled
+          Paid lesson bookings on your portal (Stripe processing applies). Your tutor
+          subscription is billed separately. Pack sales are handled
           outside Yazzow.
         </CardDescription>
       </CardHeader>

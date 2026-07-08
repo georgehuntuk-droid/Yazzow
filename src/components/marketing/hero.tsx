@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { HeroPreview } from "@/components/brand/hero-preview";
-import { BRAND_NAME, TUTOR_PUBLIC_PATH, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import { TUTOR_PUBLIC_PATH } from "@/lib/constants";
 import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
 
 export function PortalPreviewMockup() {

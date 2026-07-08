@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ConnectStatus } from "@/lib/stripe/connect";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 
 type StripeConnectPanelProps = {
   configured: boolean;

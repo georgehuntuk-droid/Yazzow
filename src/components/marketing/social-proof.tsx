@@ -2,13 +2,11 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
-
 const stats = [
   { value: "Instant", label: "slot alert emails" },
   { value: "0%", label: "commission per sale" },
   { value: "100%", label: "of lesson price to you" },
-  { value: TUTOR_SUBSCRIPTION.label, label: "tutor subscription" },
+  { value: "From £9.99/mo", label: "flexible tutor plans" },
 ] as const;
 
 type MarketingSocialProofProps = {
@@ -27,7 +25,7 @@ export function MarketingSocialProof({ authCta }: MarketingSocialProofProps) {
         </div>
         <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {stats.map((stat) => {
-            const isSubscription = stat.label === "tutor subscription";
+            const isSubscription = stat.label === "flexible tutor plans";
             const content = (
               <>
                 <dt className="text-3xl font-bold tracking-normal yazz-gradient-text sm:text-4xl">

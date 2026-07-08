@@ -2,7 +2,7 @@ import "server-only";
 
 import type Stripe from "stripe";
 
-import { BRAND_NAME, PUBLIC_SITE_URL, TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import { BRAND_NAME, PUBLIC_SITE_URL } from "@/lib/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/server";
 

@@ -3,40 +3,53 @@ import { ArrowRight, BookOpen, CalendarCheck, Sparkles } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
 import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
+import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 
 const plans = [
   {
-    icon: Sparkles,
-    name: "Tutor plan",
-    fee: TUTOR_SUBSCRIPTION.label,
-    feeSuffix: "for you",
-    description:
-      "Run your private portal, accept lesson bookings, and manage students. No per-lesson platform fee.",
+    icon: BookOpen,
+    name: SUBSCRIPTION_TIERS.starter.name,
+    fee: "£9.99",
+    feeSuffix: "per month",
+    description: SUBSCRIPTION_TIERS.starter.description,
     highlights: [
+      "Up to 5 active students",
+      "Your private booking portal",
+      "0% per-lesson platform fee",
       "Instant slot alerts included",
-      "100% of lesson price to you",
-      "Cancel anytime",
+      "List unlimited digital packs",
+    ],
+    featured: false,
+  },
+  {
+    icon: Sparkles,
+    name: SUBSCRIPTION_TIERS.growth.name,
+    fee: "£19.99",
+    feeSuffix: "per month",
+    description: SUBSCRIPTION_TIERS.growth.description,
+    highlights: [
+      "Up to 25 active students",
+      "Your private booking portal",
+      "0% per-lesson platform fee",
+      "Instant slot alerts included",
+      "List unlimited digital packs",
     ],
     featured: true,
   },
   {
     icon: CalendarCheck,
-    name: "Lesson bookings",
-    fee: "0%",
-    feeSuffix: "Yazzow fee per booking",
-    description:
-      "Parents pay your lesson price upfront. You keep the full amount (Stripe processing applies as usual).",
-    highlights: ["Paid upfront at booking", "Parent cancel links", "Slot alerts to waiting families"],
-  },
-  {
-    icon: BookOpen,
-    name: "Digital packs",
-    fee: "List",
-    feeSuffix: "on your shelf",
-    description:
-      "Showcase PDF or DOCX packs on your portal. Parents message you — you sell and deliver on your own terms.",
-    highlights: ["No extra Stripe for packs", "Your pricing", "You handle payment"],
+    name: SUBSCRIPTION_TIERS.agency.name,
+    fee: "£49.99",
+    feeSuffix: "per month",
+    description: SUBSCRIPTION_TIERS.agency.description,
+    highlights: [
+      "Unlimited active students",
+      "Your private booking portal",
+      "0% per-lesson platform fee",
+      "Instant slot alerts included",
+      "List unlimited digital packs",
+    ],
+    featured: false,
   },
 ] as const;
 
@@ -51,11 +64,11 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <p className="yazz-section-label">Pricing</p>
           <h2 className="font-heading text-3xl font-bold sm:text-4xl">
-            One simple subscription.
+            Simple, tiered pricing.
           </h2>
           <p className="mt-4 yazz-muted">
-            Tutors pay {TUTOR_SUBSCRIPTION.label} to run their business on Yazzow. Lesson bookings
-            use Stripe Connect on your portal; worksheet packs are listed for parents to enquire.
+            Choose the plan that fits your business scale. All tiers include full access to bookings,
+            lesson scheduling, slot alerts, and digital packs with 0% platform fees.
           </p>
         </div>
 
@@ -104,15 +117,15 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
                     </li>
                   ))}
                 </ul>
-                {featured ? (
-                  <Link
-                    href={authCta.href}
-                    className="yazz-btn-primary group mt-8 inline-flex h-11 w-full items-center justify-center gap-2 px-4 text-sm"
-                  >
-                    {authCta.label}
-                    <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
-                  </Link>
-                ) : null}
+                <Link
+                  href={authCta.href}
+                  className={`group mt-8 inline-flex h-11 w-full items-center justify-center gap-2 px-4 text-sm ${
+                    featured ? "yazz-btn-primary" : "yazz-btn-secondary"
+                  }`}
+                >
+                  {authCta.label}
+                  <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+                </Link>
               </SpotlightCard>
             );
           })}

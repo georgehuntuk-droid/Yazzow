@@ -10,7 +10,7 @@ import { DashboardActivityTimeline } from "@/components/dashboard/dashboard-acti
 import { requireTutorProfile } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
 import { DashboardShell } from "@/components/layout/page-header";
-import { BRAND_NAME, TUTOR_SUBSCRIPTION, tutorPublicUrl } from "@/lib/constants";
+import { BRAND_NAME, tutorPublicUrl } from "@/lib/constants";
 import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import {

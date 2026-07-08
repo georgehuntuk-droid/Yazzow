@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TUTOR_SUBSCRIPTION } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import type { PlatformRevenueStats } from "@/lib/platform/revenue";
 
@@ -19,7 +18,7 @@ export function PlatformRevenuePanel({ stats }: PlatformRevenuePanelProps) {
       <CardHeader>
         <CardTitle className="font-heading">Platform overview (admin)</CardTitle>
         <CardDescription>
-          Revenue is tutor subscriptions ({TUTOR_SUBSCRIPTION.label}). No per-sale commission on
+          Revenue is tutor subscriptions (Starter, Growth, Agency plans). No per-sale commission on
           lessons or packs.
         </CardDescription>
       </CardHeader>
@@ -30,7 +29,7 @@ export function PlatformRevenuePanel({ stats }: PlatformRevenuePanelProps) {
             <dd className="text-2xl font-semibold">
               {stats.activeSubscriptions}{" "}
               <span className="text-xs font-semibold text-muted-foreground">
-                ({stats.payingSubscriptions || 0} paying, {stats.compedSubscriptions || 0} comp'd)
+                ({stats.payingSubscriptions || 0} paying, {stats.compedSubscriptions || 0} comp&apos;d)
               </span>
             </dd>
             <dd className="text-sm text-primary font-bold">

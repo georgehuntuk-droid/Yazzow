@@ -35,7 +35,7 @@ export async function getTutorProfileForUser(
 ): Promise<TutorProfile | null> {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard") {
+  if (testVal === "dashboard" || testVal === "unsubscribed") {
     return {
       id: "test-user-id-123",
       username: "testtutor",

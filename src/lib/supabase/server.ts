@@ -40,7 +40,7 @@ export async function safeGetAuthUser() {
   try {
     const cookieStore = await cookies();
     const testVal = cookieStore.get("yazzow-test-session")?.value;
-    if (testVal === "onboarding" || testVal === "dashboard") {
+    if (testVal === "onboarding" || testVal === "dashboard" || testVal === "unsubscribed") {
       return {
         id: "test-user-id-123",
         email: "testtutor@example.com",

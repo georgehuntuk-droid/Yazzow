@@ -2,11 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Subscription Payment & Stripe Return Flow', () => {
   test('should show finalizing state when returning from Stripe before webhook processes', async ({ context, page }) => {
-    // 1. Set the mock session cookie to 'onboarding' (unsubscribed)
+    // 1. Set the mock session cookie to 'unsubscribed' (unsubscribed but onboarded)
     await context.addCookies([
       {
         name: 'yazzow-test-session',
-        value: 'onboarding',
+        value: 'unsubscribed',
         domain: 'localhost',
         path: '/',
       },
@@ -21,7 +21,7 @@ test.describe('Subscription Payment & Stripe Return Flow', () => {
     await expect(page.locator('text=We are secure-syncing your billing details with Stripe')).toBeVisible();
 
     // 4. Verify Stripe payouts section is NOT visible yet since subscription is not active
-    await expect(page.locator('text=Stripe payouts')).not.toBeVisible();
+    await expect(page.locator('[data-slot="card-title"]:has-text("Stripe payouts")')).not.toBeVisible();
   });
 
   test('should show success banner and show dashboard components when returning subscribed', async ({ context, page }) => {
@@ -44,6 +44,6 @@ test.describe('Subscription Payment & Stripe Return Flow', () => {
     await expect(page.locator('text=Thank you for subscribing. Your plan is now fully active.')).toBeVisible();
 
     // 4. Verify the Stripe payouts section is now visible and active
-    await expect(page.locator('text=Stripe payouts')).toBeVisible();
+    await expect(page.locator('[data-slot="card-title"]:has-text("Stripe payouts")')).toBeVisible();
   });
 });

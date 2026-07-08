@@ -154,6 +154,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
         : portalBooking.blockedReason
           ? "stripe"
           : undefined;
+  const paymentsBlockedMessage = portalBooking.parentMessage;
   let showAnnouncement = false;
   if (tutor.portalAnnouncementActive && tutor.portalAnnouncement) {
     showAnnouncement = true;

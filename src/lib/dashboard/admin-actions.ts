@@ -524,4 +524,49 @@ export async function getTutorPaymentHistoryAction(tutorId: string) {
   }
 }
 
+/** Sends an email message directly to a user and logs it in the support tickets. */
+export async function sendAdminDirectMessageAction(payload: {
+  recipientEmail: string;
+  recipientName: string;
+  tutorId?: string | null;
+  message: string;
+}) {
+  await requireAdmin();
+
+  // 1. Send email via Resend
+  const { sendAdminDirectMessageEmail } = await import("@/lib/notifications/support-email");
+  try {
+    await sendAdminDirectMessageEmail({
+      recipientName: payload.recipientName,
+      recipientEmail: payload.recipientEmail,
+      message: payload.message,
+    });
+  } catch (err) {
+    return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  // 2. Log in support_tickets table
+  const admin = createAdminClient();
+  const timestamp = new Date().toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const { error } = await admin
+    .from("support_tickets")
+    .insert({
+      tutor_id: payload.tutorId || null,
+      name: payload.recipientName,
+      email: payload.recipientEmail,
+      category: "other",
+      message: payload.message.trim(),
+      source: "admin console direct message",
+      status: "resolved", // Already resolved as the message is sent
+      admin_notes: `Direct message sent by admin on ${timestamp}.`,
+    });
+
+  if (error) {
+    console.error("Failed to log direct message in support_tickets:", error);
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const };
+}
+
 

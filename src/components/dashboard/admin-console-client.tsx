@@ -40,6 +40,7 @@ import {
   toggleUserBanStatusAction,
   deleteUserAction,
   getTutorPaymentHistoryAction,
+  sendAdminDirectMessageAction,
 } from "@/lib/dashboard/admin-actions";
 import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 
@@ -161,6 +162,11 @@ export function AdminConsoleClient({
   const [editSubscriptionTier, setEditSubscriptionTier] = useState("starter");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isClearingSchedule, setIsClearingSchedule] = useState(false);
+
+  // Messaging-specific states
+  const [messagingUser, setMessagingUser] = useState<{ email: string; name: string; tutorId?: string | null } | null>(null);
+  const [messageText, setMessageText] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const [stripePayments, setStripePayments] = useState<any[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
@@ -1017,6 +1023,20 @@ export function AdminConsoleClient({
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-8 text-xs font-medium gap-1"
+                              onClick={() => setMessagingUser({
+                                email: tutor.email,
+                                name: tutor.displayName,
+                                tutorId: tutor.id
+                              })}
+                            >
+                              <Mail className="size-3.5" />
+                              Message
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-8 text-xs font-medium"
                               onClick={() => handleOpenEditModal(tutor)}
                             >
@@ -1264,6 +1284,20 @@ export function AdminConsoleClient({
                           </td>
                           <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                             <Button
+                              variant="outline"
+                              size="xs"
+                              onClick={() => setMessagingUser({
+                                email: user.email,
+                                name: user.name,
+                                tutorId: user.id
+                              })}
+                              className="h-7 px-2.5 text-[11px] font-semibold gap-1 rounded-lg"
+                            >
+                              <Mail className="size-3" />
+                              Message
+                            </Button>
+
+                            <Button
                               variant={user.isBanned ? "default" : "outline"}
                               size="xs"
                               disabled={isLoading}
@@ -1386,6 +1420,20 @@ export function AdminConsoleClient({
                             )}
                           </td>
                           <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              onClick={() => setMessagingUser({
+                                email: account.email,
+                                name: account.studentNames[0] ? `${account.studentNames.join(" & ")}'s Parent` : "Parent",
+                                tutorId: account.id
+                              })}
+                              className="h-7 px-2.5 text-[11px] font-semibold gap-1 rounded-lg"
+                            >
+                              <Mail className="size-3" />
+                              Message
+                            </Button>
+
                             <Button
                               variant={account.isBanned ? "default" : "outline"}
                               size="xs"
@@ -1810,6 +1858,109 @@ export function AdminConsoleClient({
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Message Modal */}
+      {messagingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-2xl border border-border/80 bg-background p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border/40 pb-4 mb-4">
+              <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+                <Mail className="size-5 text-primary" />
+                Message User: {messagingUser.name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessagingUser(null);
+                  setMessageText("");
+                }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <XCircle className="size-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recipient Email</p>
+                <p className="text-sm font-medium text-foreground bg-muted/40 p-2.5 rounded-xl border border-border/60 mt-1 select-all font-mono">
+                  {messagingUser.email}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="admin-message-content" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Message Content (Will be emailed directly)
+                </label>
+                <textarea
+                  id="admin-message-content"
+                  rows={6}
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Write your email message to this user here... It will come from Yazzow Support."
+                  className="flex w-full rounded-xl border border-input bg-card px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-muted-foreground focus-visible:border-primary/40 focus-visible:ring-4 focus-visible:ring-primary/15"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-border/40">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMessagingUser(null);
+                    setMessageText("");
+                  }}
+                  className="h-10 px-4 font-semibold text-xs rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={isSendingMessage || !messageText.trim()}
+                  onClick={async () => {
+                    setIsSendingMessage(true);
+                    try {
+                      const res = await sendAdminDirectMessageAction({
+                        recipientEmail: messagingUser.email,
+                        recipientName: messagingUser.name,
+                        tutorId: messagingUser.tutorId,
+                        message: messageText,
+                      });
+                      if (res.ok) {
+                        alert("Message sent successfully!");
+                        setMessagingUser(null);
+                        setMessageText("");
+                        router.refresh();
+                      } else {
+                        alert(`Failed to send message: ${res.error}`);
+                      }
+                    } catch (err) {
+                      alert(err instanceof Error ? err.message : "Error sending message");
+                    } finally {
+                      setIsSendingMessage(false);
+                    }
+                  }}
+                  className="h-10 px-5 font-semibold text-xs rounded-xl text-white bg-primary hover:bg-primary/95"
+                >
+                  {isSendingMessage ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Loader2 className="size-3.5 animate-spin" />
+                      Sending...
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Mail className="size-3.5" />
+                      Send Email Message
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

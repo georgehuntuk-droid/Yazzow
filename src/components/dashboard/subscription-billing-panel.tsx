@@ -138,6 +138,7 @@ export function SubscriptionBillingPanel({
     !configured || subscription.subscriptionTrackingUnavailable;
 
   const currentTier = subscription.subscriptionTier || "starter";
+  const isFreeTrial = subscription.status === "trialing" && !subscription.stripeCustomerId;
 
   return (
     <Card id="subscription" className="yazz-surface border-primary/20 scroll-mt-8 overflow-hidden relative">
@@ -183,6 +184,19 @@ export function SubscriptionBillingPanel({
           </div>
         )}
 
+        {/* Trial Expired Alert Banner */}
+        {subscription.status === "trialing" && !subscription.active && (
+          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 flex items-start gap-3">
+            <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-destructive">Your free trial has expired</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your 7-day free trial is over and online bookings have been temporarily paused. Please choose one of the plans below to reactivate your portal.
+              </p>
+            </div>
+          </div>
+        )}
+
         {subscribed && (
           <div className="space-y-2 pb-2">
             <div className="flex items-center gap-2">
@@ -191,19 +205,37 @@ export function SubscriptionBillingPanel({
                   <span className="size-1.5 rounded-full bg-amber-500" />
                   Cancelling (Active until {renewsLabel})
                 </span>
+              ) : isFreeTrial ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200/30">
+                  <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  Free Trial ({SUBSCRIPTION_TIERS[currentTier]?.name} Plan)
+                </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                   <span className="size-1.5 rounded-full bg-primary animate-ping" />
                   Active {SUBSCRIPTION_TIERS[currentTier]?.name} Plan
                 </span>
               )}
-              {!subscription.stripeCustomerId && (
+              {!subscription.stripeCustomerId && !isFreeTrial && (
                 <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
                   Complimentary Access
                 </span>
               )}
             </div>
-            {renewsLabel && !subscription.cancelAtPeriodEnd ? (
+            {isFreeTrial ? (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your 7-day free trial is currently active. You have{" "}
+                <strong className="text-foreground font-bold">
+                  {(() => {
+                    if (!subscription.currentPeriodEnd) return 7;
+                    const diffTime = new Date(subscription.currentPeriodEnd).getTime() - Date.now();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays > 0 ? diffDays : 0;
+                  })()}
+                </strong>{" "}
+                days remaining to set up your portal and invite students. Choose a plan below to subscribe.
+              </p>
+            ) : renewsLabel && !subscription.cancelAtPeriodEnd ? (
               <p className="text-sm text-muted-foreground">
                 Current plan: <strong>{SUBSCRIPTION_TIERS[currentTier]?.name}</strong>. Next billing date is <span className="text-foreground font-semibold">{renewsLabel}</span>.
               </p>

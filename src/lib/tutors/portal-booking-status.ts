@@ -173,6 +173,13 @@ function buildSubscriptionFixSteps(status: string | null): string[] {
       "Click 'Manage billing' and update your card — Stripe is reporting a payment failure.",
     ];
   }
+  
+  if (status === "trialing") {
+    return [
+      "Open Dashboard → Payments.",
+      "Your 7-day free trial has expired. Click 'Subscribe now' to choose a plan and keep your booking portal active.",
+    ];
+  }
 
   return [
     "Open Dashboard → Payments.",

@@ -37,7 +37,9 @@ export function MarketingCta({ authCta }: { authCta: MarketingAuthCta }) {
               </Link>
             </div>
             <p className="mt-6 text-xs text-muted-foreground">
-              No credit card required · Free forever to set up your portal
+              {!authCta.href.includes("payments") 
+                ? "No credit card required · Try a 7-day free trial now"
+                : "No credit card required · Free forever to set up your portal"}
             </p>
           </div>
         </div>

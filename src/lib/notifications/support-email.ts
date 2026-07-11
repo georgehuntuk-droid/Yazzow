@@ -210,6 +210,61 @@ ${escapeHtml(payload.replyMessage)}
   }
 }
 
+export async function sendAdminDirectMessageEmail(payload: {
+  recipientName: string;
+  recipientEmail: string;
+  message: string;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("Support email is not configured yet (missing RESEND_API_KEY).");
+  }
+
+  const inbox = getSupportInboxEmail();
+  const from =
+    process.env.RESEND_FROM_EMAIL?.trim() ?? `${BRAND_NAME} Support <support@${publicSiteHost()}>`;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: payload.recipientEmail,
+      reply_to: inbox,
+      subject: `[${BRAND_NAME} Support] Message from Platform Support`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <!-- Logo Header -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+          </div>
+          
+          <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Support Update</h2>
+          
+          <p style="font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 24px; font-family: sans-serif;">
+            Hi ${escapeHtml(payload.recipientName)},
+          </p>
+          
+          <div style="font-size: 15px; line-height: 1.6; color: #0f172a; font-family: sans-serif; white-space: pre-wrap; margin-bottom: 24px; padding: 4px 0;">
+${escapeHtml(payload.message)}
+          </div>
+          
+          <p style="font-size: 13px; color: #94a3b8; text-align: center; font-family: sans-serif; margin-top: 32px;">
+            You can reply directly to this email to contact our support team.
+          </p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to send support message email (${response.status}).`);
+  }
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")

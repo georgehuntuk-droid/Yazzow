@@ -193,6 +193,11 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
                 See a live portal
               </Link>
             </div>
+            {!authCta.href.includes("payments") && (
+              <p className="yazz-fade-in yazz-fade-in-delay-3 mt-3 text-xs text-muted-foreground">
+                No credit card required. Try a 7-day free trial now.
+              </p>
+            )}
 
             <dl className="yazz-fade-in yazz-fade-in-delay-4 mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {[

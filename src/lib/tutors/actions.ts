@@ -112,6 +112,9 @@ export async function completeOnboarding(input: OnboardingInput) {
     lesson_price_cents: 4500,
     currency: input.currency || "gbp",
     country: input.country || null,
+    subscription_status: "trialing",
+    subscription_current_period_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    subscription_tier: "starter",
   };
 
   let { data, error } = await supabase

@@ -29,6 +29,14 @@ export function isSubscriptionActive(status: string | null | undefined): boolean
 export function isTutorSubscriptionLive(state: TutorSubscriptionState): boolean {
   if (state.subscriptionTrackingUnavailable) return false;
   
+  // If the subscription status is trialing but the trial period has expired, it is no longer live.
+  if (state.status === "trialing" && state.currentPeriodEnd) {
+    const periodEnd = new Date(state.currentPeriodEnd);
+    if (periodEnd.getTime() < Date.now()) {
+      return false;
+    }
+  }
+  
   // If the subscription is marked as active or trialing, it is considered live.
   // We no longer strictly require stripeCustomerId / stripeSubscriptionId for manually compped admin trials.
   return isSubscriptionActive(state.status);

@@ -28,5 +28,5 @@ export async function getMarketingAuthCta(user?: any): Promise<MarketingAuthCta>
     return { href: "/dashboard/payments", label: "Subscribe in dashboard" };
   }
 
-  return { href: "/auth/signup", label: "Get started free" };
+  return { href: "/auth/signup", label: "Try a 7-day free trial now" };
 }

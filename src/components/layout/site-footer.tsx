@@ -6,7 +6,7 @@ import { BRAND_NAME } from "@/lib/constants";
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-border/50 bg-card/50">
-      <div className="yazz-container grid gap-10 py-12 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
+      <div className="yazz-container grid gap-10 py-12 sm:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr_0.8fr]">
         <div>
           <Logo size="header" />
           <p className="mt-4 max-w-xs text-sm yazz-muted">
@@ -45,6 +45,21 @@ export function SiteFooter() {
             <li>
               <Link href="/auth/login" className="transition hover:text-primary">
                 Sign in
+              </Link>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <p className="text-sm font-semibold">Free Tools</p>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <li>
+              <Link href="/tools/invoice-generator" className="transition hover:text-primary">
+                Invoice Generator
+              </Link>
+            </li>
+            <li>
+              <Link href="/tools/rate-calculator" className="transition hover:text-primary">
+                Rate Calculator
               </Link>
             </li>
           </ul>

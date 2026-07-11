@@ -86,7 +86,7 @@ export async function getResourcesForTutorOwner(
 export async function getSlotsForTutorOwner(tutorId: string): Promise<TutorSlot[]> {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard") {
+  if (testVal === "dashboard" || testVal === "trialing-active" || testVal === "trialing-expired") {
     return [
       {
         id: "slot-mock-1",
@@ -201,7 +201,7 @@ export async function getRecentBookingsForTutor(
 ): Promise<RecentBooking[]> {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard") {
+  if (testVal === "dashboard" || testVal === "trialing-active" || testVal === "trialing-expired") {
     return [
       {
         id: "booking-mock-1",
@@ -332,7 +332,7 @@ export async function getDigitalSalesForTutor(
 ): Promise<DigitalPackSale[]> {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard") {
+  if (testVal === "dashboard" || testVal === "trialing-active" || testVal === "trialing-expired") {
     return [
       {
         id: "sale-mock-1",

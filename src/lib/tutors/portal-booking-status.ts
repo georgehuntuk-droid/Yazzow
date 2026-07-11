@@ -35,17 +35,24 @@ export async function getPortalBookingStatus(
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard" || testVal === "onboarding" || testVal === "unsubscribed") {
-    const isSubscribed = testVal === "dashboard";
+  if (
+    testVal === "dashboard" ||
+    testVal === "onboarding" ||
+    testVal === "unsubscribed" ||
+    testVal === "trialing-active" ||
+    testVal === "trialing-expired"
+  ) {
+    const isSubscribed = testVal === "dashboard" || testVal === "trialing-active";
+    const status = testVal === "dashboard" ? "active" : (testVal === "trialing-active" || testVal === "trialing-expired") ? "trialing" : null;
     return {
       canAcceptBookings: isSubscribed,
       blockedReason: isSubscribed ? null : "subscription_inactive",
       subscriptionActive: isSubscribed,
-      subscriptionStatus: isSubscribed ? "active" : null,
+      subscriptionStatus: status,
       stripeConnectReady: isSubscribed,
       stripeConfigured: true,
       parentMessage: isSubscribed ? "" : "This tutor's scheduling portal is temporarily offline.",
-      tutorFixSteps: isSubscribed ? [] : ["Click 'Subscribe now' to activate your tutor plan."],
+      tutorFixSteps: isSubscribed ? [] : buildSubscriptionFixSteps(status),
     };
   }
 

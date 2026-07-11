@@ -35,7 +35,12 @@ export async function getTutorProfileForUser(
 ): Promise<TutorProfile | null> {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard" || testVal === "unsubscribed") {
+  if (
+    testVal === "dashboard" ||
+    testVal === "unsubscribed" ||
+    testVal === "trialing-active" ||
+    testVal === "trialing-expired"
+  ) {
     return {
       id: "test-user-id-123",
       username: "testtutor",
@@ -166,7 +171,7 @@ export async function getTutorOnboardingStatus(
 ): Promise<OnboardingProgress> {
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard") {
+  if (testVal === "dashboard" || testVal === "trialing-active" || testVal === "trialing-expired") {
     return {
       isProfileCustomized: true,
       isScheduleSetup: true,

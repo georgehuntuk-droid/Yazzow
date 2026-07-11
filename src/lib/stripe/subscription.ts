@@ -48,17 +48,34 @@ export async function getTutorSubscriptionState(
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
-  if (testVal === "dashboard" || testVal === "onboarding" || testVal === "unsubscribed") {
+  if (
+    testVal === "dashboard" ||
+    testVal === "onboarding" ||
+    testVal === "unsubscribed" ||
+    testVal === "trialing-active" ||
+    testVal === "trialing-expired"
+  ) {
     const isDash = testVal === "dashboard";
+    const isTrialActive = testVal === "trialing-active";
+    const isTrialExpired = testVal === "trialing-expired";
+    const isTrial = isTrialActive || isTrialExpired;
+    const isActive = isDash || isTrialActive;
+
     return {
-      status: isDash ? "active" : null,
-      currentPeriodEnd: isDash ? new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString() : null,
-      active: isDash,
+      status: isDash ? "active" : isTrial ? "trialing" : null,
+      currentPeriodEnd: isDash
+        ? new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString()
+        : isTrialActive
+        ? new Date(Date.now() + 6 * 24 * 3600 * 1000).toISOString() // 6 days left
+        : isTrialExpired
+        ? new Date(Date.now() - 24 * 3600 * 1000).toISOString() // Expired yesterday
+        : null,
+      active: isActive,
       stripeCustomerId: isDash ? "mock-customer-id-123" : null,
       stripeSubscriptionId: isDash ? "mock-subscription-id-123" : null,
       subscriptionTrackingUnavailable: false,
       cancelAtPeriodEnd: false,
-      subscriptionTier: "growth",
+      subscriptionTier: "starter",
     };
   }
 

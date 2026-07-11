@@ -67,7 +67,7 @@ const AVATAR_COLORS = [
   { id: "amber", bg: "bg-amber-600 text-white", oklch: "#d97706" }
 ];
 
-export function InvoiceGeneratorClient({ defaultCurrency }: { defaultCurrency?: string }) {
+export function InvoiceGeneratorClient({ defaultCurrency, isDashboard = false }: { defaultCurrency?: string; isDashboard?: boolean }) {
   const [invoiceNumber, setInvoiceNumber] = useState(DEFAULT_INVOICE_DATA.invoiceNumber);
   const [issueDate, setIssueDate] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -678,31 +678,59 @@ export function InvoiceGeneratorClient({ defaultCurrency }: { defaultCurrency?: 
             </div>
 
             {/* Platform onboarding CTA Box */}
-            <div className="p-6 bg-gradient-to-br from-primary/10 to-indigo-600/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-300">
-                <Sparkles className="size-20 text-primary" />
+            {isDashboard ? (
+              <div className="p-6 bg-gradient-to-br from-emerald-500/10 to-teal-600/5 border border-emerald-500/20 rounded-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-300">
+                  <Sparkles className="size-20 text-emerald-500" />
+                </div>
+                <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="size-4 text-emerald-500 animate-pulse" /> Live Automations Enabled
+                </h3>
+                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                  Tutors on Yazzow don't need to manually write invoices. Connect your payout account and let parents book directly through your profile calendar. Yazzow handles Stripe checkout, syncing to Google Calendar, student tracking, and email receipts automatically!
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link 
+                    href="/dashboard/payments"
+                    className="inline-flex h-7 items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 px-3 text-[11px] font-semibold text-white transition-all"
+                  >
+                    Setup Stripe Payouts
+                  </Link>
+                  <Link 
+                    href="/dashboard/schedule"
+                    className="inline-flex h-7 items-center justify-center rounded-lg border border-border bg-card/85 hover:bg-muted px-3 text-[11px] font-medium text-muted-foreground transition-all"
+                  >
+                    Manage Slots
+                  </Link>
+                </div>
               </div>
-              <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
-                <Sparkles className="size-4 text-primary animate-pulse" /> Automate your business
-              </h3>
-              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                Tired of manual invoice generation? With Yazzow, you can automate lesson scheduling, trigger client cards upfront via Stripe, track your monthly income automatically, and sell worksheet packs via your customized tutor workspace.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link 
-                  href="/auth/signup"
-                  className="inline-flex h-7 items-center justify-center rounded-lg bg-primary px-3 text-[11px] font-semibold text-primary-foreground transition-all hover:bg-[oklch(0.50_0.18_250)]"
-                >
-                  Create Free Account <ArrowRight className="size-3 ml-1" />
-                </Link>
-                <Link 
-                  href="/#features"
-                  className="inline-flex h-7 items-center justify-center rounded-lg border border-border bg-card/80 px-3 text-[11px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-                >
-                  Learn More
-                </Link>
+            ) : (
+              <div className="p-6 bg-gradient-to-br from-primary/10 to-indigo-600/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-300">
+                  <Sparkles className="size-20 text-primary" />
+                </div>
+                <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="size-4 text-primary animate-pulse" /> Automate your business
+                </h3>
+                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                  Tired of manual invoice generation? With Yazzow, you can automate lesson scheduling, trigger client cards upfront via Stripe, track your monthly income automatically, and sell worksheet packs via your customized tutor workspace.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link 
+                    href="/auth/signup"
+                    className="inline-flex h-7 items-center justify-center rounded-lg bg-primary px-3 text-[11px] font-semibold text-primary-foreground transition-all hover:bg-[oklch(0.50_0.18_250)]"
+                  >
+                    Create Free Account <ArrowRight className="size-3 ml-1" />
+                  </Link>
+                  <Link 
+                    href="/#features"
+                    className="inline-flex h-7 items-center justify-center rounded-lg border border-border bg-card/80 px-3 text-[11px] font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                  >
+                    Learn More
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 

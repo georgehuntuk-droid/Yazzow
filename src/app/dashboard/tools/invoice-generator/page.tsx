@@ -9,7 +9,7 @@ export default async function DashboardInvoiceGeneratorPage() {
   const { profile } = await requireTutorProfile();
   return (
     <div className="px-6 py-4">
-      <InvoiceGeneratorClient defaultCurrency={profile.currency} />
+      <InvoiceGeneratorClient defaultCurrency={profile.currency} isDashboard={true} />
     </div>
   );
 }

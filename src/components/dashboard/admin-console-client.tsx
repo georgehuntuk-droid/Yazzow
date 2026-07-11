@@ -13,6 +13,7 @@ import {
   Mail,
   Search,
   ShieldCheck,
+  Sparkles,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -996,17 +997,41 @@ export function AdminConsoleClient({
                            })()}
 
                            {/* Active/Inactive Billing Status */}
-                           {hasActiveSub ? (
-                             <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10">
-                               <ShieldCheck className="size-3.5" />
-                               Active billing
-                             </Badge>
-                           ) : (
-                             <Badge variant="outline" className="gap-1 text-muted-foreground">
-                               <XCircle className="size-3.5" />
-                               No active billing
-                             </Badge>
-                           )}
+                            {tutor.subscriptionStatus === "trialing" ? (
+                              (() => {
+                                const isExpired = tutor.subscriptionCurrentPeriodEnd
+                                  ? new Date(tutor.subscriptionCurrentPeriodEnd).getTime() < Date.now()
+                                  : false;
+                                if (isExpired) {
+                                  return (
+                                    <Badge variant="outline" className="gap-1 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/10 font-bold">
+                                      <XCircle className="size-3.5" />
+                                      Trial Expired
+                                    </Badge>
+                                  );
+                                } else {
+                                  const daysLeft = tutor.subscriptionCurrentPeriodEnd
+                                    ? Math.max(0, Math.ceil((new Date(tutor.subscriptionCurrentPeriodEnd).getTime() - Date.now()) / (1000 * 3600 * 24)))
+                                    : 7;
+                                  return (
+                                    <Badge className="gap-1 bg-blue-500/10 border border-blue-500/25 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-500/10">
+                                      <Sparkles className="size-3.5 animate-pulse" />
+                                      Trialing ({daysLeft}d left)
+                                    </Badge>
+                                  );
+                                }
+                              })()
+                            ) : hasActiveSub ? (
+                              <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10">
+                                <ShieldCheck className="size-3.5" />
+                                Active billing
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="gap-1 text-muted-foreground">
+                                <XCircle className="size-3.5" />
+                                No active billing
+                              </Badge>
+                            )}
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-1.5 ml-auto lg:ml-0">

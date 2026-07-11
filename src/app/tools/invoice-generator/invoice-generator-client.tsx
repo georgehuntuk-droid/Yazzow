@@ -132,9 +132,24 @@ export function InvoiceGeneratorClient({
         } else if (parsed.currency) {
           setCurrency(parsed.currency);
         }
-        if (parsed.senderName) setSenderName(parsed.senderName);
-        if (parsed.senderBusiness) setSenderBusiness(parsed.senderBusiness);
-        if (parsed.senderEmail) setSenderEmail(parsed.senderEmail);
+
+        const isDefaultName = !parsed.senderName || parsed.senderName === "Alex Mercer";
+        const isDefaultEmail = !parsed.senderEmail || parsed.senderEmail === "alex@mercertutoring.co.uk";
+        const isDefaultBusiness = !parsed.senderBusiness || parsed.senderBusiness === "Mercer Physics & Maths Academy";
+        const isDefaultPayment = !parsed.paymentDetails || parsed.paymentDetails.includes("Starling Bank");
+
+        if (isDashboard && defaultTutorDetails) {
+          setSenderName(isDefaultName ? defaultTutorDetails.name : parsed.senderName);
+          setSenderEmail(isDefaultEmail ? defaultTutorDetails.email : parsed.senderEmail);
+          setSenderBusiness(isDefaultBusiness ? defaultTutorDetails.businessName || "" : parsed.senderBusiness);
+          setPaymentDetails(isDefaultPayment ? defaultTutorDetails.paymentInstructions || "" : parsed.paymentDetails);
+        } else {
+          if (parsed.senderName) setSenderName(parsed.senderName);
+          if (parsed.senderBusiness) setSenderBusiness(parsed.senderBusiness);
+          if (parsed.senderEmail) setSenderEmail(parsed.senderEmail);
+          if (parsed.paymentDetails) setPaymentDetails(parsed.paymentDetails);
+        }
+
         if (parsed.senderPhone) setSenderPhone(parsed.senderPhone);
         if (parsed.senderAddress) setSenderAddress(parsed.senderAddress);
         if (parsed.logoUrl) setLogoUrl(parsed.logoUrl);
@@ -144,7 +159,6 @@ export function InvoiceGeneratorClient({
         if (parsed.clientAddress) setClientAddress(parsed.clientAddress);
         if (parsed.items) setItems(parsed.items);
         if (parsed.taxPercent !== undefined) setTaxPercent(parsed.taxPercent);
-        if (parsed.paymentDetails) setPaymentDetails(parsed.paymentDetails);
         if (parsed.notes) setNotes(parsed.notes);
       } else if (defaultTutorDetails) {
         if (defaultTutorDetails.name) setSenderName(defaultTutorDetails.name);
@@ -351,7 +365,6 @@ export function InvoiceGeneratorClient({
       <div className="yazz-container">
         {/* Eyebrow & Title */}
         <div className="no-print mb-8 text-center sm:text-left">
-          <span className="yazz-eyebrow mb-3">Free Tools</span>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Tutor <span className="yazz-gradient-text">Invoice Generator</span>
           </h1>

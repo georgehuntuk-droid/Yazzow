@@ -67,11 +67,11 @@ const AVATAR_COLORS = [
   { id: "amber", bg: "bg-amber-600 text-white", oklch: "#d97706" }
 ];
 
-export function InvoiceGeneratorClient() {
+export function InvoiceGeneratorClient({ defaultCurrency }: { defaultCurrency?: string }) {
   const [invoiceNumber, setInvoiceNumber] = useState(DEFAULT_INVOICE_DATA.invoiceNumber);
   const [issueDate, setIssueDate] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [currency, setCurrency] = useState(DEFAULT_INVOICE_DATA.currency);
+  const [currency, setCurrency] = useState(defaultCurrency || DEFAULT_INVOICE_DATA.currency);
   
   // Sender Details
   const [senderName, setSenderName] = useState(DEFAULT_INVOICE_DATA.senderName);
@@ -112,7 +112,11 @@ export function InvoiceGeneratorClient() {
         if (parsed.invoiceNumber) setInvoiceNumber(parsed.invoiceNumber);
         if (parsed.issueDate) setIssueDate(parsed.issueDate);
         if (parsed.dueDate) setDueDate(parsed.dueDate);
-        if (parsed.currency) setCurrency(parsed.currency);
+        if (defaultCurrency) {
+          setCurrency(defaultCurrency);
+        } else if (parsed.currency) {
+          setCurrency(parsed.currency);
+        }
         if (parsed.senderName) setSenderName(parsed.senderName);
         if (parsed.senderBusiness) setSenderBusiness(parsed.senderBusiness);
         if (parsed.senderEmail) setSenderEmail(parsed.senderEmail);
@@ -131,7 +135,7 @@ export function InvoiceGeneratorClient() {
     } catch (e) {
       console.error("Failed to parse invoice state from localStorage", e);
     }
-  }, []);
+  }, [defaultCurrency]);
 
   // Save changes to localStorage
   useEffect(() => {

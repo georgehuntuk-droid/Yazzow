@@ -38,7 +38,20 @@ const STEPS: Step[] = [
   { id: 4, title: "Location", description: "Where will you deliver lessons?" }
 ];
 
-export function RateCalculatorClient() {
+const getCurrencySymbol = (code: string) => {
+  switch (code?.toLowerCase()) {
+    case "usd": return "$";
+    case "eur": return "€";
+    case "gbp": return "£";
+    case "cad": return "C$";
+    case "aud": return "A$";
+    case "inr": return "₹";
+    default: return "£";
+  }
+};
+
+export function RateCalculatorClient({ defaultCurrency = "gbp" }: { defaultCurrency?: string }) {
+  const symbol = getCurrencySymbol(defaultCurrency);
   const [step, setStep] = useState(1);
   const [subject, setSubject] = useState<SubjectType | "">("");
   const [level, setLevel] = useState<LevelType | "">("");
@@ -390,7 +403,7 @@ export function RateCalculatorClient() {
                 
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                    £{min} – £{max}
+                    {symbol}{min} – {symbol}{max}
                   </span>
                   <span className="text-lg text-muted-foreground self-end mb-1">/ hour</span>
                 </div>

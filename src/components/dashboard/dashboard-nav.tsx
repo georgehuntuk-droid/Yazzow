@@ -15,6 +15,8 @@ import {
   Users,
   AppWindow,
   MessageSquare,
+  Calculator,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
@@ -31,6 +33,8 @@ const navItems = [
   { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/storefront", label: "Shop Manager", icon: BookOpen },
   { href: "/dashboard/payments", label: "Earnings", icon: CreditCard },
+  { href: "/tools/invoice-generator", label: "Invoice Maker", icon: FileSpreadsheet, external: true },
+  { href: "/tools/rate-calculator", label: "Rate Calculator", icon: Calculator, external: true },
   { href: "/dashboard/settings", label: "Settings", icon: Palette },
   { href: "/dashboard/demo-guide", label: "Tutor Guide", icon: HelpCircle },
 ] as const;
@@ -80,6 +84,7 @@ export function DashboardNav({ isAdmin = false }: DashboardNavProps) {
             <Link
               key={item.href}
               href={item.href}
+              {...("external" in item && item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className={cn(
                 "inline-flex items-center justify-between gap-3 w-auto lg:w-full rounded-xl px-4 py-3 text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-200",
                 active

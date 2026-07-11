@@ -67,7 +67,22 @@ const AVATAR_COLORS = [
   { id: "amber", bg: "bg-amber-600 text-white", oklch: "#d97706" }
 ];
 
-export function InvoiceGeneratorClient({ defaultCurrency, isDashboard = false }: { defaultCurrency?: string; isDashboard?: boolean }) {
+export type DefaultTutorDetails = {
+  name: string;
+  email: string;
+  businessName?: string;
+  paymentInstructions?: string;
+};
+
+export function InvoiceGeneratorClient({ 
+  defaultCurrency, 
+  isDashboard = false,
+  defaultTutorDetails
+}: { 
+  defaultCurrency?: string; 
+  isDashboard?: boolean;
+  defaultTutorDetails?: DefaultTutorDetails;
+}) {
   const [invoiceNumber, setInvoiceNumber] = useState(DEFAULT_INVOICE_DATA.invoiceNumber);
   const [issueDate, setIssueDate] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -131,11 +146,16 @@ export function InvoiceGeneratorClient({ defaultCurrency, isDashboard = false }:
         if (parsed.taxPercent !== undefined) setTaxPercent(parsed.taxPercent);
         if (parsed.paymentDetails) setPaymentDetails(parsed.paymentDetails);
         if (parsed.notes) setNotes(parsed.notes);
+      } else if (defaultTutorDetails) {
+        if (defaultTutorDetails.name) setSenderName(defaultTutorDetails.name);
+        if (defaultTutorDetails.email) setSenderEmail(defaultTutorDetails.email);
+        if (defaultTutorDetails.businessName) setSenderBusiness(defaultTutorDetails.businessName);
+        if (defaultTutorDetails.paymentInstructions) setPaymentDetails(defaultTutorDetails.paymentInstructions);
       }
     } catch (e) {
       console.error("Failed to parse invoice state from localStorage", e);
     }
-  }, [defaultCurrency]);
+  }, [defaultCurrency, defaultTutorDetails]);
 
   // Save changes to localStorage
   useEffect(() => {

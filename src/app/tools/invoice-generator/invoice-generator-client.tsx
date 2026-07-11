@@ -282,6 +282,9 @@ export function InvoiceGeneratorClient() {
       {/* SCOPED MEDIA PRINT RULES */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
+          @page {
+            margin: 0;
+          }
           header, footer, nav, button, .no-print, [data-slot="pwa-install-banner"], .pwa-banner {
             display: none !important;
           }
@@ -306,7 +309,7 @@ export function InvoiceGeneratorClient() {
             top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
-            padding: 0 !important;
+            padding: 15mm !important;
             margin: 0 !important;
             border: none !important;
             box-shadow: none !important;
@@ -862,9 +865,6 @@ export function InvoiceGeneratorClient() {
                     {notes}
                   </p>
                 )}
-                <p className="text-[9px] text-slate-300 mt-4 text-center">
-                  Invoice generated using Yazzow.com (100% Free Tutor Tools)
-                </p>
               </div>
 
             </div>

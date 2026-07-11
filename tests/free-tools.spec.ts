@@ -62,4 +62,27 @@ test.describe('Free Public SEO Tools', () => {
     await expect(page.locator('text=£58')).toBeVisible();
     await expect(page.locator('text=£68')).toBeVisible();
   });
+
+  test('should load tools integrated inside tutor dashboard layout', async ({ context, page }) => {
+    // Set the mock session cookie to 'dashboard' to access dashboard pages
+    await context.addCookies([
+      {
+        name: 'yazzow-test-session',
+        value: 'dashboard',
+        domain: 'localhost',
+        path: '/',
+      },
+    ]);
+
+    // 1. Go to dashboard invoice maker
+    await page.goto('/dashboard/tools/invoice-generator');
+    await expect(page.locator('h1')).toContainText('Tutor Invoice Generator');
+    // Sidebar should be visible in dashboard layout
+    await expect(page.locator('text=Tutor Workspace').first()).toBeVisible();
+
+    // 2. Go to dashboard rate calculator
+    await page.goto('/dashboard/tools/rate-calculator');
+    await expect(page.locator('h1')).toContainText('Tutor Rate Calculator');
+    await expect(page.locator('text=Tutor Workspace').first()).toBeVisible();
+  });
 });

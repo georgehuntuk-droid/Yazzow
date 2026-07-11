@@ -33,8 +33,8 @@ const navItems = [
   { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/storefront", label: "Shop Manager", icon: BookOpen },
   { href: "/dashboard/payments", label: "Earnings", icon: CreditCard },
-  { href: "/tools/invoice-generator", label: "Invoice Maker", icon: FileSpreadsheet, external: true },
-  { href: "/tools/rate-calculator", label: "Rate Calculator", icon: Calculator, external: true },
+  { href: "/dashboard/tools/invoice-generator", label: "Invoice Maker", icon: FileSpreadsheet },
+  { href: "/dashboard/tools/rate-calculator", label: "Rate Calculator", icon: Calculator },
   { href: "/dashboard/settings", label: "Settings", icon: Palette },
   { href: "/dashboard/demo-guide", label: "Tutor Guide", icon: HelpCircle },
 ] as const;

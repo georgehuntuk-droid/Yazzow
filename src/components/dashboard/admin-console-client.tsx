@@ -992,8 +992,9 @@ export function AdminConsoleClient({
                         </div>
 
                         {/* Status & Actions */}
-                        <div className="flex flex-wrap items-center gap-3 self-end lg:self-start">
-                          {/* Stripe Connect Badge */}
+                        <div className="flex flex-col gap-4 w-full lg:w-80 shrink-0 items-end lg:items-start self-stretch lg:self-start justify-between">
+                          <div className="flex flex-wrap gap-1.5 justify-end lg:justify-start">
+                            {/* Stripe Connect Badge */}
                           {tutor.stripeAccountId ? (
                             tutor.isStripeCompleted ? (
                               <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold">
@@ -1088,9 +1089,10 @@ export function AdminConsoleClient({
                                 No active billing
                               </Badge>
                             )}
+                          </div>
 
                           {/* Action buttons */}
-                          <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
+                          <div className="flex flex-wrap items-center gap-1.5 justify-end lg:justify-start w-full pt-3 border-t border-border/40">
                             {/* Impersonation Button */}
                             <Button
                               variant="outline"

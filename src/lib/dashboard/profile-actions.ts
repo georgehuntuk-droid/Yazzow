@@ -325,6 +325,71 @@ export async function removePortalSideBanner() {
   return { ok: true as const };
 }
 
+export async function savePortalLogoUrl(publicUrl: string | null) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ business_logo_url: publicUrl })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function removePortalLogo() {
+  const { profile } = await requireTutorProfile();
+  const path = storagePathFromPublicUrl(AVATAR_BUCKET, (profile as any).businessLogoUrl || null);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ business_logo_url: null })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  if (path) {
+    try {
+      await removeStorageObject(profile.id, path);
+    } catch (e) {
+      console.warn("Failed to delete logo storage object:", e);
+    }
+  }
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
+export async function updateAcademyBranding(input: {
+  businessName?: string | null;
+  primaryBrandColor?: string | null;
+}) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({
+      business_name: input.businessName?.trim() || null,
+      primary_brand_color: input.primaryBrandColor?.trim() || null,
+    })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}
+
 export async function changePortalUsername(rawUsername: string) {
   const { profile } = await requireTutorProfile();
   const username = slugifyUsername(rawUsername);

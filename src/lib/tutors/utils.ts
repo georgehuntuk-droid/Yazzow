@@ -40,6 +40,11 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     meetingLink: (row as any).meeting_link ?? "",
     sendMeetingLinks: (row as any).send_meeting_links !== false,
     parentAcademyId: (row as any).parent_academy_id ?? undefined,
+    role: (row as any).role ?? "independent",
+    academyId: (row as any).academy_id ?? undefined,
+    businessLogoUrl: (row as any).business_logo_url ?? undefined,
+    primaryBrandColor: (row as any).primary_brand_color ?? undefined,
+    businessName: (row as any).business_name ?? undefined,
   };
 }
 

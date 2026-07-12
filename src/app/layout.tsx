@@ -100,15 +100,32 @@ export const metadata: Metadata = {
 };
 
 import { PwaInstallBanner } from "@/components/dashboard/pwa-install-banner";
+import { cookies } from "next/headers";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const impersonatedUserId = cookieStore.get("yazzow_impersonated_user_id")?.value;
+  let impersonatedEmail = "";
+  if (impersonatedUserId) {
+    try {
+      const admin = createAdminClient();
+      const { data: userRes } = await admin.auth.admin.getUserById(impersonatedUserId);
+      impersonatedEmail = userRes?.user?.email || "Unknown User";
+    } catch {
+      impersonatedEmail = "User Session";
+    }
+  }
+
   return (
     <html lang="en" className={`${plusJakarta.variable} min-h-screen antialiased`}>
       <body className="min-h-screen flex flex-col font-sans">
+        {impersonatedUserId && <ImpersonationBanner impersonatedEmail={impersonatedEmail} />}
         {children}
         <PwaInstallBanner />
         <Analytics />

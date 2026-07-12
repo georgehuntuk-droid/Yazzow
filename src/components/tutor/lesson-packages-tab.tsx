@@ -39,6 +39,7 @@ export function LessonPackagesTab({
 
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
+  const [parentPhone, setParentPhone] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,9 @@ export function LessonPackagesTab({
             const data = await response.json();
             if (data.studentName) {
               setStudentName(data.studentName);
+            }
+            if (data.parentPhone) {
+              setParentPhone(data.parentPhone);
             }
           }
         }
@@ -108,6 +112,7 @@ export function LessonPackagesTab({
         body: JSON.stringify({
           tutorUsername: tutor.username,
           parentEmail: email,
+          parentPhone: parentPhone || undefined,
           studentName: studentName || undefined,
           packageId: selectedPackageId || undefined,
           subscribeToAlerts,
@@ -287,6 +292,20 @@ export function LessonPackagesTab({
                   className="h-10 bg-background"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5 max-w-sm">
+              <label htmlFor="package-parent-phone" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Mobile Number (for SMS alerts)
+              </label>
+              <Input
+                id="package-parent-phone"
+                type="tel"
+                value={parentPhone}
+                onChange={(e) => setParentPhone(e.target.value)}
+                placeholder="+44 7700 900077"
+                className="h-10 bg-background"
+              />
             </div>
 
             <div className="flex items-start gap-2.5 pt-1.5 pb-1">

@@ -10,6 +10,7 @@ type LessonCheckoutBody = {
   slotId: string;
   tutorUsername: string;
   parentEmail: string;
+  parentPhone?: string;
   studentName?: string;
   subscribeToAlerts?: boolean;
 };
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as LessonCheckoutBody;
-  const { slotId, tutorUsername, parentEmail, studentName, subscribeToAlerts } = body;
+  const { slotId, tutorUsername, parentEmail, parentPhone, studentName, subscribeToAlerts } = body;
 
   if (!slotId || !tutorUsername || !parentEmail) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
         slot_id: slotId,
         tutor_id: tutor.id,
         parent_email: parentEmail,
+        parent_phone: parentPhone ?? "",
         student_name: studentName ?? "",
         platform_fee_cents: "0",
         subscribe_to_alerts: String(subscribeToAlerts !== false),

@@ -9,6 +9,7 @@ import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
 type PackageCheckoutBody = {
   tutorUsername: string;
   parentEmail: string;
+  parentPhone?: string;
   studentName?: string;
   packageId?: string;
   subscribeToAlerts?: boolean;
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as PackageCheckoutBody;
-  const { tutorUsername, parentEmail, studentName, packageId, subscribeToAlerts } = body;
+  const { tutorUsername, parentEmail, parentPhone, studentName, packageId, subscribeToAlerts } = body;
 
   if (!tutorUsername || !parentEmail) {
     return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -118,6 +119,7 @@ export async function POST(request: Request) {
         type: "package",
         tutor_id: tutor.id,
         parent_email: parentEmail,
+        parent_phone: parentPhone ?? "",
         student_name: studentName ?? "",
         lessons_count: String(lessonsCount),
         discount_percent: "0",

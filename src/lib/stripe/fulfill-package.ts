@@ -23,6 +23,7 @@ export async function fulfillPackageCheckoutFromSession(
 
   const tutorId = metadata.tutor_id;
   const parentEmail = metadata.parent_email?.trim().toLowerCase();
+  const parentPhone = metadata.parent_phone || null;
   const studentName = metadata.student_name?.trim() || "Bulk Pupil";
   const lessonsCount = Number(metadata.lessons_count ?? 10);
   const sessionId = session.id;
@@ -66,6 +67,7 @@ export async function fulfillPackageCheckoutFromSession(
       .update({
         lesson_credits: currentCredits + lessonsCount,
         processed_sessions: updatedProcessed,
+        parent_phone: parentPhone,
       })
       .eq("id", matchedStudent.id);
 
@@ -78,6 +80,7 @@ export async function fulfillPackageCheckoutFromSession(
     const { error: insertError } = await admin.from("students").insert({
       tutor_id: tutorId,
       parent_email: parentEmail,
+      parent_phone: parentPhone,
       student_name: studentName,
       lesson_credits: lessonsCount,
       processed_sessions: [sessionId],

@@ -36,6 +36,11 @@ export type TutorProfile = {
   meetingLink?: string;
   sendMeetingLinks?: boolean;
   parentAcademyId?: string;
+  role?: 'independent' | 'academy_owner' | 'staff_tutor';
+  academyId?: string;
+  businessLogoUrl?: string;
+  primaryBrandColor?: string;
+  businessName?: string;
 };
 
 export type OpenSlot = {

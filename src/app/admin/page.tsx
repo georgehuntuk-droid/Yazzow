@@ -126,7 +126,7 @@ export default async function AdminDashboardPage() {
     admin.from("tutor_profiles").select("*").order("created_at", { ascending: false }),
     admin.auth.admin.listUsers(),
     getPlatformRevenueStats(),
-    admin.from("bookings").select("tutor_id, amount_cents, status"),
+    admin.from("bookings").select("tutor_id, amount_cents, status, availability_slots (starts_at)"),
     admin.from("resource_purchases").select("tutor_id, amount_cents"),
     admin.from("support_tickets").select("*").order("created_at", { ascending: false }),
     admin.from("admin_notices").select("*").order("created_at", { ascending: false }),
@@ -196,14 +196,39 @@ export default async function AdminDashboardPage() {
   // Create helper structures for fast lookups
   const emailMap = new Map(authUsers.map((u) => [u.id, u.email]));
   
-  // Calculate bookings stats per tutor
-  const bookingsMap = new Map<string, { count: number; volume: number }>();
+  // Fetch Stripe Connect status in parallel for active tutors to verify onboarding completion
+  const stripeStatusList = await Promise.all(
+    rawProfiles.map(async (p) => {
+      if (!p.stripe_account_id) return { id: p.id, ready: false };
+      try {
+        const { getConnectStatus } = await import("@/lib/stripe/connect");
+        const status = await getConnectStatus(p.stripe_account_id);
+        return { id: p.id, ready: status.ready };
+      } catch {
+        return { id: p.id, ready: false };
+      }
+    })
+  );
+  const stripeStatusMap = new Map(stripeStatusList.map((s) => [s.id, s.ready]));
+
+  // Calculate bookings stats per tutor (Total and This Month)
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const bookingsMap = new Map<string, { count: number; volume: number; countThisMonth: number }>();
   for (const b of rawBookings) {
     if (b.status !== "confirmed") continue;
-    const current = bookingsMap.get(b.tutor_id) ?? { count: 0, volume: 0 };
+    const current = bookingsMap.get(b.tutor_id) ?? { count: 0, volume: 0, countThisMonth: 0 };
+    
+    // Check if slot was scheduled for this month
+    const slot = Array.isArray(b.availability_slots) ? b.availability_slots[0] : b.availability_slots;
+    const startsAt = (slot as any)?.starts_at;
+    const isThisMonth = startsAt && new Date(startsAt) >= startOfMonth;
+
     bookingsMap.set(b.tutor_id, {
       count: current.count + 1,
       volume: current.volume + (b.amount_cents ?? 0),
+      countThisMonth: current.countThisMonth + (isThisMonth ? 1 : 0),
     });
   }
 
@@ -219,8 +244,9 @@ export default async function AdminDashboardPage() {
 
   // Merge everything into the AdminTutorData structure
   const tutors: AdminTutorData[] = rawProfiles.map((p) => {
-    const bStats = bookingsMap.get(p.id) ?? { count: 0, volume: 0 };
+    const bStats = bookingsMap.get(p.id) ?? { count: 0, volume: 0, countThisMonth: 0 };
     const pStats = purchasesMap.get(p.id) ?? { count: 0, volume: 0 };
+    const authUser = authUsers.find((u) => u.id === p.id);
 
     return {
       id: p.id,
@@ -242,6 +268,13 @@ export default async function AdminDashboardPage() {
       paymentInstructions: p.payment_instructions,
       isBanned: p.is_banned === true,
       stripeCustomerId: p.stripe_customer_id,
+      // Operational command center fields
+      lastLogin: authUser?.last_sign_in_at || null,
+      lessonsScheduledThisMonth: bStats.countThisMonth,
+      isStripeCompleted: stripeStatusMap.get(p.id) === true,
+      isCalendarActive: !!(p as any).google_refresh_token || !!(p as any).calendar_feed_token,
+      smsSentCount: (p as any).sms_sent_count || 0,
+      googleConnected: !!(p as any).google_refresh_token,
     };
   });
 

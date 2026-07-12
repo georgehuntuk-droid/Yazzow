@@ -569,4 +569,28 @@ export async function sendAdminDirectMessageAction(payload: {
   return { ok: true as const };
 }
 
+/** Starts temporarily viewing the platform from a user's session perspective. */
+export async function startImpersonationAction(userId: string) {
+  await requireAdmin();
+
+  const cookieStore = await cookies();
+  cookieStore.set("yazzow_impersonated_user_id", userId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  return { ok: true as const };
+}
+
+/** Stop viewing the platform as an impersonated user. */
+export async function stopImpersonationAction() {
+  // Anyone is allowed to stop impersonating (the admin or the impersonated view)
+  const cookieStore = await cookies();
+  cookieStore.delete("yazzow_impersonated_user_id");
+
+  return { ok: true as const };
+}
+
 

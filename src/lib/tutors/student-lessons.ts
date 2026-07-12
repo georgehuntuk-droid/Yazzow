@@ -128,6 +128,28 @@ export async function getStudentsWithLessonsForTutor(
   const supabase = await createClient();
   const features = await getSchemaFeatures();
 
+  // Resolve all tutor IDs in the academy if owner
+  let tutorIds = [tutorId];
+  try {
+    const { data: ownProfile } = await supabase
+      .from("tutor_profiles")
+      .select("role")
+      .eq("id", tutorId)
+      .maybeSingle();
+
+    if (ownProfile?.role === "academy_owner") {
+      const { data: staff } = await supabase
+        .from("tutor_profiles")
+        .select("id")
+        .or(`parent_academy_id.eq.${tutorId},academy_id.eq.${tutorId}`);
+      if (staff && staff.length > 0) {
+        tutorIds = [tutorId, ...staff.map((s) => s.id)];
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to check academy staff for students view:", err);
+  }
+
   let bookingSelect = features.lessonFeedback
     ? "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, tutor_lesson_feedback, lesson_rating, created_at, is_paid, stripe_payment_intent_id, student_running_late_sent_at, attendance_status, availability_slots (starts_at, ends_at)"
     : "id, slot_id, tutor_id, parent_email, student_name, amount_cents, status, created_at, is_paid, stripe_payment_intent_id, student_running_late_sent_at, attendance_status, availability_slots (starts_at, ends_at)";
@@ -140,18 +162,18 @@ export async function getStudentsWithLessonsForTutor(
     supabase
       .from("students")
       .select("*")
-      .eq("tutor_id", tutorId)
+      .in("tutor_id", tutorIds)
       .order("created_at", { ascending: false }),
     supabase
       .from("bookings")
       .select(bookingSelect)
-      .eq("tutor_id", tutorId)
+      .in("tutor_id", tutorIds)
       .order("created_at", { ascending: false }),
     Promise.resolve(
       supabase
         .from("student_tasks")
         .select("*")
-        .eq("tutor_id", tutorId)
+        .in("tutor_id", tutorIds)
         .order("created_at", { ascending: false })
     )
       .then((res) => res)
@@ -169,7 +191,7 @@ export async function getStudentsWithLessonsForTutor(
     const retryRes = await supabase
       .from("bookings")
       .select(bookingSelect)
-      .eq("tutor_id", tutorId)
+      .in("tutor_id", tutorIds)
       .order("created_at", { ascending: false });
     
     bookings = retryRes.data;

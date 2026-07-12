@@ -142,7 +142,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
           <div className="min-h-screen flex flex-col bg-background">
             <header className="border-b border-border/60 bg-background/80 backdrop-blur-md">
               <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
-                <Logo size="header" href="/" />
+                <Logo size="header" href="/" businessLogoUrl={tutor.businessLogoUrl} businessName={tutor.businessName} />
                 <Link
                   href={`/tutor/${username}`}
                   className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"
@@ -203,7 +203,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
         <div className="min-h-screen flex flex-col bg-background">
           <header className="border-b border-border/60 bg-background/80 backdrop-blur-md">
             <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
-              <Logo size="header" href="/" />
+              <Logo size="header" href="/" businessLogoUrl={tutor.businessLogoUrl} businessName={tutor.businessName} />
               <Link href={`/tutor/${username}`} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="size-4" /> Back to Portal
               </Link>
@@ -247,7 +247,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
         <div className="min-h-screen flex flex-col bg-background">
           <header className="border-b border-border/60 bg-background/80 backdrop-blur-md">
             <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
-              <Logo size="header" href="/" />
+              <Logo size="header" href="/" businessLogoUrl={tutor.businessLogoUrl} businessName={tutor.businessName} />
               <Link href={`/tutor/${username}`} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="size-4" /> Back to Portal
               </Link>
@@ -536,8 +536,8 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
         {/* Navigation Header */}
         <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
           <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-2 sm:gap-4">
-            <Logo size="header" href="/" iconOnly={true} className="inline-flex sm:hidden shrink-0" />
-            <Logo size="header" href="/" iconOnly={false} className="hidden sm:inline-flex shrink-0" />
+            <Logo size="header" href="/" iconOnly={true} className="inline-flex sm:hidden shrink-0" businessLogoUrl={tutor.businessLogoUrl} businessName={tutor.businessName} />
+            <Logo size="header" href="/" iconOnly={false} className="hidden sm:inline-flex shrink-0" businessLogoUrl={tutor.businessLogoUrl} businessName={tutor.businessName} />
             <div className="flex items-center gap-1.5 sm:gap-3">
               {otherTutors.length > 1 && (
                 <div className="relative group">

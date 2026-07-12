@@ -4,7 +4,7 @@ import { syncBookingToGoogleCalendar } from "@/lib/calendar/sync-booking";
 
 export async function POST(request: Request) {
   try {
-    const { slotId, tutorId, parentEmail, studentName, subscribeToAlerts } = await request.json();
+    const { slotId, tutorId, parentEmail, parentPhone, studentName, subscribeToAlerts } = await request.json();
 
     if (!slotId || !tutorId || !parentEmail) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -74,9 +74,13 @@ export async function POST(request: Request) {
 
     // 3. Deduct 1 credit from the chosen student record (can be negative)
     const newCredits = (selectedStudent.lesson_credits ?? 0) - 1;
+    const updatePayload: any = { lesson_credits: newCredits };
+    if (parentPhone) {
+      updatePayload.parent_phone = parentPhone;
+    }
     const { error: deductError } = await admin
       .from("students")
-      .update({ lesson_credits: newCredits })
+      .update(updatePayload)
       .eq("id", selectedStudent.id);
 
     if (deductError) {
@@ -96,9 +100,11 @@ export async function POST(request: Request) {
         slot_id: slotId,
         tutor_id: tutorId,
         parent_email: email,
+        parent_phone: parentPhone || null,
         student_name: studentName?.trim() || selectedStudent.student_name,
         amount_cents: 0,
         platform_fee_cents: 0,
+        stripe_payment_intent_id: "credit",
         status: "confirmed",
       })
       .select("id")

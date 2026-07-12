@@ -37,18 +37,46 @@ export async function sendBookingConfirmationEmail(input: {
   let meetingLink = "";
   let sendMeetingLinks = true;
 
+  let businessName = "Yazzow";
+
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const admin = createAdminClient();
     const { data: booking } = await admin
       .from("bookings")
-      .select("tutor_id, parent_email, student_name, tutor_profiles(meeting_link, send_meeting_links)")
+      .select(`
+        tutor_id,
+        parent_email,
+        student_name,
+        tutor_profiles (
+          meeting_link,
+          send_meeting_links,
+          display_name,
+          business_name,
+          parent_academy_id,
+          academy_id
+        )
+      `)
       .eq("id", input.bookingId)
       .maybeSingle();
 
     if (booking) {
       meetingLink = (booking.tutor_profiles as any)?.meeting_link || "";
       sendMeetingLinks = (booking.tutor_profiles as any)?.send_meeting_links !== false;
+      const tutorProfile = booking.tutor_profiles as any;
+      businessName = tutorProfile.business_name || tutorProfile.display_name || "Yazzow";
+      const parentAcademyId = tutorProfile.parent_academy_id || tutorProfile.academy_id;
+      if (parentAcademyId) {
+        const { data: parentAcademy } = await admin
+          .from("tutor_profiles")
+          .select("business_name, display_name")
+          .eq("id", parentAcademyId)
+          .maybeSingle();
+        if (parentAcademy) {
+          businessName = parentAcademy.business_name || parentAcademy.display_name || businessName;
+        }
+      }
+
       const { data: student } = await admin
         .from("students")
         .select("lesson_type")
@@ -77,8 +105,8 @@ export async function sendBookingConfirmationEmail(input: {
           uid: `booking-${input.bookingId}@yazzow.com`,
           startsAt: starts,
           endsAt: ends,
-          summary: input.studentName ? `Lesson · ${input.studentName}` : "Yazzow lesson",
-          description: `Parent: ${recipient}\nLesson Type: ${lessonType === "visiting" ? "Visiting / In-Person" : "Online"}${isOnline ? `\nMeeting Link: ${meetingLink}` : ""}\nBooked on Yazzow`,
+          summary: input.studentName ? `Lesson · ${input.studentName}` : `${businessName} lesson`,
+          description: `Parent: ${recipient}\nLesson Type: ${lessonType === "visiting" ? "Visiting / In-Person" : "Online"}${isOnline ? `\nMeeting Link: ${meetingLink}` : ""}\nBooked on ${businessName}`,
           location: isOnline ? meetingLink : (lessonType === "visiting" ? "Visiting / In-Person" : "Online"),
         }
       ]
@@ -97,7 +125,7 @@ export async function sendBookingConfirmationEmail(input: {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">${businessName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #446152; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Booking Confirmed!</h2>

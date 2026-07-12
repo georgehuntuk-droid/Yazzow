@@ -57,7 +57,7 @@ export function CreateWorkspaceForm({
     <div className="min-h-screen flex flex-col bg-background">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="yazz-container flex h-16 max-w-5xl items-center justify-between gap-4">
-          <Logo size="header" href="/" />
+          <Logo size="header" href="/" businessLogoUrl={tutor.businessLogoUrl} businessName={tutor.businessName} />
           <Link
             href={`/tutor/${tutorUsername}`}
             className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"

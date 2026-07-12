@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   UserPlus, 
   Trash2, 
@@ -44,6 +44,55 @@ export function TeamManagementPanel({
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({});
+
+  // Academy Operational Command Center states
+  const [students, setStudents] = useState<Array<{ id: string; studentName: string; parentEmail: string; tutorId: string; tutorName: string }>>([]);
+  const [calendarEvents, setCalendarEvents] = useState<Array<{ id: string; tutorName: string; startsAt: string; endsAt: string; isBooked: boolean; title: string }>>([]);
+  const [loadingExtra, setLoadingExtra] = useState(false);
+
+  useEffect(() => {
+    async function loadExtraData() {
+      setLoadingExtra(true);
+      try {
+        const { getAcademyStudents, getAcademyScheduleEvents } = await import("@/lib/dashboard/team-actions");
+        const [studentsRes, calendarRes] = await Promise.all([
+          getAcademyStudents(),
+          getAcademyScheduleEvents()
+        ]);
+        setStudents(studentsRes);
+        setCalendarEvents(calendarRes);
+      } catch (err) {
+        console.error("Failed to load extra academy data:", err);
+      } finally {
+        setLoadingExtra(false);
+      }
+    }
+    loadExtraData();
+  }, []);
+
+  const handleReassign = async (studentId: string, newTutorId: string) => {
+    if (!newTutorId) return;
+    const { reassignStudent } = await import("@/lib/dashboard/team-actions");
+    setLoadingActions(prev => ({ ...prev, [studentId]: true }));
+    const res = await reassignStudent(studentId, newTutorId);
+    setLoadingActions(prev => ({ ...prev, [studentId]: false }));
+    if (res.ok) {
+      setStudents(prev => prev.map(s => {
+        if (s.id === studentId) {
+          const matchedTutor = activeMembers.find(m => m.id === newTutorId);
+          return {
+            ...s,
+            tutorId: newTutorId,
+            tutorName: matchedTutor ? matchedTutor.displayName : "Owner"
+          };
+        }
+        return s;
+      }));
+      alert("Student reassigned successfully.");
+    } else {
+      alert(res.error || "Failed to reassign student.");
+    }
+  };
 
   const handleOpenInvite = () => {
     setInviteEmail("");
@@ -283,6 +332,101 @@ export function TeamManagementPanel({
           </div>
         </div>
       )}
+
+      {/* Academy Operational Sub-panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+        {/* Reassignment Panel */}
+        <div className="yazz-panel p-6 space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-foreground">Student Reassignment</h3>
+            <p className="text-xs text-muted-foreground leading-normal">
+              Directly reallocate students to load-balance schedules or cover staff absences.
+            </p>
+          </div>
+
+          {loadingExtra ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-8">
+              <Loader2 className="size-4 animate-spin" />
+              Loading student directory...
+            </div>
+          ) : students.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-8 text-center">No students registered under this academy.</p>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+              {students.map((student) => (
+                <div key={student.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/50 text-xs">
+                  <div className="space-y-0.5 min-w-0 flex-1 pr-2">
+                    <span className="font-bold text-foreground block truncate">{student.studentName}</span>
+                    <span className="text-[10px] text-muted-foreground block truncate">{student.parentEmail}</span>
+                    <span className="text-[10px] text-primary/80 font-medium block">
+                      Assigned to: <strong>{student.tutorName}</strong>
+                    </span>
+                  </div>
+                  <select
+                    value={student.tutorId}
+                    disabled={loadingActions[student.id]}
+                    onChange={(e) => handleReassign(student.id, e.target.value)}
+                    className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary/20 max-w-[140px] cursor-pointer"
+                  >
+                    <option value="" disabled>Reassign to...</option>
+                    {activeMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Macro Calendar Panel */}
+        <div className="yazz-panel p-6 space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-foreground">Academy Master Schedule</h3>
+            <p className="text-xs text-muted-foreground leading-normal">
+              Unified timeline of upcoming tutoring availabilities and locked sessions.
+            </p>
+          </div>
+
+          {loadingExtra ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-8">
+              <Loader2 className="size-4 animate-spin" />
+              Loading master calendar...
+            </div>
+          ) : calendarEvents.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-8 text-center">No schedule slots registered by staff.</p>
+          ) : (
+            <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+              {calendarEvents.slice(0, 15).map((event) => (
+                <div key={event.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-background/50 text-xs">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-foreground block">
+                      {new Date(event.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      {event.tutorName}
+                    </span>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    event.isBooked 
+                      ? "bg-red-50 text-red-700 border border-red-100" 
+                      : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                  }`}>
+                    {event.isBooked ? "Locked Session" : "Open Slot"}
+                  </span>
+                </div>
+              ))}
+              {calendarEvents.length > 15 && (
+                <p className="text-[10px] text-muted-foreground text-center pt-2">
+                  Showing next 15 slots.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Invitation Modal */}
       {isInviteModalOpen && (

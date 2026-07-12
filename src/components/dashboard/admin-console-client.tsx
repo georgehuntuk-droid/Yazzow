@@ -13,6 +13,7 @@ import {
   Mail,
   Search,
   ShieldCheck,
+  ShieldAlert,
   Sparkles,
   Trash2,
   XCircle,
@@ -65,6 +66,12 @@ export type AdminTutorData = {
   isBanned?: boolean;
   subscriptionTier?: string;
   stripeCustomerId?: string | null;
+  lastLogin?: string | null;
+  lessonsScheduledThisMonth?: number;
+  isStripeCompleted?: boolean;
+  isCalendarActive?: boolean;
+  smsSentCount?: number;
+  googleConnected?: boolean;
 };
 
 export type SupportTicket = {
@@ -888,6 +895,13 @@ export function AdminConsoleClient({
                 const hasActiveSub = tutor.subscriptionStatus === "active" || tutor.subscriptionStatus === "trialing";
                 const isLoading = actionLoadingId === tutor.id && isPending;
 
+                // Calculate Churn Risk: paying subscription and inactive for > 14 days
+                const lastActiveDate = tutor.lastLogin ? new Date(tutor.lastLogin) : null;
+                const isInactiveOver14 = lastActiveDate 
+                  ? (Date.now() - lastActiveDate.getTime()) > 14 * 24 * 60 * 60 * 1000 
+                  : true; // Treat never logged in as inactive
+                const isChurnRisk = hasActiveSub && isInactiveOver14;
+
                 // Previous resolved tickets for this tutor/user
                 const resolvedTutorTickets = supportTickets.filter(
                   (ticket) =>
@@ -898,9 +912,14 @@ export function AdminConsoleClient({
                 return (
                   <Card
                     key={tutor.id}
-                    className={`yazz-surface transition-all ${
-                      hasActiveSub ? "border-emerald-100 dark:border-emerald-950/40" : "border-border/60"
-                    }`}
+                    className={cn(
+                      "yazz-surface transition-all relative overflow-hidden",
+                      isChurnRisk
+                        ? "border-red-200 bg-red-50/20 dark:border-red-950/40 dark:bg-red-950/5 shadow-[0_0_12px_rgba(239,68,68,0.06)]"
+                        : hasActiveSub
+                          ? "border-emerald-100 dark:border-emerald-950/40"
+                          : "border-border/60"
+                    )}
                   >
                     <CardContent className="p-6">
                       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -936,21 +955,37 @@ export function AdminConsoleClient({
                           </div>
                         </div>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 gap-4 border-y border-border/40 py-4 lg:grid-cols-3 lg:border-y-0 lg:py-0">
+                        {/* Stats & Operational Metrics */}
+                        <div className="grid grid-cols-2 gap-4 border-y border-border/40 py-4 sm:grid-cols-3 lg:grid-cols-5 lg:border-y-0 lg:py-0 min-w-0 flex-1 lg:max-w-xl">
                           <div>
                             <p className="text-xs text-muted-foreground">Lesson Vol (30d)</p>
-                            <p className="text-sm font-semibold">{formatMoney(tutor.lessonVolumeCents, tutor.currency)}</p>
-                            <p className="text-xs text-muted-foreground">{tutor.lessonCount} booking{tutor.lessonCount === 1 ? "" : "s"}</p>
+                            <p className="text-sm font-bold text-foreground">{formatMoney(tutor.lessonVolumeCents, tutor.currency)}</p>
+                            <p className="text-[10px] text-muted-foreground">{tutor.lessonCount} booking{tutor.lessonCount === 1 ? "" : "s"}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Learning Pack Vol</p>
-                            <p className="text-sm font-semibold">{formatMoney(tutor.resourceVolumeCents, tutor.currency)}</p>
-                            <p className="text-xs text-muted-foreground">{tutor.resourceCount} download{tutor.resourceCount === 1 ? "" : "s"}</p>
+                            <p className="text-xs text-muted-foreground">Scheduled (Mo)</p>
+                            <p className="text-sm font-bold text-foreground">{tutor.lessonsScheduledThisMonth ?? 0}</p>
+                            <p className="text-[10px] text-muted-foreground">This Calendar Month</p>
                           </div>
-                          <div className="col-span-2 lg:col-span-1">
-                            <p className="text-xs text-muted-foreground">Pricing</p>
-                            <p className="text-sm font-medium">
+                          <div>
+                            <p className="text-xs text-muted-foreground">SMS Sent</p>
+                            <p className="text-sm font-bold text-foreground">{tutor.smsSentCount ?? 0}</p>
+                            <p className="text-[10px] text-muted-foreground">This Billing Cycle</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Last Login</p>
+                            <p className="text-sm font-bold text-foreground">
+                              {tutor.lastLogin ? new Date(tutor.lastLogin).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "Never"}
+                            </p>
+                            {tutor.lastLogin && (
+                              <p className="text-[10px] text-muted-foreground">
+                                {Math.max(0, Math.floor((Date.now() - new Date(tutor.lastLogin).getTime()) / (1000 * 3600 * 24)))} days ago
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Pricing Rate</p>
+                            <p className="text-sm font-medium text-foreground">
                               {formatMoney(tutor.lessonPriceCents, tutor.currency)}/hr
                             </p>
                           </div>
@@ -960,14 +995,42 @@ export function AdminConsoleClient({
                         <div className="flex flex-wrap items-center gap-3 self-end lg:self-start">
                           {/* Stripe Connect Badge */}
                           {tutor.stripeAccountId ? (
-                            <Badge variant="secondary" className="gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400">
-                              <CheckCircle className="size-3.5" />
-                              Stripe Connected
+                            tutor.isStripeCompleted ? (
+                              <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold">
+                                <CheckCircle className="size-3.5 text-emerald-500" />
+                                Stripe: Active
+                              </Badge>
+                            ) : (
+                              <Badge className="gap-1 bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 font-bold">
+                                <AlertTriangle className="size-3.5 text-amber-500" />
+                                Stripe: Incomplete
+                              </Badge>
+                            )
+                          ) : (
+                            <Badge variant="outline" className="gap-1 text-muted-foreground border-border/80 bg-muted/20">
+                              <XCircle className="size-3.5" />
+                              Stripe: Missing
+                            </Badge>
+                          )}
+
+                          {/* Calendar Sync Integration Badge */}
+                          {tutor.isCalendarActive ? (
+                            <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold">
+                              <CheckCircle className="size-3.5 text-emerald-500" />
+                              Calendar: Synced
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50/50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/10 dark:text-amber-400">
-                              <AlertTriangle className="size-3.5" />
-                              Stripe Missing
+                            <Badge variant="outline" className="gap-1 text-muted-foreground border-border/80 bg-muted/20">
+                              <XCircle className="size-3.5" />
+                              Calendar: Missing
+                            </Badge>
+                          )}
+
+                          {/* Churn Risk Indicator */}
+                          {isChurnRisk && (
+                            <Badge className="gap-1 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 font-extrabold hover:bg-red-500/10 animate-pulse">
+                              <AlertTriangle className="size-3.5 text-red-500" />
+                              ⚠️ CHURN RISK (Inactive &gt; 14d)
                             </Badge>
                           )}
 
@@ -1028,6 +1091,24 @@ export function AdminConsoleClient({
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
+                            {/* Impersonation Button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs font-semibold gap-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition"
+                              disabled={isPending}
+                              onClick={async () => {
+                                const { startImpersonationAction } = await import("@/lib/dashboard/admin-actions");
+                                startTransition(async () => {
+                                  await startImpersonationAction(tutor.id);
+                                  window.location.href = "/dashboard";
+                                });
+                              }}
+                            >
+                              <ShieldAlert className="size-3.5" />
+                              Impersonate
+                            </Button>
+
                             <Button
                               variant="outline"
                               size="sm"

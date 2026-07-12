@@ -3,6 +3,36 @@ import "server-only";
 import { formatSlotRange } from "@/lib/format";
 import { sendResendEmail } from "@/lib/notifications/auth-email";
 
+async function resolveWhiteLabelBrandName(tutorName: string, tutorUsername?: string): Promise<string> {
+  let brandName = "Yazzow";
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    let query = admin.from("tutor_profiles").select("display_name, business_name, parent_academy_id, academy_id");
+    if (tutorUsername) {
+      query = query.eq("username", tutorUsername);
+    } else {
+      query = query.eq("display_name", tutorName);
+    }
+    const { data: profile } = await query.maybeSingle();
+    if (profile) {
+      brandName = profile.business_name || profile.display_name || brandName;
+      const parentId = profile.parent_academy_id || profile.academy_id;
+      if (parentId) {
+        const { data: parentAcademy } = await admin
+          .from("tutor_profiles")
+          .select("business_name, display_name")
+          .eq("id", parentId)
+          .maybeSingle();
+        if (parentAcademy) {
+          brandName = parentAcademy.business_name || parentAcademy.display_name || brandName;
+        }
+      }
+    }
+  } catch {}
+  return brandName;
+}
+
 export async function sendRunningLateEmail(input: {
   to: string;
   tutorName: string;
@@ -35,12 +65,13 @@ export async function sendBookingCancellationEmail(input: {
   slotLabel: string;
   cancelledBy: "tutor" | "parent";
 }): Promise<boolean> {
+  const brandName = await resolveWhiteLabelBrandName(input.tutorName);
   const subject = `Lesson cancelled: ${input.slotLabel} with ${input.tutorName}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">${brandName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #dc2626; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Lesson Cancelled</h2>
@@ -79,12 +110,13 @@ export async function sendTutorCancellationEmail(input: {
   slotLabel: string;
   parentEmail: string;
 }): Promise<boolean> {
+  const brandName = await resolveWhiteLabelBrandName(input.tutorName);
   const subject = `Lesson cancelled by parent: ${input.slotLabel}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">${brandName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #dc2626; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Lesson Cancelled by Parent</h2>
@@ -119,12 +151,13 @@ export async function sendBookingMovedEmail(input: {
   oldSlotLabel: string;
   newSlotLabel: string;
 }): Promise<boolean> {
+  const brandName = await resolveWhiteLabelBrandName(input.tutorName);
   const subject = `Lesson rescheduled: ${input.newSlotLabel} with ${input.tutorName}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">${brandName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #2563eb; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Lesson Rescheduled</h2>
@@ -166,12 +199,19 @@ export async function sendNewMessageEmail(input: {
   messageContent: string;
   actionUrl: string;
 }): Promise<boolean> {
-  const subject = `New message from ${input.senderName} on Yazzow`;
+  // Resolve brand name from action URL if possible
+  let tutorUsername: string | undefined;
+  const match = input.actionUrl.match(/\/tutor\/([^\/]+)\/workspace/);
+  if (match) {
+    tutorUsername = match[1];
+  }
+  const brandName = await resolveWhiteLabelBrandName(input.senderName, tutorUsername);
+  const subject = `New message from ${input.senderName} on ${brandName}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">${brandName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #446152; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">New Message Received</h2>
@@ -185,7 +225,7 @@ export async function sendNewMessageEmail(input: {
       </div>
       
       <div style="text-align: center; margin-bottom: 24px;">
-        <a href="${input.actionUrl}" style="background-color: #446152; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 700; font-size: 14px; box-shadow: 0 2px 4px rgba(68, 97, 82, 0.15); font-family: sans-serif;">Reply on Yazzow</a>
+        <a href="${input.actionUrl}" style="background-color: #446152; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 700; font-size: 14px; box-shadow: 0 2px 4px rgba(68, 97, 82, 0.15); font-family: sans-serif;">Reply on ${brandName}</a>
       </div>
       
       <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
@@ -204,12 +244,13 @@ export async function sendResourcePurchaseEmail(input: {
   resourceTitle: string;
   downloadUrl: string;
 }): Promise<boolean> {
+  const brandName = await resolveWhiteLabelBrandName(input.tutorName);
   const subject = `Your digital download: ${input.resourceTitle} from ${input.tutorName}`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #3b82f6; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #3b82f6; letter-spacing: -0.5px; font-family: sans-serif;">${brandName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; text-align: center; font-family: sans-serif;">Your Purchase is Ready!</h2>
@@ -231,7 +272,7 @@ export async function sendResourcePurchaseEmail(input: {
       <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
       
       <p style="font-size: 11px; text-align: center; color: #94a3b8; margin: 0; font-family: sans-serif;">
-        This is an automated purchase delivery from Yazzow. All storefront purchases are digital files and strictly non-refundable.
+        This is an automated purchase delivery from ${brandName}. All storefront purchases are digital files and strictly non-refundable.
       </p>
     </div>
   `;
@@ -242,4 +283,3 @@ export async function sendResourcePurchaseEmail(input: {
     html,
   });
 }
-

@@ -74,9 +74,9 @@ export async function removeTeamMember(memberId: string): Promise<{ ok: boolean;
 
     const { error } = await supabase
       .from("tutor_profiles")
-      .update({ parent_academy_id: null })
+      .update({ parent_academy_id: null, academy_id: null, role: 'independent' })
       .eq("id", memberId)
-      .eq("parent_academy_id", profile.id);
+      .or(`parent_academy_id.eq.${profile.id},academy_id.eq.${profile.id}`);
 
     if (error) {
       return { ok: false, error: error.message };
@@ -170,5 +170,110 @@ export async function cancelInvitation(inviteId: string): Promise<{ ok: boolean;
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+export async function getAcademyStudents(): Promise<Array<{ id: string; studentName: string; parentEmail: string; tutorId: string; tutorName: string }>> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    // 1. Get all staff member IDs
+    const { data: staff } = await supabase
+      .from("tutor_profiles")
+      .select("id, display_name")
+      .or(`parent_academy_id.eq.${profile.id},academy_id.eq.${profile.id}`);
+
+    const tutorIds = [profile.id, ...(staff || []).map((s) => s.id)];
+    const staffMap = new Map(tutorIds.map(id => [id, id === profile.id ? "Me (Owner)" : (staff?.find(s => s.id === id)?.display_name || "Staff")]));
+
+    // 2. Get students for all these tutor IDs
+    const { data: students, error } = await supabase
+      .from("students")
+      .select("id, student_name, parent_email, tutor_id")
+      .in("tutor_id", tutorIds);
+
+    if (error) throw new Error(error.message);
+
+    return (students || []).map((s) => ({
+      id: s.id,
+      studentName: s.student_name,
+      parentEmail: s.parent_email,
+      tutorId: s.tutor_id,
+      tutorName: staffMap.get(s.tutor_id) || "Staff",
+    }));
+  } catch (err) {
+    console.error("Failed to load academy students:", err);
+    return [];
+  }
+}
+
+export async function reassignStudent(studentId: string, newTutorId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    // Verify newTutorId is either the owner or linked staff
+    const { data: staff } = await supabase
+      .from("tutor_profiles")
+      .select("id")
+      .or(`parent_academy_id.eq.${profile.id},academy_id.eq.${profile.id}`);
+
+    const allowedIds = [profile.id, ...(staff || []).map((s) => s.id)];
+    if (!allowedIds.includes(newTutorId)) {
+      return { ok: false, error: "Tutor is not a member of your Academy." };
+    }
+
+    // Update students table
+    const { error } = await supabase
+      .from("students")
+      .update({ tutor_id: newTutorId })
+      .eq("id", studentId);
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard/team");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+export async function getAcademyScheduleEvents(): Promise<Array<{ id: string; tutorName: string; startsAt: string; endsAt: string; isBooked: boolean; title: string }>> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    // 1. Get all staff member IDs
+    const { data: staff } = await supabase
+      .from("tutor_profiles")
+      .select("id, display_name")
+      .or(`parent_academy_id.eq.${profile.id},academy_id.eq.${profile.id}`);
+
+    const tutorIds = [profile.id, ...(staff || []).map((s) => s.id)];
+    const staffMap = new Map(tutorIds.map(id => [id, id === profile.id ? "Me (Owner)" : (staff?.find(s => s.id === id)?.display_name || "Staff")]));
+
+    // 2. Fetch all slots for these tutors
+    const { data: slots, error } = await supabase
+      .from("availability_slots")
+      .select("id, starts_at, ends_at, is_booked, tutor_id")
+      .in("tutor_id", tutorIds)
+      .order("starts_at", { ascending: true });
+
+    if (error) throw new Error(error.message);
+
+    return (slots || []).map((s) => ({
+      id: s.id,
+      tutorName: staffMap.get(s.tutor_id) || "Staff",
+      startsAt: s.starts_at,
+      endsAt: s.ends_at,
+      isBooked: s.is_booked === true,
+      title: `${staffMap.get(s.tutor_id)} - ${s.is_booked ? "🔒 Booked" : "🟢 Available"}`,
+    }));
+  } catch (err) {
+    console.error("Failed to load academy calendar:", err);
+    return [];
   }
 }

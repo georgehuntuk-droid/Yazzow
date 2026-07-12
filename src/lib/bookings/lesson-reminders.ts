@@ -17,13 +17,17 @@ export async function sendLessonReminder(
     .select(`
       id,
       parent_email,
+      parent_phone,
       student_name,
       status,
       lesson_reminder_sent_at,
       slot_id,
       tutor_profiles!inner (
         display_name,
-        username
+        username,
+        business_name,
+        parent_academy_id,
+        academy_id
       ),
       availability_slots!inner (
         starts_at,
@@ -42,12 +46,16 @@ export async function sendLessonReminder(
       .select(`
         id,
         parent_email,
+        parent_phone,
         student_name,
         status,
         slot_id,
         tutor_profiles!inner (
           display_name,
-          username
+          username,
+          business_name,
+          parent_academy_id,
+          academy_id
         ),
         availability_slots!inner (
           starts_at,
@@ -83,6 +91,21 @@ export async function sendLessonReminder(
 
   if (!slot || !tutor) {
     return { ok: false, error: "Associated lesson time or tutor profile not found." };
+  }
+
+  let businessName = (tutor as any).business_name || (tutor as any).display_name || "Yazzow";
+  const parentId = (tutor as any).parent_academy_id || (tutor as any).academy_id;
+  if (parentId) {
+    try {
+      const { data: parentAcademy } = await admin
+        .from("tutor_profiles")
+        .select("business_name, display_name")
+        .eq("id", parentId)
+        .maybeSingle();
+      if (parentAcademy) {
+        businessName = parentAcademy.business_name || parentAcademy.display_name || businessName;
+      }
+    } catch {}
   }
 
   const lessonStart = new Date(slot.starts_at);
@@ -124,7 +147,7 @@ export async function sendLessonReminder(
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff; color: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
       <!-- Logo Header -->
       <div style="text-align: center; margin-bottom: 24px;">
-        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">yazzow</span>
+        <span style="font-size: 24px; font-weight: 900; color: #446152; letter-spacing: -0.5px; font-family: sans-serif;">${businessName.toLowerCase()}</span>
       </div>
       
       <h2 style="font-size: 20px; font-weight: 800; color: #446152; margin-top: 0; margin-bottom: 16px; text-align: center; font-family: sans-serif;">Lesson Reminder</h2>
@@ -166,6 +189,21 @@ export async function sendLessonReminder(
     });
   } catch (err) {
     console.error("Failed to send lesson reminder email:", err);
+  }
+
+  // 5. Send SMS notification via Twilio if parent phone is present
+  if ((booking as any).parent_phone) {
+    const { sendTwilioSms } = await import("@/lib/notifications/sms");
+    const smsBody = `Hi ${booking.student_name || "there"}, this is a reminder of your upcoming lesson with ${businessName} on ${slotLabel}. Join: ${workspaceUrl}`;
+    try {
+      const smsOk = await sendTwilioSms((booking as any).parent_phone, smsBody);
+      if (smsOk) {
+        // Increment sms_sent_count atomically in database using RPC
+        await admin.rpc("increment_sms_count", { tutor_profile_id: tutorId });
+      }
+    } catch (err) {
+      console.error("Failed to send Twilio SMS reminder:", err);
+    }
   }
 
   return { ok: true };

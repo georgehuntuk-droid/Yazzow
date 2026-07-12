@@ -4,7 +4,7 @@ import { syncBookingToGoogleCalendar } from "@/lib/calendar/sync-booking";
 
 export async function POST(request: Request) {
   try {
-    const { slotId, tutorId, parentEmail, studentName, subscribeToAlerts } = await request.json();
+    const { slotId, tutorId, parentEmail, parentPhone, studentName, subscribeToAlerts } = await request.json();
 
     if (!slotId || !tutorId || !parentEmail) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         slot_id: slotId,
         tutor_id: tutorId,
         parent_email: email,
+        parent_phone: parentPhone || null,
         student_name: studentName?.trim() || null,
         amount_cents: amountCents,
         platform_fee_cents: 0,
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
           tutor_id: tutorId,
           student_name: studentName.trim(),
           parent_email: email,
+          parent_phone: parentPhone || null,
         },
         { onConflict: "tutor_id,parent_email,student_name" }
       );

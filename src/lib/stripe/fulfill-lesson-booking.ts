@@ -27,6 +27,7 @@ export async function fulfillLessonBookingFromSession(
   const slotId = metadata.slot_id;
   const tutorId = metadata.tutor_id;
   const parentEmail = metadata.parent_email;
+  const parentPhone = metadata.parent_phone || null;
   const studentName = metadata.student_name?.trim() || null;
   const platformFeeCents = Number(metadata.platform_fee_cents ?? 0);
   const amountCents = session.amount_total ?? 0;
@@ -60,6 +61,7 @@ export async function fulfillLessonBookingFromSession(
       slot_id: slotId,
       tutor_id: tutorId,
       parent_email: parentEmail,
+      parent_phone: parentPhone,
       student_name: studentName,
       amount_cents: amountCents,
       platform_fee_cents: platformFeeCents,
@@ -101,6 +103,7 @@ export async function fulfillLessonBookingFromSession(
         tutor_id: tutorId,
         student_name: studentName,
         parent_email: parentEmail,
+        parent_phone: parentPhone,
       },
       { onConflict: "tutor_id,parent_email,student_name" },
     );

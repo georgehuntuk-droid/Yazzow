@@ -25,11 +25,12 @@ export async function getTutorByUsername(
     if (!data) return null;
 
     const profileData = { ...data };
-    if (profileData.parent_academy_id) {
+    if (profileData.parent_academy_id || (profileData as any).academy_id) {
+      const parentId = profileData.parent_academy_id || (profileData as any).academy_id;
       const { data: parentData } = await supabase
         .from("tutor_profiles")
-        .select("portal_accent_oklch, portal_bg_style, portal_side_banner_url, portal_side_banner_link, portal_side_widget_title, portal_side_widget_content, portal_announcement, portal_announcement_active, portal_announcement_updated_at, portal_announcement_duration_hours")
-        .eq("id", profileData.parent_academy_id)
+        .select("portal_accent_oklch, portal_bg_style, portal_side_banner_url, portal_side_banner_link, portal_side_widget_title, portal_side_widget_content, portal_announcement, portal_announcement_active, portal_announcement_updated_at, portal_announcement_duration_hours, business_logo_url, primary_brand_color, business_name")
+        .eq("id", parentId)
         .maybeSingle();
 
       if (parentData) {
@@ -43,6 +44,9 @@ export async function getTutorByUsername(
         profileData.portal_announcement_active = parentData.portal_announcement_active ?? profileData.portal_announcement_active;
         profileData.portal_announcement_updated_at = parentData.portal_announcement_updated_at ?? profileData.portal_announcement_updated_at;
         profileData.portal_announcement_duration_hours = parentData.portal_announcement_duration_hours ?? profileData.portal_announcement_duration_hours;
+        (profileData as any).business_logo_url = (parentData as any).business_logo_url ?? (profileData as any).business_logo_url;
+        (profileData as any).primary_brand_color = (parentData as any).primary_brand_color ?? (profileData as any).primary_brand_color;
+        (profileData as any).business_name = (parentData as any).business_name ?? (profileData as any).business_name;
       }
     }
 
@@ -91,11 +95,12 @@ export async function getTutorProfileForUser(
     if (error || !data) return null;
 
     const profileData = { ...data };
-    if (profileData.parent_academy_id) {
+    if (profileData.parent_academy_id || (profileData as any).academy_id) {
+      const parentId = profileData.parent_academy_id || (profileData as any).academy_id;
       const { data: parentData } = await supabase
         .from("tutor_profiles")
-        .select("portal_accent_oklch, portal_bg_style, portal_side_banner_url, portal_side_banner_link, portal_side_widget_title, portal_side_widget_content, portal_announcement, portal_announcement_active, portal_announcement_updated_at, portal_announcement_duration_hours")
-        .eq("id", profileData.parent_academy_id)
+        .select("portal_accent_oklch, portal_bg_style, portal_side_banner_url, portal_side_banner_link, portal_side_widget_title, portal_side_widget_content, portal_announcement, portal_announcement_active, portal_announcement_updated_at, portal_announcement_duration_hours, business_logo_url, primary_brand_color, business_name")
+        .eq("id", parentId)
         .maybeSingle();
 
       if (parentData) {
@@ -109,6 +114,9 @@ export async function getTutorProfileForUser(
         profileData.portal_announcement_active = parentData.portal_announcement_active ?? profileData.portal_announcement_active;
         profileData.portal_announcement_updated_at = parentData.portal_announcement_updated_at ?? profileData.portal_announcement_updated_at;
         profileData.portal_announcement_duration_hours = parentData.portal_announcement_duration_hours ?? profileData.portal_announcement_duration_hours;
+        (profileData as any).business_logo_url = (parentData as any).business_logo_url ?? (profileData as any).business_logo_url;
+        (profileData as any).primary_brand_color = (parentData as any).primary_brand_color ?? (profileData as any).primary_brand_color;
+        (profileData as any).business_name = (parentData as any).business_name ?? (profileData as any).business_name;
       }
     }
 

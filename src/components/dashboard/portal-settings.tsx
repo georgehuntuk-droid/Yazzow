@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   PORTAL_ACCENT_PRESETS,
   SUPPORTED_CURRENCIES,
@@ -135,6 +136,11 @@ export function PortalSettings({
   );
   const [emailAllStudents, setEmailAllStudents] = useState(false);
   const [announcementLoading, setAnnouncementLoading] = useState(false);
+
+  const [businessName, setBusinessName] = useState(profile.businessName ?? "");
+  const [primaryBrandColor, setPrimaryBrandColor] = useState(profile.primaryBrandColor ?? "#7c3aed");
+  const [businessLogoUrl, setBusinessLogoUrl] = useState(profile.businessLogoUrl || null);
+  const [logoLoading, setLogoLoading] = useState(false);
   const [accentPresetId, setAccentPresetId] = useState<string>(() => {
     const match = PORTAL_ACCENT_PRESETS.find(
       (p) => p.oklch === profile.portalAccentOklch,
@@ -656,6 +662,93 @@ export function PortalSettings({
     router.refresh();
   }
 
+  async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2_097_152) { // 2MB limit
+      setError("Logo image must be 2 MB or smaller.");
+      return;
+    }
+
+    const validMimes = new Set(["image/jpeg", "image/png", "image/webp", "image/svg+xml"]);
+    if (!validMimes.has(file.type)) {
+      setError("Use JPG, PNG, WebP or SVG format.");
+      return;
+    }
+
+    setLogoLoading(true);
+    setError(null);
+
+    // Optimistic update
+    const previewUrl = URL.createObjectURL(file);
+    setBusinessLogoUrl(previewUrl);
+
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "png";
+      const storagePath = `${profile.id}/logo.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(storagePath, file, { upsert: true, contentType: file.type });
+
+      if (uploadErr) {
+        throw new Error(uploadErr.message);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(storagePath);
+
+      const { savePortalLogoUrl } = await import("@/lib/dashboard/profile-actions");
+      const dbRes = await savePortalLogoUrl(publicUrl);
+      if (!dbRes.ok) {
+        throw new Error(dbRes.error);
+      }
+
+      flashSuccess("Business logo updated.");
+      router.refresh();
+    } catch (err) {
+      setBusinessLogoUrl(profile.businessLogoUrl || null);
+      setError(err instanceof Error ? err.message : "Failed to upload logo.");
+    } finally {
+      setLogoLoading(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleRemoveLogo() {
+    if (!confirm("Remove your business logo?")) return;
+    setLogoLoading(true);
+    const { removePortalLogo } = await import("@/lib/dashboard/profile-actions");
+    const result = await removePortalLogo();
+    setLogoLoading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setBusinessLogoUrl(null);
+    flashSuccess("Business logo removed.");
+    router.refresh();
+  }
+
+  async function handleSaveAcademyBranding() {
+    const { updateAcademyBranding } = await import("@/lib/dashboard/profile-actions");
+    setLogoLoading(true);
+    const result = await updateAcademyBranding({
+      businessName: businessName || null,
+      primaryBrandColor: primaryBrandColor || null,
+    });
+    setLogoLoading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    flashSuccess("Custom branding settings saved.");
+    router.refresh();
+  }
+
   const initials = displayName
     .split(" ")
     .map((part) => part[0])
@@ -804,6 +897,143 @@ export function PortalSettings({
                 ) : null}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="yazz-surface">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <CardTitle>White-label & custom branding</CardTitle>
+                <CardDescription>
+                  Replace Yazzow branding with your custom logo, colors, and business name across all client booking portals and emails.
+                </CardDescription>
+              </div>
+              {profile.role !== "academy_owner" && !profile.isPlatformAdmin && (
+                <Badge variant="outline" className="bg-yellow-500/10 border-yellow-500/30 text-yellow-700 font-extrabold uppercase tracking-wide text-[10px]">
+                  🏫 Academy Tier
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {profile.role !== "academy_owner" && !profile.isPlatformAdmin ? (
+              <div className="rounded-xl border border-yellow-100 bg-yellow-50/50 p-4 dark:border-yellow-950/40 dark:bg-yellow-950/10 space-y-3">
+                <p className="text-xs text-yellow-800 dark:text-yellow-400 font-medium leading-relaxed">
+                  You are currently on the <strong>Independent Tier</strong>. White-labeling (logo upload, custom brand colours, and platform name substitution) is a premium capability for schools and academies.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => router.push("/dashboard/settings")}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-8 text-xs rounded-lg cursor-pointer"
+                >
+                  Upgrade to Academy
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Logo uploader */}
+                <div className="space-y-2">
+                  <span className="text-sm font-semibold block text-foreground">Business Logo</span>
+                  <div className="flex items-center gap-4">
+                    {businessLogoUrl ? (
+                      <div className="relative size-20 rounded-xl border border-border bg-background p-2.5 flex items-center justify-center shrink-0">
+                        <img src={businessLogoUrl} alt="Business logo" className="max-h-full max-w-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="size-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center text-xs text-muted-foreground bg-muted/10 shrink-0 font-medium">
+                        No Logo
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={logoLoading}
+                          className="relative h-8 font-semibold text-xs border-border/80"
+                        >
+                          {logoLoading ? "Uploading..." : "Upload Logo"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                            disabled={logoLoading}
+                          />
+                        </Button>
+                        {businessLogoUrl && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveLogo}
+                            className="h-8 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-normal max-w-xs">
+                        JPG, PNG or WebP. Transparent backgrounds recommended.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brand Text Settings */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label htmlFor="business-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Business / Academy Name
+                    </label>
+                    <Input
+                      id="business-name"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="e.g. Apex Academy"
+                      className="h-10 bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="brand-color" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                      Primary Brand Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        id="brand-color-picker"
+                        value={primaryBrandColor.startsWith("#") ? primaryBrandColor : "#7c3aed"}
+                        onChange={(e) => setPrimaryBrandColor(e.target.value)}
+                        className="size-10 p-0.5 border border-border rounded-lg cursor-pointer bg-background"
+                      />
+                      <Input
+                        id="brand-color"
+                        type="text"
+                        value={primaryBrandColor}
+                        onChange={(e) => setPrimaryBrandColor(e.target.value)}
+                        placeholder="#7c3aed"
+                        className="h-10 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="button"
+                    onClick={handleSaveAcademyBranding}
+                    disabled={logoLoading}
+                    className="h-9 px-4 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/95 transition-all"
+                  >
+                    Save Branding Settings
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

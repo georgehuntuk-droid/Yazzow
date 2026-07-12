@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import {
   applyAuthCookieOptions,
@@ -55,7 +55,67 @@ export async function safeGetAuthUser() {
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    return user ?? null;
+    if (!user) return null;
+
+    // Impersonation logic
+    const impersonatedId = cookieStore.get("yazzow_impersonated_user_id")?.value;
+    if (impersonatedId && impersonatedId !== user.id) {
+      // 1. Bypass impersonation if accessing administrative page routes to avoid lockout
+      let bypassImpersonation = false;
+      try {
+        const reqHeaders = await headers();
+        const pathname = reqHeaders.get("x-pathname") || "";
+        if (
+          pathname.startsWith("/admin") ||
+          pathname.startsWith("/api/stripe/webhook") ||
+          pathname.startsWith("/api/cron")
+        ) {
+          bypassImpersonation = true;
+        }
+      } catch {
+        // Safe to ignore headers failures in static/prerender phases
+      }
+
+      if (!bypassImpersonation) {
+        // 2. Verify that the actual logged-in user is a platform administrator
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        const adminSession = cookieStore.get("yazzow_admin_session")?.value;
+        let isRealAdmin = adminPassword && adminSession === adminPassword;
+
+        if (!isRealAdmin) {
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const adminClient = createAdminClient();
+          const { data: realProfile } = await adminClient
+            .from("tutor_profiles")
+            .select("username, is_platform_admin")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const { isPlatformAdminUser } = await import("@/lib/auth/platform-admin");
+          isRealAdmin = isPlatformAdminUser(
+            user,
+            realProfile
+              ? {
+                  username: realProfile.username,
+                  isPlatformAdmin: realProfile.is_platform_admin === true,
+                }
+              : null
+          );
+        }
+
+        if (isRealAdmin) {
+          // Retrieve and return the impersonated user's auth record
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const adminClient = createAdminClient();
+          const { data: impersonatedUserRes } = await adminClient.auth.admin.getUserById(impersonatedId);
+          if (impersonatedUserRes?.user) {
+            return impersonatedUserRes.user;
+          }
+        }
+      }
+    }
+
+    return user;
   } catch (error) {
     if (error instanceof Error && (
       error.message.includes("Dynamic server usage") ||

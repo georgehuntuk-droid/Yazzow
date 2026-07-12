@@ -18,7 +18,7 @@ export function PlatformRevenuePanel({ stats }: PlatformRevenuePanelProps) {
       <CardHeader>
         <CardTitle className="font-heading">Platform overview (admin)</CardTitle>
         <CardDescription>
-          Revenue is tutor subscriptions (Starter, Growth, Agency plans). No per-sale commission on
+          Revenue is tutor subscriptions (Independent and Academy plans). No per-sale commission on
           lessons or packs.
         </CardDescription>
       </CardHeader>

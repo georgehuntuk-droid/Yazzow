@@ -1,0 +1,174 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { requireTutorProfile } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+
+export type TeamMember = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  headline: string | null;
+  lessonPriceCents: number;
+  currency: string;
+};
+
+export type PendingInvitation = {
+  id: string;
+  email: string;
+  createdAt: string;
+};
+
+/**
+ * Invites a new employee tutor to join the Academy.
+ * Only allowed for tutors with the 'academy' subscription tier.
+ */
+export async function inviteTeamMember(email: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const formattedEmail = email.trim().toLowerCase();
+    if (!formattedEmail) {
+      return { ok: false, error: "Email address is required." };
+    }
+
+    const { getTutorSubscriptionState } = await import("@/lib/stripe/subscription");
+    const subState = await getTutorSubscriptionState(profile.id);
+    const tier = subState.subscriptionTier;
+
+    // Check tier (also allow legacy agency)
+    if (tier !== "academy" && tier !== "agency") {
+      return { ok: false, error: "Only Academy plan subscribers can manage staff sub-accounts." };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("academy_invitations")
+      .insert({
+        academy_id: profile.id,
+        email: formattedEmail,
+        status: "pending",
+      });
+
+    if (error) {
+      if (error.code === "23505") {
+        return { ok: false, error: "This email has already been invited to your academy." };
+      }
+      return { ok: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard/team");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+/**
+ * Removes an employee tutor from the Academy, resetting their parent relationship.
+ */
+export async function removeTeamMember(memberId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("tutor_profiles")
+      .update({ parent_academy_id: null })
+      .eq("id", memberId)
+      .eq("parent_academy_id", profile.id);
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard/team");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+/**
+ * Fetches all employee tutors currently linked to this Academy.
+ */
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("tutor_profiles")
+      .select("id, username, display_name, avatar_url, headline, lesson_price_cents, currency")
+      .eq("parent_academy_id", profile.id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      username: row.username,
+      displayName: row.display_name,
+      avatarUrl: row.avatar_url,
+      headline: row.headline,
+      lessonPriceCents: row.lesson_price_cents,
+      currency: row.currency,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetches all pending staff invitations for this Academy.
+ */
+export async function getPendingInvitations(): Promise<PendingInvitation[]> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("academy_invitations")
+      .select("id, email, created_at")
+      .eq("academy_id", profile.id)
+      .eq("status", "pending");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      email: row.email,
+      createdAt: row.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Cancels a pending staff invitation.
+ */
+export async function cancelInvitation(inviteId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("academy_invitations")
+      .delete()
+      .eq("id", inviteId)
+      .eq("academy_id", profile.id);
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    revalidatePath("/dashboard/team");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err.message || "An unexpected error occurred." };
+  }
+}

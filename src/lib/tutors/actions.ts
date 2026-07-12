@@ -103,6 +103,21 @@ export async function completeOnboarding(input: OnboardingInput) {
     return { ok: false as const, error: "That username is already taken." };
   }
 
+  // Check for pending academy invitations
+  let parentAcademyId: string | null = null;
+  if (user.email) {
+    const { data: invite } = await supabase
+      .from("academy_invitations")
+      .select("academy_id")
+      .eq("email", user.email.trim().toLowerCase())
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (invite) {
+      parentAcademyId = invite.academy_id;
+    }
+  }
+
   const insertPayload: any = {
     id: user.id,
     username: input.username,
@@ -114,7 +129,8 @@ export async function completeOnboarding(input: OnboardingInput) {
     country: input.country || null,
     subscription_status: "trialing",
     subscription_current_period_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    subscription_tier: "starter",
+    subscription_tier: "independent",
+    parent_academy_id: parentAcademyId,
   };
 
   let { data, error } = await supabase
@@ -141,6 +157,15 @@ export async function completeOnboarding(input: OnboardingInput) {
       data = retryRes.data;
       error = retryRes.error;
     }
+  }
+
+  if (!error && parentAcademyId && user.email) {
+    // Mark invitation as accepted
+    await supabase
+      .from("academy_invitations")
+      .update({ status: "accepted" })
+      .eq("email", user.email.trim().toLowerCase())
+      .eq("academy_id", parentAcademyId);
   }
 
   if (error || !data) {

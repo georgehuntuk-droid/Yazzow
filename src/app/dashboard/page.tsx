@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   let recentMessages: any[] = [];
   let tutorRating: any = { averageRating: 0, ratingCount: 0 };
   let notices: any[] = [];
-  let subState: any = { subscriptionTier: "starter" };
+  let subState: any = { subscriptionTier: "independent" };
 
   try {
     const [
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
       }),
       getTutorSubscriptionState(profile.id).catch((err) => {
         console.error("Error in getTutorSubscriptionState:", err);
-        return { subscriptionTier: "starter" };
+        return { subscriptionTier: "independent" };
       }),
     ]);
 
@@ -165,19 +165,22 @@ export default async function DashboardPage() {
           <CopyLinkButton url={publicLink} variant="outline" size="sm" className="self-start sm:self-auto bg-background text-[11px] font-bold" />
         </div>
 
-        {/* Subscription Tier Info Card */}
         {(() => {
-          const tier = subState?.subscriptionTier || "starter";
+          const rawTier = subState?.subscriptionTier || "independent";
           const { SUBSCRIPTION_TIERS } = require("@/lib/constants");
-          const config = SUBSCRIPTION_TIERS[tier];
+          const tier =
+            rawTier === "agency"
+              ? "academy"
+              : (rawTier === "growth" || rawTier === "starter")
+              ? "independent"
+              : rawTier;
+          const config = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS] || SUBSCRIPTION_TIERS.independent;
           
-          let badgeText = "🥉 Bronze Member (Starter)";
-          let badgeColor = "bg-amber-700/10 border-amber-700/25 text-amber-800 dark:text-amber-500";
-          if (tier === "growth") {
-            badgeText = "🥈 Silver Member (Growth)";
-            badgeColor = "bg-slate-300/20 border-slate-300/40 text-slate-700 dark:text-slate-300 font-bold";
-          } else if (tier === "agency") {
-            badgeText = "🏆 Gold Member (Agency)";
+          let badgeText = "🎓 The Independent Member";
+          let badgeColor = "bg-blue-500/10 border-blue-500/25 text-blue-700 dark:text-blue-400 font-bold";
+          
+          if (tier === "academy") {
+            badgeText = "🏫 The Academy Member";
             badgeColor = "bg-yellow-500/10 border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold";
           }
           
@@ -191,11 +194,9 @@ export default async function DashboardPage() {
                   </span>
                 </p>
                 <p className="mt-1.5 text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed">
-                  Active Students: <strong className="text-foreground">{activeStudentsCount}</strong> / {config.maxStudents === null ? "Unlimited" : config.maxStudents}
+                  Active Students: <strong className="text-foreground">{activeStudentsCount}</strong> / Unlimited
                   {" · "}
-                  {config.maxStudents === null 
-                    ? "You have unlimited active students on the Gold plan."
-                    : `Your plan supports up to ${config.maxStudents} active students. Upgrade in Payments to increase student capacity.`}
+                  Your plan features zero student limits. Enjoy full access to booking scheduling, reminders, and parent portals!
                 </p>
               </div>
               <Button size="sm" render={<Link href="/dashboard/payments#subscription" />}>

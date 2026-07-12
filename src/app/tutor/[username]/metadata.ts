@@ -38,6 +38,11 @@ export async function generateMetadata(
     title,
     description,
     manifest: `/api/tutor/${tutor.username}/manifest.json?v=4`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: `${tutor.displayName} Portal`,
+    },
     alternates: {
       canonical: siteUrl,
     },

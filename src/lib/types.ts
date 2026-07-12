@@ -35,6 +35,7 @@ export type TutorProfile = {
   isBanned?: boolean;
   meetingLink?: string;
   sendMeetingLinks?: boolean;
+  parentAcademyId?: string;
 };
 
 export type OpenSlot = {

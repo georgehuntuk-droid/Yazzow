@@ -23,7 +23,30 @@ export async function getTutorByUsername(
       return null;
     }
     if (!data) return null;
-    return rowToTutorProfile(data as TutorProfileRow);
+
+    const profileData = { ...data };
+    if (profileData.parent_academy_id) {
+      const { data: parentData } = await supabase
+        .from("tutor_profiles")
+        .select("portal_accent_oklch, portal_bg_style, portal_side_banner_url, portal_side_banner_link, portal_side_widget_title, portal_side_widget_content, portal_announcement, portal_announcement_active, portal_announcement_updated_at, portal_announcement_duration_hours")
+        .eq("id", profileData.parent_academy_id)
+        .maybeSingle();
+
+      if (parentData) {
+        profileData.portal_accent_oklch = parentData.portal_accent_oklch ?? profileData.portal_accent_oklch;
+        profileData.portal_bg_style = parentData.portal_bg_style ?? profileData.portal_bg_style;
+        profileData.portal_side_banner_url = parentData.portal_side_banner_url ?? profileData.portal_side_banner_url;
+        profileData.portal_side_banner_link = parentData.portal_side_banner_link ?? profileData.portal_side_banner_link;
+        profileData.portal_side_widget_title = parentData.portal_side_widget_title ?? profileData.portal_side_widget_title;
+        profileData.portal_side_widget_content = parentData.portal_side_widget_content ?? profileData.portal_side_widget_content;
+        profileData.portal_announcement = parentData.portal_announcement ?? profileData.portal_announcement;
+        profileData.portal_announcement_active = parentData.portal_announcement_active ?? profileData.portal_announcement_active;
+        profileData.portal_announcement_updated_at = parentData.portal_announcement_updated_at ?? profileData.portal_announcement_updated_at;
+        profileData.portal_announcement_duration_hours = parentData.portal_announcement_duration_hours ?? profileData.portal_announcement_duration_hours;
+      }
+    }
+
+    return rowToTutorProfile(profileData as TutorProfileRow);
   } catch (err) {
     console.warn(`[getTutorByUsername] Offline or paused database fallback for username: ${username}`, err instanceof Error ? err.message : err);
     return null;
@@ -66,7 +89,30 @@ export async function getTutorProfileForUser(
       .maybeSingle();
 
     if (error || !data) return null;
-    return rowToTutorProfile(data as TutorProfileRow);
+
+    const profileData = { ...data };
+    if (profileData.parent_academy_id) {
+      const { data: parentData } = await supabase
+        .from("tutor_profiles")
+        .select("portal_accent_oklch, portal_bg_style, portal_side_banner_url, portal_side_banner_link, portal_side_widget_title, portal_side_widget_content, portal_announcement, portal_announcement_active, portal_announcement_updated_at, portal_announcement_duration_hours")
+        .eq("id", profileData.parent_academy_id)
+        .maybeSingle();
+
+      if (parentData) {
+        profileData.portal_accent_oklch = parentData.portal_accent_oklch ?? profileData.portal_accent_oklch;
+        profileData.portal_bg_style = parentData.portal_bg_style ?? profileData.portal_bg_style;
+        profileData.portal_side_banner_url = parentData.portal_side_banner_url ?? profileData.portal_side_banner_url;
+        profileData.portal_side_banner_link = parentData.portal_side_banner_link ?? profileData.portal_side_banner_link;
+        profileData.portal_side_widget_title = parentData.portal_side_widget_title ?? profileData.portal_side_widget_title;
+        profileData.portal_side_widget_content = parentData.portal_side_widget_content ?? profileData.portal_side_widget_content;
+        profileData.portal_announcement = parentData.portal_announcement ?? profileData.portal_announcement;
+        profileData.portal_announcement_active = parentData.portal_announcement_active ?? profileData.portal_announcement_active;
+        profileData.portal_announcement_updated_at = parentData.portal_announcement_updated_at ?? profileData.portal_announcement_updated_at;
+        profileData.portal_announcement_duration_hours = parentData.portal_announcement_duration_hours ?? profileData.portal_announcement_duration_hours;
+      }
+    }
+
+    return rowToTutorProfile(profileData as TutorProfileRow);
   } catch (err) {
     console.warn(`[getTutorProfileForUser] Offline database fallback for userId: ${userId}`);
     return null;

@@ -393,7 +393,14 @@ export async function addStudent(input: {
   const { SUBSCRIPTION_TIERS } = await import("@/lib/constants");
   
   const subState = await getTutorSubscriptionState(profile.id);
-  const tierConfig = SUBSCRIPTION_TIERS[subState.subscriptionTier];
+  const rawTier = subState.subscriptionTier;
+  const resolvedTier: keyof typeof SUBSCRIPTION_TIERS =
+    rawTier === "agency"
+      ? "academy"
+      : (rawTier === "growth" || rawTier === "starter")
+      ? "independent"
+      : (rawTier as any);
+  const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
 
   if (tierConfig.maxStudents !== null) {
     const supabase = await createClient();
@@ -1469,7 +1476,14 @@ export async function approveStudentApplication(studentId: string) {
   const { SUBSCRIPTION_TIERS } = await import("@/lib/constants");
 
   const subState = await getTutorSubscriptionState(profile.id);
-  const tierConfig = SUBSCRIPTION_TIERS[subState.subscriptionTier];
+  const rawTier = subState.subscriptionTier;
+  const resolvedTier: keyof typeof SUBSCRIPTION_TIERS =
+    rawTier === "agency"
+      ? "academy"
+      : (rawTier === "growth" || rawTier === "starter")
+      ? "independent"
+      : (rawTier as any);
+  const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
 
   if (tierConfig.maxStudents !== null) {
     const { count, error: countErr } = await admin

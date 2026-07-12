@@ -18,7 +18,7 @@ export type TutorSubscriptionState = {
   /** Database migration 004 not applied — subscription cannot be tracked yet. */
   subscriptionTrackingUnavailable: boolean;
   cancelAtPeriodEnd: boolean;
-  subscriptionTier: "starter" | "growth" | "agency";
+  subscriptionTier: "independent" | "academy" | "starter" | "growth" | "agency";
 };
 
 export function isSubscriptionActive(status: string | null | undefined): boolean {
@@ -75,7 +75,7 @@ export async function getTutorSubscriptionState(
       stripeSubscriptionId: isDash ? "mock-subscription-id-123" : null,
       subscriptionTrackingUnavailable: false,
       cancelAtPeriodEnd: false,
-      subscriptionTier: "starter",
+      subscriptionTier: "independent",
     };
   }
 
@@ -119,7 +119,7 @@ export async function getTutorSubscriptionState(
       stripeSubscriptionId: null,
       subscriptionTrackingUnavailable: true,
       cancelAtPeriodEnd: false,
-      subscriptionTier: "starter",
+      subscriptionTier: "independent",
     };
   }
 
@@ -132,7 +132,7 @@ export async function getTutorSubscriptionState(
       stripeSubscriptionId: null,
       subscriptionTrackingUnavailable: false,
       cancelAtPeriodEnd: false,
-      subscriptionTier: "starter",
+      subscriptionTier: "independent",
     };
   }
 
@@ -147,7 +147,7 @@ export async function getTutorSubscriptionState(
     stripeSubscriptionId,
     subscriptionTrackingUnavailable: false,
     cancelAtPeriodEnd: data?.subscription_cancel_at_period_end ?? false,
-    subscriptionTier: (data?.subscription_tier as any) || "starter",
+    subscriptionTier: (data?.subscription_tier as any) || "independent",
   };
   state.active = isTutorSubscriptionLive(state);
   return state;
@@ -168,24 +168,25 @@ export async function syncTutorSubscriptionFromStripe(
   const periodEndUnix = getSubscriptionPeriodEndUnix(subscription);
 
   const priceId = subscription.items?.data?.[0]?.price?.id;
-  let resolvedTier = "starter";
+  let resolvedTier = "independent";
 
+  const independentPrice = process.env.STRIPE_PRICE_INDEPENDENT?.trim();
+  const academyPrice = process.env.STRIPE_PRICE_ACADEMY?.trim();
+
+  // Legacy mappings for transition
   const starterPrice = process.env.STRIPE_PRICE_STARTER?.trim();
   const growthPrice = process.env.STRIPE_PRICE_GROWTH?.trim();
   const agencyPrice = process.env.STRIPE_PRICE_AGENCY?.trim();
 
-  if (priceId === growthPrice) {
-    resolvedTier = "growth";
-  } else if (priceId === agencyPrice) {
-    resolvedTier = "agency";
-  } else if (priceId === starterPrice) {
-    resolvedTier = "starter";
+  if (priceId === academyPrice || priceId === agencyPrice) {
+    resolvedTier = "academy";
+  } else if (priceId === independentPrice || priceId === starterPrice || priceId === growthPrice) {
+    resolvedTier = "independent";
   } else {
     const amount = subscription.items?.data?.[0]?.plan?.amount;
     if (amount) {
-      if (amount >= 4000) resolvedTier = "agency";
-      else if (amount >= 1500) resolvedTier = "growth";
-      else resolvedTier = "starter";
+      if (amount >= 7000 || amount === 4999) resolvedTier = "academy";
+      else resolvedTier = "independent";
     }
   }
 
@@ -234,19 +235,19 @@ function getSubscriptionPeriodEndUnix(subscription: Stripe.Subscription): number
   return null;
 }
 
-function subscriptionLineItems(tier: "starter" | "growth" | "agency" = "growth"): Stripe.Checkout.SessionCreateParams.LineItem[] {
+function subscriptionLineItems(tier: "independent" | "academy" | "starter" | "growth" | "agency" = "independent"): Stripe.Checkout.SessionCreateParams.LineItem[] {
   let priceId = "";
-  if (tier === "growth") {
-    priceId = process.env.STRIPE_PRICE_GROWTH?.trim() || "";
-  } else if (tier === "agency") {
-    priceId = process.env.STRIPE_PRICE_AGENCY?.trim() || "";
+  if (tier === "academy" || tier === "agency") {
+    priceId = process.env.STRIPE_PRICE_ACADEMY?.trim() || "";
   } else {
-    priceId = process.env.STRIPE_PRICE_STARTER?.trim() || "";
+    priceId = process.env.STRIPE_PRICE_INDEPENDENT?.trim() || "";
   }
 
   // Fallback to legacy price ID if none set for this tier
-  if (!priceId && tier === "growth") {
-    priceId = process.env.STRIPE_SUBSCRIPTION_PRICE_ID?.trim() || "";
+  if (!priceId && (tier === "independent" || tier === "growth" || tier === "starter")) {
+    priceId = process.env.STRIPE_PRICE_STARTER?.trim() || process.env.STRIPE_PRICE_GROWTH?.trim() || process.env.STRIPE_SUBSCRIPTION_PRICE_ID?.trim() || "";
+  } else if (!priceId && tier === "agency") {
+    priceId = process.env.STRIPE_PRICE_AGENCY?.trim() || "";
   }
 
   if (priceId) {
@@ -254,7 +255,7 @@ function subscriptionLineItems(tier: "starter" | "growth" | "agency" = "growth")
   }
 
   const { SUBSCRIPTION_TIERS } = require("@/lib/constants");
-  const tierConfig = SUBSCRIPTION_TIERS[tier];
+  const tierConfig = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS] || SUBSCRIPTION_TIERS.independent;
 
   return [
     {
@@ -276,7 +277,7 @@ export async function createTutorSubscriptionCheckout(input: {
   tutorId: string;
   email: string;
   existingCustomerId?: string | null;
-  tier?: "starter" | "growth" | "agency";
+  tier?: "independent" | "academy" | "starter" | "growth" | "agency";
 }): Promise<string> {
   const stripe = getStripe();
 
@@ -293,6 +294,7 @@ export async function createTutorSubscriptionCheckout(input: {
     },
     subscription_data: {
       metadata: { tutor_id: input.tutorId },
+      trial_period_days: 7, // 7-day free trial before the card is charged
     },
     success_url: `${PUBLIC_SITE_URL}/dashboard/payments?subscription=active`,
     cancel_url: `${PUBLIC_SITE_URL}/dashboard/payments?subscription=cancelled`,

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 import { Logo } from "@/components/brand/logo";
@@ -129,12 +130,27 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
     }
   }
 
-  const [activeStudents, slots, resources, packages, portalBooking] = await Promise.all([
+  const [activeStudents, slots, resources, packages, portalBooking, teamMembers, parentAcademy] = await Promise.all([
     activeStudentsPromise,
     liveTutor ? getOpenSlotsForTutor(liveTutor.id) : Promise.resolve(DEMO_OPEN_SLOTS),
     liveTutor ? getPublishedResourcesForTutor(liveTutor.id) : Promise.resolve(DEMO_RESOURCES),
     liveTutor ? getPackagesForTutor(liveTutor.id) : Promise.resolve(DEMO_PACKAGES),
     liveTutor ? getPortalBookingStatus(liveTutor.id) : getPortalBookingStatus("", { isDemo: true }),
+    liveTutor
+      ? createAdminClient()
+          .from("tutor_profiles")
+          .select("id, username, display_name, avatar_url, headline")
+          .eq("parent_academy_id", liveTutor.id)
+          .then((res) => res.data || [])
+      : Promise.resolve([]),
+    liveTutor && liveTutor.parentAcademyId
+      ? createAdminClient()
+          .from("tutor_profiles")
+          .select("username, display_name")
+          .eq("id", liveTutor.parentAcademyId)
+          .maybeSingle()
+          .then((res) => res.data ? { username: res.data.username as string, displayName: res.data.display_name as string } : null)
+      : Promise.resolve(null),
   ]);
 
   let connectedStudents: any[] = [];
@@ -235,7 +251,7 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
         <div className="grid gap-8 lg:grid-cols-[1fr_320px] min-w-0 w-full">
           {/* Main Area */}
           <div className="space-y-8 min-w-0 w-full">
-            <PublicProfile tutor={tutor} />
+            <PublicProfile tutor={tutor} parentAcademy={parentAcademy} />
 
             {/* Mobile/Tablet Placement: Join Group / Portal Signup (Hidden on desktop) */}
             {liveTutor && tutor.allowPublicJoining !== false ? (
@@ -341,6 +357,43 @@ export default async function TutorPortalPage({ params, searchParams }: TutorPor
                 <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {tutor.portalSideWidgetContent}
                 </p>
+              </div>
+            )}
+
+            {/* Academy Staff Sidebar Widget */}
+            {teamMembers && teamMembers.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+                <h4 className="font-heading text-sm font-bold text-foreground flex items-center gap-2">
+                  <Users className="size-4 text-primary" />
+                  Our Tutors
+                </h4>
+                <div className="space-y-3">
+                  {teamMembers.map((member) => (
+                    <Link
+                      key={member.id}
+                      href={`/tutor/${member.username}`}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/85 transition group"
+                    >
+                      <div className="size-9 rounded-lg overflow-hidden bg-primary/5 flex items-center justify-center border border-border/80 flex-shrink-0">
+                        {member.avatar_url ? (
+                          <img src={member.avatar_url} alt={member.display_name} className="size-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-black text-primary uppercase">
+                            {member.display_name.slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-foreground group-hover:text-primary transition truncate">
+                          {member.display_name}
+                        </p>
+                        {member.headline && (
+                          <p className="text-[10px] text-muted-foreground truncate">{member.headline}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>

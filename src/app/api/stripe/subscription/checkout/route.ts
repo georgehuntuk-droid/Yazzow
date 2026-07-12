@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let tier: "starter" | "growth" | "agency" | undefined = undefined;
+  let tier: "independent" | "academy" | "starter" | "growth" | "agency" | undefined = undefined;
   try {
     const body = await request.json();
     tier = body.tier;

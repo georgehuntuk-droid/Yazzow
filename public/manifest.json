@@ -4,8 +4,9 @@
   "description": "The business home for independent tutors.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#fbfbf8",
-  "theme_color": "#24487c",
+  "background_color": "#f9fcff",
+  "theme_color": "#0072d5",
+  "color_scheme": "light",
   "orientation": "portrait-primary",
   "icons": [
     {

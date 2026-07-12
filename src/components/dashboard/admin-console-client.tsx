@@ -160,7 +160,7 @@ export function AdminConsoleClient({
   const [editPrice, setEditPrice] = useState("");
   const [editPaymentInstructions, setEditPaymentInstructions] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
-  const [editSubscriptionTier, setEditSubscriptionTier] = useState("starter");
+  const [editSubscriptionTier, setEditSubscriptionTier] = useState("independent");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isClearingSchedule, setIsClearingSchedule] = useState(false);
 
@@ -206,7 +206,7 @@ export function AdminConsoleClient({
     setEditPrice((tutor.lessonPriceCents / 100).toFixed(2));
     setEditPaymentInstructions(tutor.paymentInstructions ?? "");
     setEditAvatarUrl(tutor.avatarUrl ?? "");
-    setEditSubscriptionTier(tutor.subscriptionTier ?? "starter");
+    setEditSubscriptionTier(tutor.subscriptionTier ?? "independent");
   };
 
   const handleSaveTutorDetails = async (e: React.FormEvent) => {
@@ -974,24 +974,17 @@ export function AdminConsoleClient({
                           {/* Subscription Badge */}
                            {/* Tier Badge */}
                            {(() => {
-                             const tier = tutor.subscriptionTier || "starter";
-                             if (tier === "agency") {
+                             const tier = tutor.subscriptionTier || "independent";
+                             if (tier === "academy" || tier === "agency") {
                                return (
                                  <Badge className="gap-1 bg-yellow-500/10 border border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold hover:bg-yellow-500/10">
-                                   🏆 Gold (Agency)
-                                 </Badge>
-                               );
-                             }
-                             if (tier === "growth") {
-                               return (
-                                 <Badge className="gap-1 bg-slate-300/20 border border-slate-300/40 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-300/20">
-                                   🥈 Silver (Growth)
+                                   🏫 Academy
                                  </Badge>
                                );
                              }
                              return (
-                               <Badge className="gap-1 bg-amber-700/10 border border-amber-700/20 text-amber-800 dark:text-amber-500 font-semibold hover:bg-amber-700/10">
-                                 🥉 Bronze (Starter)
+                               <Badge className="gap-1 bg-blue-500/10 border border-blue-500/20 text-blue-800 dark:text-blue-500 font-semibold hover:bg-blue-500/10">
+                                 🎓 Independent
                                </Badge>
                              );
                            })()}
@@ -1769,9 +1762,8 @@ export function AdminConsoleClient({
                       onChange={(e) => setEditSubscriptionTier(e.target.value)}
                       className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
                     >
-                      <option value="starter">🥉 Bronze (Starter - max 5 active students)</option>
-                      <option value="growth">🥈 Silver (Growth - max 25 active students)</option>
-                      <option value="agency">🏆 Gold (Agency - unlimited active students)</option>
+                      <option value="independent">🎓 The Independent (£29/mo - Unlimited students)</option>
+                      <option value="academy">🏫 The Academy (£79/mo - Multi-tutor & Branding)</option>
                     </select>
                   </div>
                   <div>

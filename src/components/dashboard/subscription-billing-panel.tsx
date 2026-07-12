@@ -51,7 +51,7 @@ export function SubscriptionBillingPanel({
     }
   }, [isSuccess, subscribed, router]);
 
-  async function openCheckout(tier: "starter" | "growth" | "agency") {
+  async function openCheckout(tier: "independent" | "academy" | "starter" | "growth" | "agency") {
     setLoading(true);
     setLoadingTier(tier);
     setError(null);
@@ -137,7 +137,13 @@ export function SubscriptionBillingPanel({
   const blocked =
     !configured || subscription.subscriptionTrackingUnavailable;
 
-  const currentTier = subscription.subscriptionTier || "starter";
+  const rawTier = subscription.subscriptionTier || "independent";
+  const currentTier: keyof typeof SUBSCRIPTION_TIERS =
+    rawTier === "agency"
+      ? "academy"
+      : (rawTier === "growth" || rawTier === "starter")
+      ? "independent"
+      : (rawTier as any);
   const isFreeTrial = subscription.status === "trialing" && !subscription.stripeCustomerId;
 
   return (
@@ -261,11 +267,11 @@ export function SubscriptionBillingPanel({
         )}
 
         {/* Pricing Tiers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl gap-6 pt-2">
           {(Object.keys(SUBSCRIPTION_TIERS) as Array<keyof typeof SUBSCRIPTION_TIERS>).map((tierKey) => {
             const tier = SUBSCRIPTION_TIERS[tierKey];
             const isCurrent = subscribed && currentTier === tierKey;
-            const isGrowth = tierKey === "growth";
+            const isPopular = tierKey === "academy";
 
             return (
               <div
@@ -273,12 +279,12 @@ export function SubscriptionBillingPanel({
                 className={`relative rounded-2xl p-5 border flex flex-col justify-between transition-all ${
                   isCurrent
                     ? "border-primary bg-primary/5 shadow-md"
-                    : isGrowth
+                    : isPopular
                     ? "border-primary/40 bg-muted/40 shadow-sm hover:border-primary/70"
                     : "border-border bg-muted/20 hover:border-border-hover"
                 }`}
               >
-                {isGrowth && (
+                {isPopular && (
                   <span className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                     <Sparkles className="size-3" />
                     Popular
@@ -287,7 +293,12 @@ export function SubscriptionBillingPanel({
                 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-heading text-lg font-bold text-foreground">{tier.name}</h3>
+                    <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+                      <span>{tier.name}</span>
+                      <span className="inline-flex items-center rounded-full bg-blue-500/10 border border-blue-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                        7-Day Trial
+                      </span>
+                    </h3>
                     {isCurrent && (
                       <span className="text-[10px] bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full">
                         Current
@@ -321,7 +332,7 @@ export function SubscriptionBillingPanel({
                   ) : (
                     <Button
                       type="button"
-                      variant={isGrowth ? "default" : "outline"}
+                      variant={isPopular ? "default" : "outline"}
                       disabled={(isCurrent && subscribed) || loading || blocked}
                       onClick={() => openCheckout(tierKey)}
                       className="w-full h-9 text-xs font-semibold rounded-xl cursor-pointer"

@@ -6,7 +6,7 @@ import { BRAND_NAME, PUBLIC_SITE_URL } from "@/lib/constants";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#24487c",
+  themeColor: "#0072d5",
   colorScheme: "only light",
 };
 
@@ -34,6 +34,11 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.png?v=4",
     apple: "/icon.png?v=4",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: BRAND_NAME,
   },
   verification: {
     google: "3Cc3_pbbhitfL-m_TACF19q_Gj-NKzbQBQUTrKRselI",

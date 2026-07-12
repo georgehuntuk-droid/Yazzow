@@ -20,34 +20,25 @@ export const PUBLIC_SITE_URL =
         : rawSiteUrl)
     : "https://www.yazzow.com";
 
-/** Subscription tiers mapping for tutors based on student limits. */
+/** Subscription tiers mapping for tutors based on features. */
 export const SUBSCRIPTION_TIERS = {
-  starter: {
-    id: "starter",
-    name: "Starter",
-    maxStudents: 5,
-    amountCents: 999,
-    priceLabel: "£9.99/mo",
-    description: "Up to 5 active students. Premium features completely risk-free.",
-    stripePriceId: process.env.STRIPE_PRICE_STARTER?.trim() || "",
+  independent: {
+    id: "independent",
+    name: "The Independent",
+    maxStudents: null, // Unlimited students
+    amountCents: 2900,
+    priceLabel: "£29/mo",
+    description: "Unlimited students, bookings, automated reminders, and the Cancellation Filler.",
+    stripePriceId: process.env.STRIPE_PRICE_INDEPENDENT?.trim() || "",
   },
-  growth: {
-    id: "growth",
-    name: "Growth",
-    maxStudents: 25,
-    amountCents: 1999,
-    priceLabel: "£19.99/mo",
-    description: "Up to 25 active students. Serious independent tutors.",
-    stripePriceId: process.env.STRIPE_PRICE_GROWTH?.trim() || "",
-  },
-  agency: {
-    id: "agency",
-    name: "Agency",
-    maxStudents: null, // Unlimited
-    amountCents: 4999,
-    priceLabel: "£49.99/mo",
-    description: "Unlimited active students. Cohort models & scale.",
-    stripePriceId: process.env.STRIPE_PRICE_AGENCY?.trim() || "",
+  academy: {
+    id: "academy",
+    name: "The Academy",
+    maxStudents: null, // Unlimited students
+    amountCents: 7900,
+    priceLabel: "£79/mo",
+    description: "Everything in The Independent, plus Multi-Tutor Management and Custom Branding.",
+    stripePriceId: process.env.STRIPE_PRICE_ACADEMY?.trim() || "",
   },
 } as const;
 

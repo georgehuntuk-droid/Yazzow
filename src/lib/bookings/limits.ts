@@ -18,7 +18,14 @@ export async function checkStudentLimitBeforeBooking(input: {
 
   // 1. Fetch tutor subscription state and resolve tier limits
   const subState = await getTutorSubscriptionState(input.tutorId);
-  const tierConfig = SUBSCRIPTION_TIERS[subState.subscriptionTier];
+  const rawTier = subState.subscriptionTier;
+  const resolvedTier: keyof typeof SUBSCRIPTION_TIERS =
+    rawTier === "agency"
+      ? "academy"
+      : (rawTier === "growth" || rawTier === "starter")
+      ? "independent"
+      : (rawTier as any);
+  const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
 
   // If the tier allows unlimited active students, return ok immediately
   if (tierConfig.maxStudents === null) {

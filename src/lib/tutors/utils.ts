@@ -39,6 +39,7 @@ export function rowToTutorProfile(row: TutorProfileRow): TutorProfile {
     isBanned: row.is_banned === true,
     meetingLink: (row as any).meeting_link ?? "",
     sendMeetingLinks: (row as any).send_meeting_links !== false,
+    parentAcademyId: (row as any).parent_academy_id ?? undefined,
   };
 }
 

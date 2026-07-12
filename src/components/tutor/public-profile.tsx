@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/format";
@@ -9,6 +10,7 @@ import { detectUserCurrency, convertAmount, subscribeToCurrencyChange } from "@/
 
 type PublicProfileProps = {
   tutor: TutorProfile;
+  parentAcademy?: { username: string; displayName: string } | null;
 };
 
 function getInitials(name: string) {
@@ -20,7 +22,7 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function PublicProfile({ tutor }: PublicProfileProps) {
+export function PublicProfile({ tutor, parentAcademy }: PublicProfileProps) {
   const initials = getInitials(tutor.displayName);
 
   const [currency, setCurrency] = useState(tutor.currency);
@@ -85,6 +87,20 @@ export function PublicProfile({ tutor }: PublicProfileProps) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 pb-1">
+            {parentAcademy && (
+              <div className="flex flex-wrap items-center gap-1.5 mb-1.5 animate-in fade-in duration-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-black text-primary border border-primary/20">
+                  🏫 Member of {parentAcademy.displayName}
+                </span>
+                <a 
+                  href={`/tutor/${parentAcademy.username}`}
+                  className="text-[10px] font-bold text-muted-foreground hover:text-primary transition flex items-center gap-0.5 hover:underline"
+                >
+                  View Academy
+                  <ExternalLink className="size-2.5" />
+                </a>
+              </div>
+            )}
             <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl text-foreground">
               {tutor.displayName}
             </h1>

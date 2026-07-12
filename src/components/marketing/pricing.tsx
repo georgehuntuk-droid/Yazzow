@@ -8,48 +8,36 @@ import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 const plans = [
   {
     icon: BookOpen,
-    name: SUBSCRIPTION_TIERS.starter.name,
-    fee: "£9.99",
+    name: SUBSCRIPTION_TIERS.independent.name,
+    fee: "£29",
     feeSuffix: "per month",
-    description: SUBSCRIPTION_TIERS.starter.description,
+    description: SUBSCRIPTION_TIERS.independent.description,
     highlights: [
-      "Up to 5 active students",
+      "Unlimited active students",
       "Your private booking portal",
+      "Automated SMS/email reminders",
+      "Parent reporting dashboard",
+      "Automated Cancellation Filler",
       "0% per-lesson platform fee",
       "Instant slot alerts included",
-      "List unlimited digital packs",
     ],
     featured: false,
   },
   {
     icon: Sparkles,
-    name: SUBSCRIPTION_TIERS.growth.name,
-    fee: "£19.99",
+    name: SUBSCRIPTION_TIERS.academy.name,
+    fee: "£79",
     feeSuffix: "per month",
-    description: SUBSCRIPTION_TIERS.growth.description,
+    description: SUBSCRIPTION_TIERS.academy.description,
     highlights: [
-      "Up to 25 active students",
+      "Everything in The Independent",
+      "Multi-Tutor Management (sub-accounts)",
+      "Custom branding & theme options",
       "Your private booking portal",
       "0% per-lesson platform fee",
       "Instant slot alerts included",
-      "List unlimited digital packs",
     ],
     featured: true,
-  },
-  {
-    icon: CalendarCheck,
-    name: SUBSCRIPTION_TIERS.agency.name,
-    fee: "£49.99",
-    feeSuffix: "per month",
-    description: SUBSCRIPTION_TIERS.agency.description,
-    highlights: [
-      "Unlimited active students",
-      "Your private booking portal",
-      "0% per-lesson platform fee",
-      "Instant slot alerts included",
-      "List unlimited digital packs",
-    ],
-    featured: false,
   },
 ] as const;
 
@@ -64,15 +52,15 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <p className="yazz-section-label">Pricing</p>
           <h2 className="font-heading text-3xl font-bold sm:text-4xl">
-            Simple, tiered pricing.
+            Simple, transparent pricing.
           </h2>
           <p className="mt-4 yazz-muted">
-            Choose the plan that fits your business scale. All tiers include full access to bookings,
-            lesson scheduling, slot alerts, and digital packs with 0% platform fees.
+            Choose the plan that fits your business scale. Both tiers feature unlimited students,
+            unlimited bookings, and 0% platform fees with a 7-day free trial.
           </p>
         </div>
 
-        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3 items-stretch pt-4">
+        <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2 items-stretch pt-4">
           {plans.map((plan) => {
             const featured = "featured" in plan && plan.featured;
             return (
@@ -97,12 +85,17 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
                   <plan.icon className="size-6" />
                 </div>
                 <h3 className="font-heading text-xl font-black tracking-tight text-foreground">{plan.name}</h3>
-                <p className="mt-2 font-heading text-4xl font-black yazz-gradient-text">
-                  {plan.fee}
-                  <span className="ml-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                
+                <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                  <span className="font-heading text-4xl font-black yazz-gradient-text">{plan.fee}</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {plan.feeSuffix}
                   </span>
-                </p>
+                  <span className="ml-auto inline-flex items-center rounded-full bg-blue-500/10 border border-blue-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    7-Day Free Trial
+                  </span>
+                </div>
+
                 <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                   {plan.description}
                 </p>

@@ -28,14 +28,15 @@ function parsePricePreview(raw: string): number | null {
   if (!Number.isFinite(value) || value < 0) return null;
   return Math.round(value * 100);
 }
-import type { DigitalResource } from "@/lib/types";
+import type { DigitalResource, TutorProfile } from "@/lib/types";
 
 type StorefrontManagerProps = {
   resources: DigitalResource[];
   currency: string;
+  profile?: TutorProfile;
 };
 
-export function StorefrontManager({ resources, currency }: StorefrontManagerProps) {
+export function StorefrontManager({ resources, currency, profile }: StorefrontManagerProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
@@ -259,15 +260,24 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {resources.map((resource) => (
-            <Card key={resource.id} className="yazz-surface">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base">{resource.title}</CardTitle>
-                  <Badge variant={resource.isPublished ? "default" : "secondary"}>
-                    {resource.isPublished ? "Live" : "Hidden"}
-                  </Badge>
-                </div>
+          {resources.map((resource) => {
+            const isOwnerOfResource = !profile || !resource.tutorId || resource.tutorId === profile.id;
+            return (
+              <Card key={resource.id} className="yazz-surface">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base">{resource.title}</CardTitle>
+                      {!isOwnerOfResource && (
+                        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          🏫 Shared Vault
+                        </span>
+                      )}
+                    </div>
+                    <Badge variant={resource.isPublished ? "default" : "secondary"}>
+                      {resource.isPublished ? "Live" : "Hidden"}
+                    </Badge>
+                  </div>
                 {resource.description ? (
                   <CardDescription>{resource.description}</CardDescription>
                 ) : null}
@@ -276,28 +286,34 @@ export function StorefrontManager({ resources, currency }: StorefrontManagerProp
                 <span className="font-medium text-primary">
                   {resource.priceCents === 0 ? "Free" : formatMoney(resource.priceCents, resource.currency)}
                 </span>
-                <div className="flex gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleToggle(resource.id, !resource.isPublished)}
-                  >
-                    {resource.isPublished ? "Hide" : "Publish"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(resource.id)}
-                    aria-label="Delete resource"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
+                {isOwnerOfResource ? (
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggle(resource.id, !resource.isPublished)}
+                    >
+                      {resource.isPublished ? "Hide" : "Publish"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(resource.id)}
+                      aria-label="Delete resource"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/60 px-2.5 py-1 rounded-lg">
+                    Read Only
+                  </span>
+                )}
               </CardContent>
             </Card>
-          ))}
+          );})}
         </div>
       )}
     </div>

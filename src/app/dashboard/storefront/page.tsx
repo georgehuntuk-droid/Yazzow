@@ -44,7 +44,7 @@ export default async function StorefrontPage() {
         {/* Storefront Manager Card container */}
         <Card className="yazz-surface border-border/80 shadow-md">
           <CardContent className="p-6">
-            <StorefrontManager resources={resources} currency={profile.currency} />
+            <StorefrontManager resources={resources} currency={profile.currency} profile={profile} />
           </CardContent>
         </Card>
 

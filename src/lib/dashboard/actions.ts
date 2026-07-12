@@ -546,11 +546,15 @@ export async function saveLessonFeedback(input: {
       ? input.lessonRating
       : null;
 
+  const isStaff = profile.role === "staff_tutor";
+  const feedbackStatus = isStaff ? "pending_review" : "approved";
+
   const { error } = await supabase
     .from("bookings")
     .update({
       tutor_lesson_feedback: feedback,
       lesson_rating: lessonRating,
+      feedback_status: feedbackStatus,
     })
     .eq("id", input.bookingId)
     .eq("tutor_id", profile.id)
@@ -560,7 +564,100 @@ export async function saveLessonFeedback(input: {
     return { ok: false as const, error: formatSupabaseError(error.message) };
   }
 
+  // Trigger direct notification email if approved instantly
+  if (feedbackStatus === "approved" && feedback && profile.displayName) {
+    try {
+      const { data: booking } = await supabase
+        .from("bookings")
+        .select("parent_email, student_name")
+        .eq("id", input.bookingId)
+        .maybeSingle();
+
+      if (booking?.parent_email) {
+        const { sendLessonReportEmail } = await import("@/lib/notifications/lesson-report");
+        const businessName = profile.businessName || profile.displayName || "Yazzow";
+        await sendLessonReportEmail({
+          to: booking.parent_email,
+          tutorName: profile.displayName,
+          studentName: booking.student_name || "Student",
+          feedbackText: feedback,
+          businessName,
+        });
+      }
+    } catch (mailErr) {
+      console.error("Failed to send instant lesson report email:", mailErr);
+    }
+  }
+
   revalidatePath("/dashboard");
+  return { ok: true as const };
+}
+
+export async function approveLessonFeedback(bookingId: string) {
+  const { profile: ownerProfile } = await requireTutorProfile();
+  if (ownerProfile.role !== "academy_owner" && !ownerProfile.isPlatformAdmin) {
+    return { ok: false as const, error: "Only Academy owners can review and approve staff reports." };
+  }
+
+  const supabase = await createClient();
+  const { data: booking, error: fetchError } = await supabase
+    .from("bookings")
+    .select(`
+      id,
+      parent_email,
+      student_name,
+      tutor_lesson_feedback,
+      tutor_profiles!inner (
+        id,
+        display_name,
+        parent_academy_id,
+        academy_id
+      )
+    `)
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (fetchError || !booking) {
+    return { ok: false as const, error: "Report not found." };
+  }
+
+  const tutor = Array.isArray(booking.tutor_profiles) ? booking.tutor_profiles[0] : booking.tutor_profiles;
+  if (!tutor) {
+    return { ok: false as const, error: "Tutor profile not found." };
+  }
+
+  const isOwner = tutor.parent_academy_id === ownerProfile.id || tutor.academy_id === ownerProfile.id;
+  if (!isOwner && !ownerProfile.isPlatformAdmin) {
+    return { ok: false as const, error: "Unauthorized access to this staff report." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("bookings")
+    .update({ feedback_status: "approved" })
+    .eq("id", bookingId);
+
+  if (updateError) {
+    return { ok: false as const, error: updateError.message };
+  }
+
+  // Trigger report email notification
+  if (booking.tutor_lesson_feedback && booking.parent_email) {
+    try {
+      const { sendLessonReportEmail } = await import("@/lib/notifications/lesson-report");
+      const businessName = ownerProfile.businessName || ownerProfile.displayName || "Academy";
+      await sendLessonReportEmail({
+        to: booking.parent_email,
+        tutorName: tutor.display_name,
+        studentName: booking.student_name || "Student",
+        feedbackText: booking.tutor_lesson_feedback,
+        businessName,
+      });
+    } catch (mailErr) {
+      console.error("Failed to send approved lesson report email:", mailErr);
+    }
+  }
+
+  revalidatePath("/dashboard/team");
   return { ok: true as const };
 }
 

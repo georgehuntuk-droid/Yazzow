@@ -48,19 +48,22 @@ export function TeamManagementPanel({
   // Academy Operational Command Center states
   const [students, setStudents] = useState<Array<{ id: string; studentName: string; parentEmail: string; tutorId: string; tutorName: string }>>([]);
   const [calendarEvents, setCalendarEvents] = useState<Array<{ id: string; tutorName: string; startsAt: string; endsAt: string; isBooked: boolean; title: string }>>([]);
+  const [pendingReports, setPendingReports] = useState<Array<{ id: string; studentName: string; parentEmail: string; tutorName: string; feedback: string; startsAt: string }>>([]);
   const [loadingExtra, setLoadingExtra] = useState(false);
 
   useEffect(() => {
     async function loadExtraData() {
       setLoadingExtra(true);
       try {
-        const { getAcademyStudents, getAcademyScheduleEvents } = await import("@/lib/dashboard/team-actions");
-        const [studentsRes, calendarRes] = await Promise.all([
+        const { getAcademyStudents, getAcademyScheduleEvents, getAcademyPendingReports } = await import("@/lib/dashboard/team-actions");
+        const [studentsRes, calendarRes, reportsRes] = await Promise.all([
           getAcademyStudents(),
-          getAcademyScheduleEvents()
+          getAcademyScheduleEvents(),
+          getAcademyPendingReports()
         ]);
         setStudents(studentsRes);
         setCalendarEvents(calendarRes);
+        setPendingReports(reportsRes);
       } catch (err) {
         console.error("Failed to load extra academy data:", err);
       } finally {
@@ -69,6 +72,19 @@ export function TeamManagementPanel({
     }
     loadExtraData();
   }, []);
+
+  const handleApproveReport = async (bookingId: string) => {
+    const { approveLessonFeedback } = await import("@/lib/dashboard/actions");
+    setLoadingActions(prev => ({ ...prev, [bookingId]: true }));
+    const res = await approveLessonFeedback(bookingId);
+    setLoadingActions(prev => ({ ...prev, [bookingId]: false }));
+    if (res.ok) {
+      setPendingReports(prev => prev.filter(r => r.id !== bookingId));
+      alert("Lesson report approved and released to parent.");
+    } else {
+      alert(res.error || "Failed to release report.");
+    }
+  };
 
   const handleReassign = async (studentId: string, newTutorId: string) => {
     if (!newTutorId) return;
@@ -434,6 +450,70 @@ export function TeamManagementPanel({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Quality Control / Progress Reports Approval Section */}
+      <div className="yazz-panel p-6 space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-base font-black text-foreground flex items-center gap-2">
+            <span>📝</span> Pending Lesson Reports Review
+          </h3>
+          <p className="text-xs text-muted-foreground leading-normal">
+            Quality control queue. Scan progress reports submitted by staff, check for professionalism, and release them to parents.
+          </p>
+        </div>
+
+        {loadingExtra ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-8">
+            <Loader2 className="size-4 animate-spin" />
+            Loading pending reports queue...
+          </div>
+        ) : pendingReports.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/80 bg-muted/10 p-6 text-center text-xs text-muted-foreground">
+            🟢 No pending lesson reports awaiting review. All staff feedback has been released.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {pendingReports.map((report) => (
+              <div key={report.id} className="rounded-2xl border border-border/60 bg-card p-4 space-y-3.5 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-foreground">
+                      {report.studentName} ({report.parentEmail})
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Tutor: <strong>{report.tutorName}</strong>
+                    </span>
+                  </div>
+                  {report.startsAt && (
+                    <span className="text-[10px] block text-muted-foreground font-semibold">
+                      Lesson time: {new Date(report.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                  <div className="text-xs bg-muted/40 p-3 rounded-xl border border-border/30 italic text-muted-foreground leading-relaxed font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
+                    &ldquo;{report.feedback}&rdquo;
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    size="sm"
+                    disabled={loadingActions[report.id]}
+                    onClick={() => handleApproveReport(report.id)}
+                    className="h-8 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
+                  >
+                    {loadingActions[report.id] ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      <span>✓</span>
+                    )}
+                    Approve & Release Report
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Invitation Modal */}

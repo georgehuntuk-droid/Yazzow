@@ -52,6 +52,7 @@ export type OpenSlot = {
 
 export type DigitalResource = {
   id: string;
+  tutorId?: string;
   title: string;
   description: string;
   priceCents: number;

@@ -79,6 +79,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
   let studentRecords;
   let allStudentRecords;
   let otherTutors: { username: string; display_name: string }[] = [];
+  let tutorIds: string[] = [tutor.id];
 
   const cookieStore = await cookies();
   const testVal = cookieStore.get("yazzow-test-session")?.value;
@@ -95,11 +96,22 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
     allStudentRecords = studentRecords;
     otherTutors = [];
   } else {
+    const academyId = tutor.parentAcademyId || tutor.academyId || (tutor.role === 'academy_owner' ? tutor.id : null);
+    if (academyId) {
+      const { data: staff } = await admin
+        .from("tutor_profiles")
+        .select("id")
+        .or(`parent_academy_id.eq.${academyId},academy_id.eq.${academyId},id.eq.${academyId}`);
+      if (staff && staff.length > 0) {
+        tutorIds = staff.map((s) => s.id);
+      }
+    }
+
     const [studentRecordsRes, allStudentsRes] = await Promise.all([
       admin
         .from("students")
         .select("*")
-        .eq("tutor_id", tutor.id)
+        .in("tutor_id", tutorIds)
         .ilike("parent_email", user.email)
         .eq("status", "active"),
       admin
@@ -356,11 +368,12 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
               amount_cents, 
               created_at, 
               tutor_lesson_feedback, 
+              feedback_status,
               lesson_rating, 
               running_late_note, 
               availability_slots (id, starts_at, ends_at)
             `)
-            .eq("tutor_id", tutor.id)
+            .in("tutor_id", tutorIds)
             .ilike("parent_email", user.email)
             .order("created_at", { ascending: false })
         )
@@ -385,7 +398,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
           admin
             .from("availability_slots")
             .select("id, starts_at, ends_at, is_booked")
-            .eq("tutor_id", tutor.id)
+            .in("tutor_id", tutorIds)
             .gte("starts_at", new Date().toISOString())
             .order("starts_at", { ascending: true })
         )
@@ -398,7 +411,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
           admin
             .from("digital_resources")
             .select("*")
-            .eq("tutor_id", tutor.id)
+            .in("tutor_id", tutorIds)
             .eq("is_published", true)
             .order("created_at", { ascending: false })
         )
@@ -437,7 +450,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
       endsAt: slot?.ends_at || b.created_at,
       status: b.status,
       amountCents: b.amount_cents,
-      feedback: b.tutor_lesson_feedback,
+      feedback: b.feedback_status === "pending_review" ? null : b.tutor_lesson_feedback,
       rating: b.lesson_rating,
     };
   });

@@ -303,3 +303,51 @@ export async function getAcademyScheduleEvents(): Promise<Array<{ id: string; tu
     return [];
   }
 }
+
+export async function getAcademyPendingReports(): Promise<Array<{ id: string; studentName: string; parentEmail: string; tutorName: string; feedback: string; startsAt: string }>> {
+  try {
+    const { profile } = await requireTutorProfile();
+    const supabase = await createClient();
+
+    // 1. Get all staff member IDs
+    const { data: staff } = await supabase
+      .from("tutor_profiles")
+      .select("id, display_name")
+      .or(`parent_academy_id.eq.${profile.id},academy_id.eq.${profile.id}`);
+
+    const tutorIds = [profile.id, ...(staff || []).map((s) => s.id)];
+    const staffMap = new Map(tutorIds.map(id => [id, id === profile.id ? "Me (Owner)" : (staff?.find(s => s.id === id)?.display_name || "Staff")]));
+
+    // 2. Fetch bookings where tutor_id in tutorIds, feedback_status is 'pending_review'
+    const { data: bookings, error } = await supabase
+      .from("bookings")
+      .select(`
+        id,
+        parent_email,
+        student_name,
+        tutor_lesson_feedback,
+        tutor_id,
+        availability_slots (starts_at)
+      `)
+      .in("tutor_id", tutorIds)
+      .eq("feedback_status", "pending_review")
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    return (bookings || []).map((b) => {
+      const slot = Array.isArray(b.availability_slots) ? b.availability_slots[0] : b.availability_slots;
+      return {
+        id: b.id,
+        studentName: b.student_name || "GCSE Student",
+        parentEmail: b.parent_email,
+        tutorName: staffMap.get(b.tutor_id) || "Staff",
+        feedback: b.tutor_lesson_feedback || "",
+        startsAt: slot?.starts_at || "",
+      };
+    });
+  } catch (err) {
+    console.error("Failed to load academy pending reports:", err);
+    return [];
+  }
+}

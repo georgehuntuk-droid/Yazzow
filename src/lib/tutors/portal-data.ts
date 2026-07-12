@@ -64,16 +64,32 @@ export async function getResourcesForTutorOwner(
   tutorId: string,
 ): Promise<DigitalResource[]> {
   const supabase = await createClient();
+
+  let tutorIds = [tutorId];
+  try {
+    const { data: profile } = await supabase
+      .from("tutor_profiles")
+      .select("parent_academy_id")
+      .eq("id", tutorId)
+      .maybeSingle();
+    if (profile?.parent_academy_id) {
+      tutorIds.push(profile.parent_academy_id);
+    }
+  } catch (err) {
+    console.warn("Failed to check parent academy for resources:", err);
+  }
+
   const { data, error } = await supabase
     .from("digital_resources")
     .select("*")
-    .eq("tutor_id", tutorId)
+    .in("tutor_id", tutorIds)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
 
   return (data as DigitalResourceRow[]).map((row) => ({
     id: row.id,
+    tutorId: row.tutor_id,
     title: row.title,
     description: row.description ?? "",
     priceCents: row.price_cents,

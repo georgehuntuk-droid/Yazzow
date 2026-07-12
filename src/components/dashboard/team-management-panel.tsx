@@ -250,18 +250,26 @@ export function TeamManagementPanel({
                     <p className="text-xs text-muted-foreground font-medium truncate">{member.headline}</p>
                   )}
                   
-                  <div className="flex items-center gap-3 pt-2">
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 pt-2">
                     <span className="text-[11px] text-muted-foreground font-medium">
-                      Lesson Rate: <strong className="text-foreground">£{(member.lessonPriceCents / 100).toFixed(2)}</strong>
+                      Rate: <strong className="text-foreground">£{(member.lessonPriceCents / 100).toFixed(2)}</strong>
                     </span>
-                    <span className="text-muted-foreground text-[10px]">·</span>
+                    <span className="text-muted-foreground text-[10px] hidden xs:inline">·</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      Students: <strong className="text-foreground">{member.studentCount ?? 0}</strong>
+                    </span>
+                    <span className="text-muted-foreground text-[10px] hidden xs:inline">·</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      Lessons: <strong className="text-foreground">{member.lessonCount ?? 0}</strong>
+                    </span>
+                    <span className="text-muted-foreground text-[10px] hidden xs:inline">·</span>
                     <a 
                       href={`/tutor/${member.username}`} 
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="text-[11px] font-bold text-primary flex items-center gap-1 hover:underline"
                     >
-                      View Booking Page
+                      Portal
                       <ExternalLink className="size-3" />
                     </a>
                   </div>

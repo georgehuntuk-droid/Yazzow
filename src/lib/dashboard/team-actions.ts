@@ -12,6 +12,8 @@ export type TeamMember = {
   headline: string | null;
   lessonPriceCents: number;
   currency: string;
+  studentCount?: number;
+  lessonCount?: number;
 };
 
 export type PendingInvitation = {
@@ -90,7 +92,7 @@ export async function removeTeamMember(memberId: string): Promise<{ ok: boolean;
 }
 
 /**
- * Fetches all employee tutors currently linked to this Academy.
+ * Fetches all employee tutors currently linked to this Academy, with stats.
  */
 export async function getTeamMembers(): Promise<TeamMember[]> {
   try {
@@ -106,7 +108,29 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       throw new Error(error.message);
     }
 
-    return (data || []).map((row: any) => ({
+    const members = data || [];
+    if (members.length === 0) return [];
+
+    const memberIds = members.map((m) => m.id);
+
+    // Fetch student and monthly lesson counts
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+    const [studentsRes, bookingsRes] = await Promise.all([
+      supabase.from("students").select("tutor_id").in("tutor_id", memberIds),
+      supabase.from("bookings").select("tutor_id").in("tutor_id", memberIds).gte("created_at", startOfMonth),
+    ]);
+
+    const studentMap = new Map();
+    studentsRes.data?.forEach((s: any) => {
+      studentMap.set(s.tutor_id, (studentMap.get(s.tutor_id) || 0) + 1);
+    });
+
+    const bookingMap = new Map();
+    bookingsRes.data?.forEach((b: any) => {
+      bookingMap.set(b.tutor_id, (bookingMap.get(b.tutor_id) || 0) + 1);
+    });
+
+    return members.map((row: any) => ({
       id: row.id,
       username: row.username,
       displayName: row.display_name,
@@ -114,6 +138,8 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       headline: row.headline,
       lessonPriceCents: row.lesson_price_cents,
       currency: row.currency,
+      studentCount: studentMap.get(row.id) || 0,
+      lessonCount: bookingMap.get(row.id) || 0,
     }));
   } catch {
     return [];

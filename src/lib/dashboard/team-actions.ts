@@ -44,6 +44,44 @@ export async function inviteTeamMember(email: string): Promise<{ ok: boolean; er
     }
 
     const supabase = await createClient();
+
+    // 1. UNIQUE PROTECTION: Check if email is already registered in auth.users
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    const { data: usersData } = await admin.auth.admin.listUsers();
+    const existingUser = usersData?.users?.find(
+      (u) => u.email?.toLowerCase() === formattedEmail
+    );
+
+    if (existingUser) {
+      return { ok: false, error: "This email is already associated with an active Yazzow account." };
+    }
+
+    // 2. HARD SEAT LIMIT CHECK: Check allowed seat count vs active staff count
+    const { count: activeCount, error: activeErr } = await supabase
+      .from("tutor_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("academy_id", profile.id)
+      .eq("role", "staff_tutor");
+
+    if (activeErr) {
+      throw new Error(activeErr.message);
+    }
+
+    const { data: academyProfile } = await supabase
+      .from("tutor_profiles")
+      .select("additional_purchased_seats")
+      .eq("id", profile.id)
+      .single();
+
+    const additionalSeats = academyProfile?.additional_purchased_seats || 0;
+    const MAX_INCLUDED_SEATS = 5;
+    const totalAllowedSeats = MAX_INCLUDED_SEATS + additionalSeats;
+
+    if ((activeCount || 0) >= totalAllowedSeats) {
+      return { ok: false, error: "Seat limit reached. Upgrade your plan to add more staff." };
+    }
+
     const { error } = await supabase
       .from("academy_invitations")
       .insert({

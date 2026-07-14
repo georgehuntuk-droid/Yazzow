@@ -27,11 +27,13 @@ import {
 type TeamManagementPanelProps = {
   initialActiveMembers: TeamMember[];
   initialPendingInvites: PendingInvitation[];
+  additionalPurchasedSeats?: number;
 };
 
 export function TeamManagementPanel({ 
   initialActiveMembers, 
-  initialPendingInvites 
+  initialPendingInvites,
+  additionalPurchasedSeats = 0
 }: TeamManagementPanelProps) {
   const [activeMembers, setActiveMembers] = useState<TeamMember[]>(initialActiveMembers);
   const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>(initialPendingInvites);
@@ -43,7 +45,42 @@ export function TeamManagementPanel({
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
+  const [isPaywallModalOpen, setIsPaywallModalOpen] = useState(false);
+  const [isRedirectingToStripe, setIsRedirectingToStripe] = useState(false);
+  const [paywallError, setPaywallError] = useState<string | null>(null);
+
   const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({});
+
+  const MAX_INCLUDED_SEATS = 5;
+  const totalAllowedSeats = MAX_INCLUDED_SEATS + additionalPurchasedSeats;
+  const activeStaffCount = activeMembers.length;
+  const isLimitReached = activeStaffCount >= totalAllowedSeats;
+
+  const handleOpenPaywall = () => {
+    setPaywallError(null);
+    setIsRedirectingToStripe(false);
+    setIsPaywallModalOpen(true);
+  };
+
+  const handleRedirectToStripe = async () => {
+    setIsRedirectingToStripe(true);
+    setPaywallError(null);
+    try {
+      const response = await fetch("/api/stripe/subscription/portal", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.url) {
+        setPaywallError(data.error || "Could not access Stripe portal.");
+        setIsRedirectingToStripe(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setPaywallError("Network error. Please try again.");
+      setIsRedirectingToStripe(false);
+    }
+  };
 
   // Academy Operational Command Center states
   const [students, setStudents] = useState<Array<{ id: string; studentName: string; parentEmail: string; tutorId: string; tutorName: string }>>([]);
@@ -202,15 +239,33 @@ export function TeamManagementPanel({
 
         <div className="yazz-panel p-6 flex flex-col justify-between gap-4">
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-foreground">Expand Your Team</h3>
+            <div className="flex justify-between items-start">
+              <h3 className="text-sm font-bold text-foreground">Expand Your Team</h3>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                isLimitReached 
+                  ? "bg-rose-500/10 text-rose-600 border border-rose-500/20" 
+                  : "bg-primary/10 text-primary border border-primary/20"
+              }`}>
+                {activeStaffCount} / {totalAllowedSeats} Seats
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground leading-normal">
-              Register new professional tutors to coordinate schedules and scale lesson volumes.
+              {isLimitReached 
+                ? "Seat limit reached. You must add additional staff tutor seats to invite more tutors."
+                : `Invite employee tutors to join your academy. Plan includes ${MAX_INCLUDED_SEATS} seats.`}
             </p>
           </div>
-          <Button onClick={handleOpenInvite} className="w-full flex items-center justify-center gap-2">
-            <UserPlus className="size-4" />
-            Invite Staff Tutor
-          </Button>
+          {isLimitReached ? (
+            <Button onClick={handleOpenPaywall} variant="secondary" className="w-full flex items-center justify-center gap-2 border border-primary/20 text-primary hover:bg-primary/5 cursor-pointer">
+              <UserPlus className="size-4" />
+              Upgrade Seats
+            </Button>
+          ) : (
+            <Button onClick={handleOpenInvite} className="w-full flex items-center justify-center gap-2 cursor-pointer">
+              <UserPlus className="size-4" />
+              Invite Staff Tutor
+            </Button>
+          )}
         </div>
       </div>
 
@@ -584,6 +639,71 @@ export function TeamManagementPanel({
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Paywall/Upgrade Modal */}
+      {isPaywallModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md p-6 rounded-3xl border border-border/80 bg-card shadow-2xl space-y-6">
+            <button 
+              onClick={() => setIsPaywallModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted text-muted-foreground transition cursor-pointer"
+              disabled={isRedirectingToStripe}
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="space-y-2 text-center pt-2">
+              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Shield className="size-6 animate-pulse" />
+              </div>
+              <h3 className="text-lg font-black text-foreground">Academy Seat Limit Reached</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto font-semibold">
+                Your Academy Plan includes <strong>{MAX_INCLUDED_SEATS} staff seats</strong>. 
+                You are currently using <strong>{activeStaffCount} / {totalAllowedSeats} seats</strong>.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-primary/5 border border-primary/10 p-4 space-y-2.5">
+              <h4 className="text-xs font-bold text-primary uppercase tracking-wider text-center">Add Staff Tutor Seats</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed text-center font-semibold">
+                Need more tutors? You can add additional staff seats to your Academy tier for just <strong>£10/month per tutor seat</strong>.
+              </p>
+            </div>
+
+            {paywallError && (
+              <p className="text-xs font-semibold text-destructive text-center">{paywallError}</p>
+            )}
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button 
+                onClick={handleRedirectToStripe}
+                disabled={isRedirectingToStripe}
+                className="w-full flex items-center justify-center gap-2 h-10 font-bold cursor-pointer"
+              >
+                {isRedirectingToStripe ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Opening Stripe Portal...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="size-4" />
+                    Upgrade Seats on Stripe
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setIsPaywallModalOpen(false)}
+                disabled={isRedirectingToStripe}
+                className="w-full text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}

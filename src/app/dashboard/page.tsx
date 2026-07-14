@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Globe, Settings, Sparkles, CalendarRange, Megaphone } from "lucide-react";
 import { InstallAppButton } from "@/components/pwa/install-app-button";
+import { PushPromptBanner } from "@/components/pwa/push-prompt-banner";
 
 import { PortalBookingStatusCard } from "@/components/dashboard/portal-booking-status-card";
 import { RecentBookings } from "@/components/dashboard/recent-bookings";
@@ -11,7 +12,7 @@ import { requireTutorProfile } from "@/lib/auth/session";
 import { Button } from "@/components/ui/button";
 import { DashboardShell } from "@/components/layout/page-header";
 import { BRAND_NAME, tutorPublicUrl } from "@/lib/constants";
-import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
+import { getTutorSubscriptionState, type TutorSubscriptionState } from "@/lib/stripe/subscription";
 import { getPortalBookingStatus } from "@/lib/tutors/portal-booking-status";
 import {
   getDigitalSalesForTutor,
@@ -41,6 +42,20 @@ export default async function DashboardPage() {
   let notices: any[] = [];
   let subState: any = { subscriptionTier: "independent" };
 
+  const subStateRes = await getTutorSubscriptionState(profile.id).catch((err) => {
+    console.error("Error in getTutorSubscriptionState:", err);
+    return {
+      status: null,
+      currentPeriodEnd: null,
+      active: false,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionTrackingUnavailable: false,
+      cancelAtPeriodEnd: false,
+      subscriptionTier: "independent",
+    } as TutorSubscriptionState;
+  });
+
   try {
     const [
       slotsRes,
@@ -51,13 +66,12 @@ export default async function DashboardPage() {
       recentMessagesRes,
       tutorRatingRes,
       noticesRes,
-      subStateRes,
     ] = await Promise.all([
       getSlotsForTutorOwner(profile.id).catch((err) => {
         console.error("Error in getSlotsForTutorOwner:", err);
         return [];
       }),
-      getStudentsWithLessonsForTutor(profile.id).catch((err) => {
+      getStudentsWithLessonsForTutor(profile.id, { skipAuthCheck: true }).catch((err) => {
         console.error("Error in getStudentsWithLessonsForTutor:", err);
         return { active: [], archived: [], pending: [] };
       }),
@@ -69,7 +83,7 @@ export default async function DashboardPage() {
         console.error("Error in getDigitalSalesForTutor:", err);
         return [];
       }),
-      getPortalBookingStatus(profile.id).catch((err) => {
+      getPortalBookingStatus(profile.id, { subscriptionState: subStateRes }).catch((err) => {
         console.error("Error in getPortalBookingStatus:", err);
         return { canAcceptBookings: false, subscriptionActive: false };
       }),
@@ -84,10 +98,6 @@ export default async function DashboardPage() {
       getLatestAdminNotices(2).catch((err) => {
         console.error("Error in getLatestAdminNotices:", err);
         return [];
-      }),
-      getTutorSubscriptionState(profile.id).catch((err) => {
-        console.error("Error in getTutorSubscriptionState:", err);
-        return { subscriptionTier: "independent" };
       }),
     ]);
 
@@ -128,6 +138,9 @@ export default async function DashboardPage() {
   return (
     <DashboardShell>
       <div className="space-y-8 pb-12">
+        {/* Web Push Onboarding Prompt */}
+        <PushPromptBanner role="tutor" userId={profile.id} />
+
         {/* Top Header Row with Profile Quick View */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

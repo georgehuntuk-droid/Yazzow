@@ -39,8 +39,12 @@ export async function createOnboardingLink(
   return link.url;
 }
 
+let cachedConnectStatus: { [accountId: string]: { status: ConnectStatus; timestamp: number } } = {};
+const CONNECT_CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
 export async function getConnectStatus(
   accountId: string | null | undefined,
+  options?: { forceFresh?: boolean },
 ): Promise<ConnectStatus> {
   if (!accountId) {
     return {
@@ -52,6 +56,15 @@ export async function getConnectStatus(
     };
   }
 
+  const now = Date.now();
+  if (
+    !options?.forceFresh &&
+    cachedConnectStatus[accountId] &&
+    now - cachedConnectStatus[accountId].timestamp < CONNECT_CACHE_TTL
+  ) {
+    return cachedConnectStatus[accountId].status;
+  }
+
   try {
     const stripe = getStripe();
     const account = await stripe.accounts.retrieve(accountId);
@@ -60,13 +73,16 @@ export async function getConnectStatus(
     const payoutsEnabled = account.payouts_enabled ?? false;
     const detailsSubmitted = account.details_submitted ?? false;
 
-    return {
+    const status: ConnectStatus = {
       accountId,
       chargesEnabled,
       payoutsEnabled,
       detailsSubmitted,
       ready: chargesEnabled && payoutsEnabled && detailsSubmitted,
     };
+
+    cachedConnectStatus[accountId] = { status, timestamp: now };
+    return status;
   } catch (error) {
     console.error("Error retrieving Stripe account details:", error);
     return {

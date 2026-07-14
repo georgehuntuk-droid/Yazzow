@@ -8,19 +8,29 @@ import {
   MessageSquare, 
   CalendarRange, 
   Plus, 
-  Minus, 
   RefreshCw, 
-  BadgeAlert, 
   Star, 
-  CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Shield,
+  Store,
+  CheckCircle2,
+  ListTodo
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export function DemoGuideClient() {
-  const [activeTab, setActiveTab] = useState<"credits" | "owed" | "reminders" | "feedback">("credits");
+  const [activeTab, setActiveTab] = useState<"onboarding" | "credits" | "owed" | "reminders" | "feedback">("onboarding");
+
+  // Onboarding Setup Checklist State
+  const [stepStorefront, setStepStorefront] = useState(false);
+  const [stepStripe, setStepStripe] = useState(false);
+  const [stepSchedule, setStepSchedule] = useState(false);
+  const [stepStudent, setStepStudent] = useState(false);
+
+  const completedStepsCount = [stepStorefront, stepStripe, stepSchedule, stepStudent].filter(Boolean).length;
+  const setupProgressPercent = Math.round((completedStepsCount / 4) * 100);
 
   // Credits Simulator State
   const [simCredits, setSimCredits] = useState(2);
@@ -141,13 +151,14 @@ export function DemoGuideClient() {
           <h1 className="font-heading text-3xl font-semibold">Tutor Feature Guide & Playground</h1>
         </div>
         <p className="text-muted-foreground mt-1 text-sm">
-          Learn how to use Yazzow&apos;s credit limits, owed balances, automated payment reminders, and student feedback.
+          Learn how to configure your storefront settings, manage credit limits, billing records, and staff accounts.
         </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border pb-px overflow-x-auto">
         {([
+          { id: "onboarding", label: "Onboarding & Academy", icon: Sparkles },
           { id: "credits", label: "Credits & Overdraft", icon: Users },
           { id: "owed", label: "Owed Balances", icon: CreditCard },
           { id: "reminders", label: "Payment Reminders", icon: MessageSquare },
@@ -167,6 +178,196 @@ export function DemoGuideClient() {
           </button>
         ))}
       </div>
+
+      {/* Onboarding & Academy Tab */}
+      {activeTab === "onboarding" && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="space-y-5 text-sm text-muted-foreground leading-relaxed">
+            
+            {/* Academy section */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-foreground font-semibold text-base">
+                <Shield className="size-4.5 text-primary" />
+                <h2>Academy (Master Account) Architecture</h2>
+              </div>
+              <p>
+                The **Academy Membership (£79/month)** acts as a single, centralized **Master Account** designed to help tuition agencies scale.
+              </p>
+              <ul className="list-disc pl-5 space-y-1.5">
+                <li>
+                  <strong className="text-foreground">Staff Management:</strong> Invite and register employee tutors. Staff tutors receive their own dashboards to run lessons and view tasks.
+                </li>
+                <li>
+                  <strong className="text-foreground">Centralized Billing:</strong> All student packages, invoice tracking, and Stripe payouts route through the master Academy account.
+                </li>
+                <li>
+                  <strong className="text-foreground">Unified Branding:</strong> Share custom branding (business name, logos, and portal theme styles) with all staff tutor pages.
+                </li>
+              </ul>
+              <p className="text-xs italic bg-muted/40 p-2.5 rounded-lg border border-border/50">
+                💡 Independent Members (£9/month) run a single-tutor profile without employee invitation or shared branding capability.
+              </p>
+            </div>
+
+            <hr className="border-border/60" />
+
+            {/* Setup Process */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-foreground font-semibold text-base">
+                <ListTodo className="size-4.5 text-primary" />
+                <h2>New Account Setup Steps</h2>
+              </div>
+              <p>
+                To launch your bookings, configure the following settings:
+              </p>
+              <ol className="list-decimal pl-5 space-y-1.5">
+                <li>
+                  <strong className="text-foreground">Configure Storefront Settings:</strong> Go to settings and define your booking prices, subjects, bio, and educational levels (e.g. GCSE Maths).
+                </li>
+                <li>
+                  <strong className="text-foreground">Stripe Integration:</strong> Tutors must connect Stripe (under Payments) to receive credit card purchases. Direct card checkout is required to sell lesson credit packages.
+                </li>
+                <li>
+                  <strong className="text-foreground">Generate Active Slots:</strong> Set your recurring calendar rules to open booking slots for families.
+                </li>
+                <li>
+                  <strong className="text-foreground">Link Parent workspaces:</strong> Add parent emails to send invitation links. Parents use this workspace to book slots, view homework, and message you.
+                </li>
+              </ol>
+            </div>
+
+            <hr className="border-border/60" />
+
+            {/* Unique Storefronts warning */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-foreground font-semibold text-base">
+                <Store className="size-4.5 text-primary" />
+                <h2>Unique Storefront Shops</h2>
+              </div>
+              <p>
+                Every account gets a unique public booking portal: <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">/tutor/[username]</code>.
+              </p>
+              <p className="font-semibold text-xs text-amber-600 dark:text-amber-500 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg leading-relaxed">
+                ⚠️ IMPORTANT FOR NEW ACCOUNTS: Tutors and Academies must configure their settings first before sharing their public storefront. If Stripe or booking rules are left unconfigured, families will be unable to purchase packages or secure slots on your storefront page!
+              </p>
+            </div>
+
+          </div>
+
+          {/* Onboarding Checklist Simulator */}
+          <Card className="yazz-surface border-primary/20 self-start">
+            <CardHeader className="pb-3 border-b border-border/50">
+              <CardTitle className="text-base font-semibold">Setup Checklist Simulator</CardTitle>
+              <CardDescription className="text-xs">Simulate your account onboarding checklist</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              
+              {/* Progress bar */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-muted-foreground">Setup Completed</span>
+                  <span className="text-primary">{setupProgressPercent}%</span>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-500" 
+                    style={{ width: `${setupProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Steps list */}
+              <div className="space-y-2.5 pt-1">
+                {[
+                  {
+                    id: "storefront",
+                    label: "Define Storefront Bio & Rates",
+                    desc: "Sets up your public shop profile settings",
+                    checked: stepStorefront,
+                    setChecked: setStepStorefront
+                  },
+                  {
+                    id: "stripe",
+                    label: "Link Stripe Payments",
+                    desc: "Enables instant package credit checkout",
+                    checked: stepStripe,
+                    setChecked: setStepStripe
+                  },
+                  {
+                    id: "schedule",
+                    label: "Generate Availability Slots",
+                    desc: "Opens hours for parents to book",
+                    checked: stepSchedule,
+                    setChecked: setStepSchedule
+                  },
+                  {
+                    id: "student",
+                    label: "Register Student Workspace",
+                    desc: "Links parent email for portal access",
+                    checked: stepStudent,
+                    setChecked: setStepStudent
+                  }
+                ].map((step) => (
+                  <button
+                    key={step.id}
+                    onClick={() => step.setChecked(!step.checked)}
+                    className={`flex items-start text-left gap-3 p-3 rounded-xl border transition-all w-full cursor-pointer hover:bg-muted/40 ${
+                      step.checked 
+                        ? "border-primary bg-primary/5 text-primary" 
+                        : "border-border bg-background text-muted-foreground"
+                    }`}
+                  >
+                    <div className={`mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded border transition-all ${
+                      step.checked 
+                        ? "border-primary bg-primary text-white" 
+                        : "border-muted-foreground/30 bg-background"
+                    }`}>
+                      {step.checked && <CheckCircle2 className="size-3.5 stroke-[3px]" />}
+                    </div>
+                    <div>
+                      <span className={`block text-xs font-bold ${step.checked ? "text-foreground" : "text-muted-foreground"}`}>
+                        {step.label}
+                      </span>
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">
+                        {step.desc}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Simulator Success screen */}
+              {setupProgressPercent === 100 && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-center space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                  <Sparkles className="size-7 text-green-600 mx-auto animate-bounce" />
+                  <h5 className="text-xs font-bold text-green-800 dark:text-green-400">🎉 Storefront Online & Active!</h5>
+                  <p className="text-[10px] text-green-700 dark:text-green-500 leading-normal">
+                    Your unique shop portal is fully active. Parents can now buy credit packages, checkout online, and instantly claim cancelled slot waitlists!
+                  </p>
+                </div>
+              )}
+
+              {/* Reset button */}
+              {completedStepsCount > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setStepStorefront(false);
+                    setStepStripe(false);
+                    setStepSchedule(false);
+                    setStepStudent(false);
+                  }}
+                  className="w-full text-xs h-8 text-muted-foreground"
+                >
+                  <RefreshCw className="size-3 mr-1" /> Reset Setup Simulator
+                </Button>
+              )}
+
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Credits Tab */}
       {activeTab === "credits" && (

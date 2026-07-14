@@ -197,7 +197,7 @@ export function SubscriptionBillingPanel({
             <div>
               <p className="text-sm font-semibold text-destructive">Your free trial has expired</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Your 7-day free trial is over and online bookings have been temporarily paused. Please choose one of the plans below to reactivate your portal.
+                Your 14-day free trial is over and online bookings have been temporarily paused. Please choose one of the plans below to reactivate your portal.
               </p>
             </div>
           </div>
@@ -230,10 +230,10 @@ export function SubscriptionBillingPanel({
             </div>
             {isFreeTrial ? (
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Your 7-day free trial is currently active. You have{" "}
+                Your 14-day free trial is currently active. You have{" "}
                 <strong className="text-foreground font-bold">
                   {(() => {
-                    if (!subscription.currentPeriodEnd) return 7;
+                    if (!subscription.currentPeriodEnd) return 14;
                     const diffTime = new Date(subscription.currentPeriodEnd).getTime() - Date.now();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     return diffDays > 0 ? diffDays : 0;
@@ -296,7 +296,7 @@ export function SubscriptionBillingPanel({
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
                       <span>{tier.name}</span>
                       <span className="inline-flex items-center rounded-full bg-blue-500/10 border border-blue-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                        7-Day Trial
+                        14-Day Trial
                       </span>
                     </h3>
                     {isCurrent && (

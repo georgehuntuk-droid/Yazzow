@@ -28,7 +28,7 @@ export async function GET() {
       .eq("id", user.id)
       .maybeSingle();
 
-    const status = await getConnectStatus(profile?.stripe_account_id);
+    const status = await getConnectStatus(profile?.stripe_account_id, { forceFresh: true });
     return NextResponse.json({ configured: true, status });
   } catch (error: any) {
     console.error("Stripe GET Connect Status Error:", error);
@@ -77,7 +77,7 @@ export async function POST() {
         .eq("id", user.id);
     }
 
-    const status = await getConnectStatus(accountId);
+    const status = await getConnectStatus(accountId, { forceFresh: true });
 
     if (status.ready) {
       const dashboardUrl = await createExpressDashboardLink(accountId);

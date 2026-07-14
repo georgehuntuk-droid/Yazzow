@@ -6,7 +6,7 @@ const stats = [
   { value: "Instant", label: "slot alert emails" },
   { value: "0%", label: "commission per sale" },
   { value: "100%", label: "of lesson price to you" },
-  { value: "From £9.99/mo", label: "flexible tutor plans" },
+  { value: "From £29/mo", label: "flexible tutor plans" },
 ] as const;
 
 type MarketingSocialProofProps = {

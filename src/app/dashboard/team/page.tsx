@@ -104,6 +104,7 @@ export default async function TeamDashboardPage() {
       <TeamManagementPanel
         initialActiveMembers={activeMembers}
         initialPendingInvites={pendingInvites}
+        additionalPurchasedSeats={(profile as any).additional_purchased_seats || 0}
       />
     </div>
   );

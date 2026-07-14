@@ -195,7 +195,7 @@ export function MarketingHero({ authCta }: { authCta: MarketingAuthCta }) {
             </div>
             {!authCta.href.includes("payments") && (
               <p className="yazz-fade-in yazz-fade-in-delay-3 mt-3 text-xs text-muted-foreground">
-                No credit card required. Try a 7-day free trial now.
+                No credit card required. Try a 14-day free trial now.
               </p>
             )}
 

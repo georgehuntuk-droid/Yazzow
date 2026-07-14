@@ -9,6 +9,7 @@ export async function joinTutorFamily(input: {
   parentEmail: string;
   studentName: string;
   password?: string;
+  parentPhone?: string;
   origin?: string;
 }): Promise<{ ok: true; needsVerification?: boolean } | { ok: false; error: string }> {
   const parentEmail = input.parentEmail.trim().toLowerCase();
@@ -94,6 +95,7 @@ export async function joinTutorFamily(input: {
       parent_email: parentEmail,
       student_name: studentName,
       status,
+      parent_phone: input.parentPhone || null,
     },
     { onConflict: "tutor_id,parent_email,student_name" },
   );

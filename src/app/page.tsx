@@ -9,6 +9,7 @@ import { MarketingPricing } from "@/components/marketing/pricing";
 import { MarketingSocialProof } from "@/components/marketing/social-proof";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { PushPromptBanner } from "@/components/pwa/push-prompt-banner";
 import { getMarketingAuthCta } from "@/lib/marketing/auth-cta";
 import { redirect } from "next/navigation";
 import { safeGetAuthUser } from "@/lib/supabase/server";
@@ -74,6 +75,9 @@ export default async function HomePage() {
       />
       <SiteHeader />
       <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <PushPromptBanner role="guest" />
+        </div>
         <MarketingHero authCta={authCta} />
         <MarketingAudience />
         <MarketingSlotAlerts authCta={authCta} />

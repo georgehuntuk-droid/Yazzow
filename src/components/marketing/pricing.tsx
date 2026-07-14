@@ -56,7 +56,7 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
           </h2>
           <p className="mt-4 yazz-muted">
             Choose the plan that fits your business scale. Both tiers feature unlimited students,
-            unlimited bookings, and 0% platform fees with a 7-day free trial.
+            unlimited bookings, and 0% platform fees with a 14-day free trial.
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
                     {plan.feeSuffix}
                   </span>
                   <span className="ml-auto inline-flex items-center rounded-full bg-blue-500/10 border border-blue-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                    7-Day Free Trial
+                    14-Day Free Trial
                   </span>
                 </div>
 

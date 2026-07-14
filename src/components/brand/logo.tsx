@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
@@ -75,13 +76,16 @@ export function Logo({
         className,
       )}
     >
-      <img
-        src={iconOnly ? "/yazzow-brand-icon.png?v=4" : "/yazzow-logo-transparent.png?v=4"}
+      <Image
+        src={iconOnly ? "/yazzow-brand-icon.png" : "/yazzow-logo-transparent.png"}
         alt="Yazzow Logo"
+        width={iconOnly ? 48 : 160}
+        height={iconOnly ? 48 : 48}
         className={cn(
           "w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02] dark:brightness-110",
           logoHeights[size]
         )}
+        priority
       />
     </Link>
   );

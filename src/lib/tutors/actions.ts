@@ -128,7 +128,7 @@ export async function completeOnboarding(input: OnboardingInput) {
     currency: input.currency || "gbp",
     country: input.country || null,
     subscription_status: "trialing",
-    subscription_current_period_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    subscription_current_period_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     subscription_tier: "independent",
     parent_academy_id: parentAcademyId,
   };

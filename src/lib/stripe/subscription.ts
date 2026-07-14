@@ -66,7 +66,7 @@ export async function getTutorSubscriptionState(
       currentPeriodEnd: isDash
         ? new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString()
         : isTrialActive
-        ? new Date(Date.now() + 6 * 24 * 3600 * 1000).toISOString() // 6 days left
+        ? new Date(Date.now() + 13 * 24 * 3600 * 1000).toISOString() // 13 days left
         : isTrialExpired
         ? new Date(Date.now() - 24 * 3600 * 1000).toISOString() // Expired yesterday
         : null,
@@ -294,7 +294,7 @@ export async function createTutorSubscriptionCheckout(input: {
     },
     subscription_data: {
       metadata: { tutor_id: input.tutorId },
-      trial_period_days: 7, // 7-day free trial before the card is charged
+      trial_period_days: 14, // 14-day free trial before the card is charged
     },
     success_url: `${PUBLIC_SITE_URL}/dashboard/payments?subscription=active`,
     cancel_url: `${PUBLIC_SITE_URL}/dashboard/payments?subscription=cancelled`,

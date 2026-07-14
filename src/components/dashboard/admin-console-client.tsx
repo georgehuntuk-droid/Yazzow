@@ -1069,7 +1069,7 @@ export function AdminConsoleClient({
                                 } else {
                                   const daysLeft = tutor.subscriptionCurrentPeriodEnd
                                     ? Math.max(0, Math.ceil((new Date(tutor.subscriptionCurrentPeriodEnd).getTime() - Date.now()) / (1000 * 3600 * 24)))
-                                    : 7;
+                                    : 14;
                                   return (
                                     <Badge className="gap-1 bg-blue-500/10 border border-blue-500/25 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-500/10">
                                       <Sparkles className="size-3.5 animate-pulse" />

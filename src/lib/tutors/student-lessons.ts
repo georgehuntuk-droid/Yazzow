@@ -77,6 +77,7 @@ const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 export async function getStudentsWithLessonsForTutor(
   tutorId: string,
+  options?: { skipAuthCheck?: boolean },
 ): Promise<{ active: StudentWithLessons[]; archived: StudentWithLessons[]; pending: StudentWithLessons[] }> {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
@@ -210,20 +211,22 @@ export async function getStudentsWithLessonsForTutor(
     .select("parent_email, student_name")
     .eq("tutor_id", tutorId);
   
-  if (cachedAuthEmails && (nowTime - cachedAuthEmails.timestamp < CACHE_TTL)) {
-    cachedAuthEmails.emails.forEach((email) => authEmails.add(email));
-  } else {
-    try {
-      const resList = await admin.auth.admin.listUsers();
-      const usersData = resList?.data;
-      if (usersData?.users) {
-        usersData.users.forEach((u) => {
-          if (u.email) authEmails.add(u.email.toLowerCase());
-        });
+  if (!options?.skipAuthCheck) {
+    if (cachedAuthEmails && (nowTime - cachedAuthEmails.timestamp < CACHE_TTL)) {
+      cachedAuthEmails.emails.forEach((email) => authEmails.add(email));
+    } else {
+      try {
+        const resList = await admin.auth.admin.listUsers();
+        const usersData = resList?.data;
+        if (usersData?.users) {
+          usersData.users.forEach((u) => {
+            if (u.email) authEmails.add(u.email.toLowerCase());
+          });
+        }
+        cachedAuthEmails = { emails: new Set(authEmails), timestamp: nowTime };
+      } catch (err) {
+        console.warn("Could not list auth users for email confirmation check:", err);
       }
-      cachedAuthEmails = { emails: new Set(authEmails), timestamp: nowTime };
-    } catch (err) {
-      console.warn("Could not list auth users for email confirmation check:", err);
     }
   }
 
@@ -309,7 +312,7 @@ export async function getStudentsWithLessonsForTutor(
       createdAt: student.created_at,
       lessons,
       tasks: studentTasks,
-      hasAccount: student.parent_email ? authEmails.has(student.parent_email.toLowerCase()) : false,
+      hasAccount: !options?.skipAuthCheck && student.parent_email ? authEmails.has(student.parent_email.toLowerCase()) : false,
       owedAmountCents,
       lessonType: ((student as any).lesson_type as "online" | "visiting") ?? "online",
       alertsEnabled,

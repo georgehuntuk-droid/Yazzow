@@ -83,7 +83,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   // Only make the slow Stripe Connect API call if they are subscribed and configured!
   // This speeds up the checkout onboarding flow significantly.
   const [status, platformStats] = await Promise.all([
-    configured && subscription.active ? getConnectStatus(row?.stripe_account_id) : Promise.resolve(null),
+    configured && subscription.active ? getConnectStatus(row?.stripe_account_id, { forceFresh: true }) : Promise.resolve(null),
     admin ? getPlatformRevenueStats() : Promise.resolve(null),
   ]);
 

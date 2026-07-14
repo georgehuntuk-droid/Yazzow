@@ -191,19 +191,25 @@ export async function sendLessonReminder(
     console.error("Failed to send lesson reminder email:", err);
   }
 
-  // 5. Send SMS notification via Twilio if parent phone is present
-  if ((booking as any).parent_phone) {
-    const { sendTwilioSms } = await import("@/lib/notifications/sms");
-    const smsBody = `Hi ${booking.student_name || "there"}, this is a reminder of your upcoming lesson with ${businessName} on ${slotLabel}. Join: ${workspaceUrl}`;
-    try {
-      const smsOk = await sendTwilioSms((booking as any).parent_phone, smsBody);
-      if (smsOk) {
-        // Increment sms_sent_count atomically in database using RPC
-        await admin.rpc("increment_sms_count", { tutor_profile_id: tutorId });
-      }
-    } catch (err) {
-      console.error("Failed to send Twilio SMS reminder:", err);
+  // 5. Send Web Push notification if parent has an active subscription
+  try {
+    const { data: usersData } = await admin.auth.admin.listUsers();
+    const parentUser = usersData?.users.find(
+      (u) => u.email?.toLowerCase() === booking.parent_email.toLowerCase()
+    );
+    const userId = parentUser?.id;
+    if (userId) {
+      const { sendPushNotification } = await import("@/lib/notifications/web-push");
+      const pushTitle = "Upcoming Lesson Reminder";
+      const pushBody = `Hi ${booking.student_name || "there"}, this is a reminder for your upcoming lesson with ${businessName} on ${slotLabel}.`;
+      await sendPushNotification(userId, {
+        title: pushTitle,
+        body: pushBody,
+        url: workspaceUrl,
+      });
     }
+  } catch (err) {
+    console.error("Failed to send Web Push reminder notification:", err);
   }
 
   return { ok: true };

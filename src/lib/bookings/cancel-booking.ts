@@ -12,7 +12,7 @@ export async function cancelLessonBooking(input: {
 
   const { data: booking, error: fetchError } = await admin
     .from("bookings")
-    .select("id, slot_id, tutor_id, parent_email, student_name, status, stripe_payment_intent_id, created_at")
+    .select("id, slot_id, tutor_id, parent_email, student_name, status, stripe_payment_intent_id, created_at, subject_id, education_level")
     .eq("id", input.bookingId)
     .eq("tutor_id", input.tutorId)
     .maybeSingle();
@@ -161,15 +161,15 @@ export async function cancelLessonBooking(input: {
     }
   }
 
-  // 3. Notify other alert subscribers that a slot has reopened (only if booked for more than 24 hours to avoid booking-cancel spam)
+  // 3. Trigger proximity check: if > 48h in future, send quiet email. Otherwise, trigger targeted waitlist SMS blast.
   if (profile) {
-    const createdTime = booking.created_at ? new Date(booking.created_at).getTime() : Date.now();
-    const durationMs = Date.now() - createdTime;
-    const hoursSinceBooking = durationMs / (1000 * 60 * 60);
+    const startsAtTime = new Date(slotRow.starts_at).getTime();
+    const diffInHours = (startsAtTime - Date.now()) / (1000 * 60 * 60);
 
-    if (hoursSinceBooking >= 24) {
+    if (diffInHours > 48) {
+      console.log(`[cancelBooking] Lesson is scheduled >48h into the future (${diffInHours.toFixed(1)}h). Sending quiet email instead of push blast.`);
       await notifyFamiliesSlotOpened({
-        tutorId: input.tutorId,
+        tutorId: booking.tutor_id,
         tutorUsername: profile.username,
         tutorDisplayName: profile.display_name,
         slotStartsAt: slotRow.starts_at,
@@ -177,7 +177,19 @@ export async function cancelLessonBooking(input: {
         excludeParentEmail: booking.parent_email,
       });
     } else {
-      console.log(`[cancelLessonBooking] Skipping reopened slot alert because booking was created only ${hoursSinceBooking.toFixed(1)} hours ago.`);
+      console.log(`[cancelBooking] Lesson is scheduled <=48h in future (${diffInHours.toFixed(1)}h). Triggering push blast.`);
+      
+      try {
+        // Dynamic import to prevent dependency cycles
+        const { triggerWaitlistPushBlast } = await import("./waitlist-blast");
+        await triggerWaitlistPushBlast({
+          tutorId: booking.tutor_id,
+          bookingId: input.bookingId,
+          slotId: booking.slot_id,
+        });
+      } catch (err) {
+        console.error("[cancelLessonBooking] Failed to trigger waitlist push blast:", err);
+      }
     }
   }
 

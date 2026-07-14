@@ -660,6 +660,7 @@ export default async function StudentWorkspacePage({ params, searchParams }: Wor
               paymentsEnabled={paymentsEnabled}
               parentEmail={user.email!}
               username={username}
+              userId={user.id}
             />
           </Suspense>
         </main>

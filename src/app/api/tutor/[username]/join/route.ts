@@ -11,6 +11,7 @@ type JoinBody = {
   parentEmail?: string;
   studentName?: string;
   password?: string;
+  parentPhone?: string;
 };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -29,6 +30,7 @@ export async function POST(request: Request, context: RouteContext) {
     parentEmail: body.parentEmail ?? "",
     studentName: body.studentName ?? "",
     password: body.password || undefined,
+    parentPhone: body.parentPhone || undefined,
     origin,
   });
 

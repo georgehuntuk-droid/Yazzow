@@ -4,6 +4,7 @@ import { getConnectStatus } from "@/lib/stripe/connect";
 import {
   getTutorSubscriptionState,
   isTutorSubscriptionLive,
+  type TutorSubscriptionState,
 } from "@/lib/stripe/subscription";
 import { isStripeConfigured } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
@@ -30,7 +31,7 @@ export type PortalBookingStatus = {
 
 export async function getPortalBookingStatus(
   tutorId: string,
-  options?: { isDemo?: boolean },
+  options?: { isDemo?: boolean; subscriptionState?: TutorSubscriptionState },
 ): Promise<PortalBookingStatus> {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
@@ -87,7 +88,7 @@ export async function getPortalBookingStatus(
     };
   }
 
-  const subscription = await getTutorSubscriptionState(tutorId);
+  const subscription = options?.subscriptionState ?? await getTutorSubscriptionState(tutorId);
 
   if (subscription.subscriptionTrackingUnavailable) {
     return {
@@ -184,7 +185,7 @@ function buildSubscriptionFixSteps(status: string | null): string[] {
   if (status === "trialing") {
     return [
       "Open Dashboard → Payments.",
-      "Your 7-day free trial has expired. Click 'Subscribe now' to choose a plan and keep your booking portal active.",
+      "Your 14-day free trial has expired. Click 'Subscribe now' to choose a plan and keep your booking portal active.",
     ];
   }
 

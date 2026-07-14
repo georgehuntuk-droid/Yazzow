@@ -23,6 +23,7 @@ import { WorkspaceClient } from "./workspace-client";
 import { TwoWeekCalendar } from "@/components/dashboard/two-week-calendar";
 import { WorkspaceChat } from "@/components/booking/workspace-chat";
 import { PwaInstallBanner } from "@/components/pwa/install-app-banner";
+import { PushPromptBanner } from "@/components/pwa/push-prompt-banner";
 import { formatSlotRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ResourceShelf } from "@/components/tutor/resource-shelf";
@@ -63,6 +64,7 @@ type WorkspaceDashboardProps = {
   paymentsEnabled: boolean;
   parentEmail: string;
   username: string;
+  userId: string;
 };
 
 export function WorkspaceDashboard({
@@ -77,7 +79,8 @@ export function WorkspaceDashboard({
   calendarSlots,
   paymentsEnabled,
   parentEmail,
-  username
+  username,
+  userId
 }: WorkspaceDashboardProps) {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -180,6 +183,9 @@ export function WorkspaceDashboard({
     <div className="space-y-6">
       {/* Premium PWA Install Banner */}
       <PwaInstallBanner />
+
+      {/* Web Push Onboarding Prompt */}
+      <PushPromptBanner role="parent" userId={userId} />
 
       {/* Stats row */}
       <div className="grid gap-3 grid-cols-3">

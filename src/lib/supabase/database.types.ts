@@ -36,6 +36,7 @@ export type TutorProfileRow = {
   portal_announcement_updated_at: string | null;
   portal_announcement_duration_hours: number | null;
   subscription_tier: string;
+  last_sms_blast_at: string | null;
 };
 
 export type AvailabilitySlotRow = {
@@ -45,6 +46,7 @@ export type AvailabilitySlotRow = {
   ends_at: string;
   is_booked: boolean;
   created_at: string;
+  claim_token: string | null;
 };
 
 export type DigitalResourceRow = {
@@ -73,6 +75,8 @@ export type StudentRow = {
   credit_limit?: number;
   lesson_type: string;
   processed_sessions?: string[];
+  subject_id: string | null;
+  education_level: string | null;
 };
 
 export type BookingRow = {
@@ -93,6 +97,8 @@ export type BookingRow = {
   tutor_lesson_feedback: string | null;
   lesson_rating: number | null;
   created_at: string;
+  subject_id: string | null;
+  education_level: string | null;
 };
 
 export type ResourcePurchaseRow = {

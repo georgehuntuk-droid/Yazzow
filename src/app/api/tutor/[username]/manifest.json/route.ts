@@ -29,7 +29,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   // Default color fallback
   const themeColor = "#0072d5"; 
-  const backgroundColor = "#f9fcff";
+  const backgroundColor = "#000000";
 
   // Use tutor's avatar as the icon, falling back to Yazzow logo
   const iconUrl = tutor.avatarUrl || "/icon.png?v=4";

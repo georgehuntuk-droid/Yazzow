@@ -796,3 +796,28 @@ export async function savePortalCoverUrl(publicUrl: string | null) {
   await revalidatePortal(profile.username);
   return { ok: true as const };
 }
+
+export async function updateTutorRate(rate: number) {
+  const { profile } = await requireTutorProfile();
+  const supabase = await createClient();
+  const cents = Math.round(rate * 100);
+
+  if (cents < LESSON_PRICE_LIMITS.minCents || cents > LESSON_PRICE_LIMITS.maxCents) {
+    return { 
+      ok: false as const, 
+      error: `Rate must be between ${LESSON_PRICE_LIMITS.minCents / 100} and ${LESSON_PRICE_LIMITS.maxCents / 100}.` 
+    };
+  }
+
+  const { error } = await supabase
+    .from("tutor_profiles")
+    .update({ lesson_price_cents: cents })
+    .eq("id", profile.id);
+
+  if (error) {
+    return { ok: false as const, error: formatSupabaseError(error.message) };
+  }
+
+  await revalidatePortal(profile.username);
+  return { ok: true as const };
+}

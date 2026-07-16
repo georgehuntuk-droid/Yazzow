@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { updateTutorRate } from "@/lib/dashboard/profile-actions";
+import { useRouter } from "next/navigation";
 
 type SubjectType = "maths" | "science" | "languages" | "music" | "humanities" | "other";
 type LevelType = "primary" | "gcse" | "alevel" | "university" | "adult";
@@ -50,13 +52,42 @@ const getCurrencySymbol = (code: string) => {
   }
 };
 
-export function RateCalculatorClient({ defaultCurrency = "gbp" }: { defaultCurrency?: string }) {
+export function RateCalculatorClient({ 
+  defaultCurrency = "gbp",
+  isDashboard = false
+}: { 
+  defaultCurrency?: string;
+  isDashboard?: boolean;
+}) {
   const symbol = getCurrencySymbol(defaultCurrency);
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [subject, setSubject] = useState<SubjectType | "">("");
   const [level, setLevel] = useState<LevelType | "">("");
   const [experience, setExperience] = useState<ExperienceType | "">("");
   const [location, setLocation] = useState<LocationType | "">("");
+  const [isApplying, setIsApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+
+  const handleApplyToPortal = async () => {
+    setIsApplying(true);
+    setApplyError(null);
+    setApplySuccess(false);
+    try {
+      const res = await updateTutorRate(baseRate);
+      if (res.ok) {
+        setApplySuccess(true);
+        router.refresh();
+      } else {
+        setApplyError(res.error || "Failed to apply rate.");
+      }
+    } catch (err) {
+      setApplyError("An unexpected error occurred.");
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   // Rate Calculation Formula
   const calculateRates = () => {
@@ -526,6 +557,29 @@ export function RateCalculatorClient({ defaultCurrency = "gbp" }: { defaultCurre
               >
                 Continue <ArrowRight className="size-3.5 ml-1" />
               </Button>
+            ) : isDashboard ? (
+              <div className="flex flex-col items-end gap-1.5 ml-auto">
+                {applySuccess && (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    ✓ Hourly rate applied to your profile!
+                  </span>
+                )}
+                {applyError && (
+                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                    ⚠️ {applyError}
+                  </span>
+                )}
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleApplyToPortal}
+                  disabled={isApplying || applySuccess}
+                  className="yazz-btn-primary h-8 font-semibold px-4 text-xs animate-pulse"
+                >
+                  {isApplying ? "Applying..." : applySuccess ? "Applied!" : "Apply to my portal"}
+                  <ArrowRight className="size-3.5 ml-1" />
+                </Button>
+              </div>
             ) : (
               <Link
                 href="/auth/signup"
@@ -540,33 +594,35 @@ export function RateCalculatorClient({ defaultCurrency = "gbp" }: { defaultCurre
         </div>
 
         {/* Post-results brand promotion block */}
-        <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-indigo-600/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-300">
-            <Sparkles className="size-20 text-primary" />
-          </div>
-          
-          <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
-            <Sparkles className="size-4 text-primary animate-pulse" /> Launch Your Private Tutoring Brand
-          </h3>
-          <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-            Running a tutor business shouldn't mean wasting hours on schedules, WhatsApp bookings, or manually chasing parents for payments. Yazzow sets up a beautiful public workspace with your branding, lets clients book slot calendars upfront via card/Stripe, and delivers auto-invoices.
-          </p>
+        {!isDashboard && (
+          <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-indigo-600/5 border border-primary/20 rounded-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-300">
+              <Sparkles className="size-20 text-primary" />
+            </div>
+            
+            <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
+              <Sparkles className="size-4 text-primary animate-pulse" /> Launch Your Private Tutoring Brand
+            </h3>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              Running a tutor business shouldn't mean wasting hours on schedules, WhatsApp bookings, or manually chasing parents for payments. Yazzow sets up a beautiful public workspace with your branding, lets clients book slot calendars upfront via card/Stripe, and delivers auto-invoices.
+            </p>
 
-          <div className="mt-4 flex flex-wrap gap-2.5">
-            <Link 
-              href="/auth/signup"
-              className="inline-flex h-8 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition-all hover:bg-[oklch(0.50_0.18_250)]"
-            >
-              Get Started Free <ArrowRight className="size-3 ml-1" />
-            </Link>
-            <Link 
-              href="/#pricing"
-              className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card/80 px-4 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-            >
-              Pricing & Features
-            </Link>
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              <Link 
+                href="/auth/signup"
+                className="inline-flex h-8 items-center justify-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition-all hover:bg-[oklch(0.50_0.18_250)]"
+              >
+                Get Started Free <ArrowRight className="size-3 ml-1" />
+              </Link>
+              <Link 
+                href="/#pricing"
+                className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card/80 px-4 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              >
+                Pricing & Features
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

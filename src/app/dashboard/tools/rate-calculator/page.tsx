@@ -9,7 +9,7 @@ export default async function DashboardRateCalculatorPage() {
   const { profile } = await requireTutorProfile();
   return (
     <div className="px-6 py-4">
-      <RateCalculatorClient defaultCurrency={profile.currency} />
+      <RateCalculatorClient defaultCurrency={profile.currency} isDashboard={true} />
     </div>
   );
 }

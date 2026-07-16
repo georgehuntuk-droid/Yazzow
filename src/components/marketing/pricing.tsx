@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarCheck, Sparkles, TrendingUp } from "lucide-react";
 
 import { SpotlightCard } from "@/components/brand/spotlight-card";
 import type { MarketingAuthCta } from "@/lib/marketing/auth-cta";
@@ -8,14 +8,31 @@ import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 const plans = [
   {
     icon: BookOpen,
-    name: SUBSCRIPTION_TIERS.independent.name,
-    fee: "£29",
+    name: SUBSCRIPTION_TIERS.starter.name,
+    fee: "£10",
     feeSuffix: "per month",
-    description: SUBSCRIPTION_TIERS.independent.description,
+    description: SUBSCRIPTION_TIERS.starter.description,
     highlights: [
-      "Unlimited active students",
+      "Up to 10 active students",
       "Your private booking portal",
-      "Automated SMS/email reminders",
+      "Automated email reminders",
+      "Parent reporting dashboard",
+      "Automated Cancellation Filler",
+      "0% per-lesson platform fee",
+      "Instant slot alerts included",
+    ],
+    featured: false,
+  },
+  {
+    icon: TrendingUp,
+    name: SUBSCRIPTION_TIERS.growth.name,
+    fee: "£25",
+    feeSuffix: "per month",
+    description: SUBSCRIPTION_TIERS.growth.description,
+    highlights: [
+      "Up to 25 active students",
+      "Your private booking portal",
+      "Automated email reminders",
       "Parent reporting dashboard",
       "Automated Cancellation Filler",
       "0% per-lesson platform fee",
@@ -26,12 +43,12 @@ const plans = [
   {
     icon: Sparkles,
     name: SUBSCRIPTION_TIERS.academy.name,
-    fee: "£79",
+    fee: "£50",
     feeSuffix: "per month",
     description: SUBSCRIPTION_TIERS.academy.description,
     highlights: [
-      "Everything in The Independent",
-      "Multi-Tutor Management (sub-accounts)",
+      "Everything in Growth",
+      "Multi-Tutor Management (5 sub-accounts)",
       "Custom branding & theme options",
       "Your private booking portal",
       "0% per-lesson platform fee",
@@ -55,12 +72,11 @@ export function MarketingPricing({ authCta }: MarketingPricingProps) {
             Simple, transparent pricing.
           </h2>
           <p className="mt-4 yazz-muted">
-            Choose the plan that fits your business scale. Both tiers feature unlimited students,
-            unlimited bookings, and 0% platform fees with a 14-day free trial.
+            Choose the plan that fits your business scale. All tiers feature unlimited bookings, 0% platform fees, and a 14-day free trial.
           </p>
         </div>
 
-        <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2 items-stretch pt-4">
+        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3 items-stretch pt-4">
           {plans.map((plan) => {
             const featured = "featured" in plan && plan.featured;
             return (

@@ -397,8 +397,8 @@ export async function addStudent(input: {
   const resolvedTier: keyof typeof SUBSCRIPTION_TIERS =
     rawTier === "agency"
       ? "academy"
-      : (rawTier === "growth" || rawTier === "starter")
-      ? "independent"
+      : rawTier === "independent"
+      ? "growth"
       : (rawTier as any);
   const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
 
@@ -1577,8 +1577,8 @@ export async function approveStudentApplication(studentId: string) {
   const resolvedTier: keyof typeof SUBSCRIPTION_TIERS =
     rawTier === "agency"
       ? "academy"
-      : (rawTier === "growth" || rawTier === "starter")
-      ? "independent"
+      : rawTier === "independent"
+      ? "growth"
       : (rawTier as any);
   const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
 

@@ -22,8 +22,8 @@ export async function checkStudentLimitBeforeBooking(input: {
   const resolvedTier: keyof typeof SUBSCRIPTION_TIERS =
     rawTier === "agency"
       ? "academy"
-      : (rawTier === "growth" || rawTier === "starter")
-      ? "independent"
+      : rawTier === "independent"
+      ? "growth"
       : (rawTier as any);
   const tierConfig = SUBSCRIPTION_TIERS[resolvedTier];
 

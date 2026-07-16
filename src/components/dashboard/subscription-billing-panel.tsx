@@ -137,12 +137,12 @@ export function SubscriptionBillingPanel({
   const blocked =
     !configured || subscription.subscriptionTrackingUnavailable;
 
-  const rawTier = subscription.subscriptionTier || "independent";
+  const rawTier = subscription.subscriptionTier || "growth";
   const currentTier: keyof typeof SUBSCRIPTION_TIERS =
     rawTier === "agency"
       ? "academy"
-      : (rawTier === "growth" || rawTier === "starter")
-      ? "independent"
+      : rawTier === "independent"
+      ? "growth"
       : (rawTier as any);
   const isFreeTrial = subscription.status === "trialing" && !subscription.stripeCustomerId;
 
@@ -267,7 +267,7 @@ export function SubscriptionBillingPanel({
         )}
 
         {/* Pricing Tiers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl gap-6 pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 max-w-5xl gap-6 pt-2">
           {(Object.keys(SUBSCRIPTION_TIERS) as Array<keyof typeof SUBSCRIPTION_TIERS>).map((tierKey) => {
             const tier = SUBSCRIPTION_TIERS[tierKey];
             const isCurrent = subscribed && currentTier === tierKey;

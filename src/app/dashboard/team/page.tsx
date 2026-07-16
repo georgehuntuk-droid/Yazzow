@@ -6,6 +6,7 @@ import { getTutorSubscriptionState } from "@/lib/stripe/subscription";
 import { getTeamMembers, getPendingInvitations } from "@/lib/dashboard/team-actions";
 import { TeamManagementPanel } from "@/components/dashboard/team-management-panel";
 import { Button } from "@/components/ui/button";
+import { SUBSCRIPTION_TIERS } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "My Team · Dashboard",
@@ -68,7 +69,7 @@ export default async function TeamDashboardPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button size="lg" render={<Link href="/dashboard/payments#subscription" />}>
-              Upgrade to The Academy (£79/mo)
+              Upgrade to The Academy ({SUBSCRIPTION_TIERS.academy.priceLabel})
             </Button>
             <Button variant="outline" size="lg" render={<Link href="/dashboard" />}>
               Back to Overview

@@ -46,8 +46,9 @@ export async function getPlatformRevenueStats(): Promise<PlatformRevenueStats> {
       activeSubscriptions++;
       if (row.stripe_subscription_id) {
         payingSubscriptions++;
-        const tierKey = (row.subscription_tier || "independent") as keyof typeof SUBSCRIPTION_TIERS;
-        const tier = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.independent;
+        const rawTierKey = row.subscription_tier || "growth";
+        const tierKey = (rawTierKey === "independent" ? "growth" : rawTierKey) as keyof typeof SUBSCRIPTION_TIERS;
+        const tier = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.growth;
         estimatedSubscriptionMrrCents += tier.amountCents;
       } else {
         compedSubscriptions++;

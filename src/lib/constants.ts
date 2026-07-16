@@ -22,22 +22,31 @@ export const PUBLIC_SITE_URL =
 
 /** Subscription tiers mapping for tutors based on features. */
 export const SUBSCRIPTION_TIERS = {
-  independent: {
-    id: "independent",
-    name: "The Independent",
-    maxStudents: null, // Unlimited students
-    amountCents: 2900,
-    priceLabel: "£29/mo",
-    description: "Unlimited students, bookings, automated reminders, and the Cancellation Filler.",
-    stripePriceId: process.env.STRIPE_PRICE_INDEPENDENT?.trim() || "",
+  starter: {
+    id: "starter",
+    name: "Starter",
+    maxStudents: 10,
+    amountCents: 1000,
+    priceLabel: "£10/mo",
+    description: "Up to 10 active students, bookings, automated reminders, and the Cancellation Filler.",
+    stripePriceId: process.env.STRIPE_PRICE_STARTER?.trim() || "",
+  },
+  growth: {
+    id: "growth",
+    name: "Growth",
+    maxStudents: 25,
+    amountCents: 2500,
+    priceLabel: "£25/mo",
+    description: "Up to 25 active students, bookings, automated reminders, and the Cancellation Filler.",
+    stripePriceId: process.env.STRIPE_PRICE_GROWTH?.trim() || "",
   },
   academy: {
     id: "academy",
     name: "The Academy",
     maxStudents: null, // Unlimited students
-    amountCents: 7900,
-    priceLabel: "£79/mo",
-    description: "Everything in The Independent, plus Multi-Tutor Management and Custom Branding.",
+    amountCents: 5000,
+    priceLabel: "£50/mo",
+    description: "Unlimited active students, Multi-Tutor Management (up to 5 staff accounts), and Custom Branding.",
     stripePriceId: process.env.STRIPE_PRICE_ACADEMY?.trim() || "",
   },
 } as const;

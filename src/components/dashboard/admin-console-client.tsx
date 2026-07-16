@@ -166,7 +166,7 @@ export function AdminConsoleClient({
   const [editPrice, setEditPrice] = useState("");
   const [editPaymentInstructions, setEditPaymentInstructions] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
-  const [editSubscriptionTier, setEditSubscriptionTier] = useState("independent");
+  const [editSubscriptionTier, setEditSubscriptionTier] = useState("growth");
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isClearingSchedule, setIsClearingSchedule] = useState(false);
 
@@ -212,7 +212,7 @@ export function AdminConsoleClient({
     setEditPrice((tutor.lessonPriceCents / 100).toFixed(2));
     setEditPaymentInstructions(tutor.paymentInstructions ?? "");
     setEditAvatarUrl(tutor.avatarUrl ?? "");
-    setEditSubscriptionTier(tutor.subscriptionTier ?? "independent");
+    setEditSubscriptionTier(tutor.subscriptionTier ?? "growth");
   };
 
   const handleSaveTutorDetails = async (e: React.FormEvent) => {
@@ -1029,22 +1029,28 @@ export function AdminConsoleClient({
                           )}
 
                           {/* Subscription Badge */}
-                           {/* Tier Badge */}
-                           {(() => {
-                             const tier = tutor.subscriptionTier || "independent";
-                             if (tier === "academy" || tier === "agency") {
-                               return (
-                                 <Badge className="gap-1 bg-yellow-500/10 border border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold hover:bg-yellow-500/10">
-                                   🏫 Academy
-                                 </Badge>
-                               );
-                             }
-                             return (
-                               <Badge className="gap-1 bg-blue-500/10 border border-blue-500/20 text-blue-800 dark:text-blue-500 font-semibold hover:bg-blue-500/10">
-                                 🎓 Independent
-                               </Badge>
-                             );
-                           })()}
+                          {(() => {
+                            const tier = tutor.subscriptionTier || "growth";
+                            if (tier === "academy" || tier === "agency") {
+                              return (
+                                <Badge className="gap-1 bg-yellow-500/10 border border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold hover:bg-yellow-500/10">
+                                  🏫 Academy
+                                </Badge>
+                              );
+                            }
+                            if (tier === "growth" || tier === "independent") {
+                              return (
+                                <Badge className="gap-1 bg-blue-500/10 border border-blue-500/20 text-blue-800 dark:text-blue-500 font-semibold hover:bg-blue-500/10">
+                                  📈 Growth
+                                </Badge>
+                              );
+                            }
+                            return (
+                              <Badge className="gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-500 font-semibold hover:bg-emerald-500/10">
+                                🌱 Starter
+                              </Badge>
+                            );
+                          })()}
 
                            {/* Active/Inactive Billing Status */}
                             {tutor.subscriptionStatus === "trialing" ? (
@@ -1838,8 +1844,9 @@ export function AdminConsoleClient({
                       onChange={(e) => setEditSubscriptionTier(e.target.value)}
                       className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
                     >
-                      <option value="independent">🎓 The Independent (£29/mo - Unlimited students)</option>
-                      <option value="academy">🏫 The Academy (£79/mo - Multi-tutor & Branding)</option>
+                      <option value="starter">🌱 Starter (£10/mo - 10 students)</option>
+                      <option value="growth">📈 Growth (£25/mo - 25 students)</option>
+                      <option value="academy">🏫 The Academy (£50/mo - Unlimited & 5 staff)</option>
                     </select>
                   </div>
                   <div>

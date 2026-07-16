@@ -179,22 +179,25 @@ export default async function DashboardPage() {
         </div>
 
         {(() => {
-          const rawTier = subState?.subscriptionTier || "independent";
+          const rawTier = subState?.subscriptionTier || "growth";
           const { SUBSCRIPTION_TIERS } = require("@/lib/constants");
           const tier =
             rawTier === "agency"
               ? "academy"
-              : (rawTier === "growth" || rawTier === "starter")
-              ? "independent"
+              : rawTier === "independent"
+              ? "growth"
               : rawTier;
-          const config = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS] || SUBSCRIPTION_TIERS.independent;
+          const config = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS] || SUBSCRIPTION_TIERS.growth;
           
-          let badgeText = "🎓 The Independent Member";
+          let badgeText = "📈 Growth Member";
           let badgeColor = "bg-blue-500/10 border-blue-500/25 text-blue-700 dark:text-blue-400 font-bold";
           
           if (tier === "academy") {
             badgeText = "🏫 The Academy Member";
             badgeColor = "bg-yellow-500/10 border-yellow-500/25 text-yellow-700 dark:text-yellow-400 font-extrabold";
+          } else if (tier === "starter") {
+            badgeText = "🌱 Starter Member";
+            badgeColor = "bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-semibold";
           }
           
           return (
@@ -207,9 +210,11 @@ export default async function DashboardPage() {
                   </span>
                 </p>
                 <p className="mt-1.5 text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed">
-                  Active Students: <strong className="text-foreground">{activeStudentsCount}</strong> / Unlimited
+                  Active Students: <strong className="text-foreground">{activeStudentsCount}</strong> / {config.maxStudents ? config.maxStudents : "Unlimited"}
                   {" · "}
-                  Your plan features zero student limits. Enjoy full access to booking scheduling, reminders, and parent portals!
+                  {config.maxStudents 
+                    ? `Your plan allows up to ${config.maxStudents} active students. Upgrade if you need more.`
+                    : "Enjoy unlimited active students, custom branding, and team management tools!"}
                 </p>
               </div>
               <Button size="sm" render={<Link href="/dashboard/payments#subscription" />}>

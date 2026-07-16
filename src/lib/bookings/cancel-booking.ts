@@ -55,7 +55,7 @@ export async function cancelLessonBooking(input: {
 
   const { error: slotError } = await admin
     .from("availability_slots")
-    .update({ is_booked: false })
+    .update({ is_booked: false, notified: false })
     .eq("id", booking.slot_id)
     .eq("tutor_id", input.tutorId);
 
@@ -167,15 +167,7 @@ export async function cancelLessonBooking(input: {
     const diffInHours = (startsAtTime - Date.now()) / (1000 * 60 * 60);
 
     if (diffInHours > 48) {
-      console.log(`[cancelBooking] Lesson is scheduled >48h into the future (${diffInHours.toFixed(1)}h). Sending quiet email instead of push blast.`);
-      await notifyFamiliesSlotOpened({
-        tutorId: booking.tutor_id,
-        tutorUsername: profile.username,
-        tutorDisplayName: profile.display_name,
-        slotStartsAt: slotRow.starts_at,
-        slotEndsAt: slotRow.ends_at,
-        excludeParentEmail: booking.parent_email,
-      });
+      console.log(`[cancelBooking] Lesson is scheduled >48h into the future (${diffInHours.toFixed(1)}h). Slot is set to unnotified and will be emailed via cron.`);
     } else {
       console.log(`[cancelBooking] Lesson is scheduled <=48h in future (${diffInHours.toFixed(1)}h). Triggering push blast.`);
       

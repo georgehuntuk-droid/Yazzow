@@ -47,6 +47,7 @@ export type AvailabilitySlotRow = {
   is_booked: boolean;
   created_at: string;
   claim_token: string | null;
+  notified: boolean;
 };
 
 export type DigitalResourceRow = {
@@ -139,6 +140,7 @@ export type Database = {
         Insert: Omit<AvailabilitySlotRow, "id" | "created_at"> & {
           id?: string;
           created_at?: string;
+          notified?: boolean;
         };
         Update: Partial<AvailabilitySlotRow>;
       };

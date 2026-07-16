@@ -136,27 +136,6 @@ export async function createAvailabilitySlot(input: {
 
   await revalidateTutor(profile.username);
 
-  // Send availability alerts to parent alert lists
-  try {
-    const { getTutorNotifyProfile, notifyFamiliesNewAvailabilityBlock } = await import(
-      "@/lib/notifications/slot-opened"
-    );
-    const tutorNotifyProfile = await getTutorNotifyProfile(profile.id);
-    if (tutorNotifyProfile && toInsert.length > 0) {
-      await notifyFamiliesNewAvailabilityBlock({
-        tutorId: profile.id,
-        tutorUsername: tutorNotifyProfile.username,
-        tutorDisplayName: tutorNotifyProfile.display_name,
-        slots: toInsert.map((slot) => ({
-          startsAt: slot.startsAt.toISOString(),
-          endsAt: slot.endsAt.toISOString(),
-        })),
-      });
-    }
-  } catch (err) {
-    console.error("[createAvailabilitySlot] Failed to send availability alerts:", err);
-  }
-
   const skipped = hourlyWindows.length - toInsert.length;
   return {
     ok: true as const,

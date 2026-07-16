@@ -413,7 +413,7 @@ export async function addStudent(input: {
     if (!countErr && count !== null && count >= tierConfig.maxStudents) {
       return {
         ok: false as const,
-        error: `Active student limit reached. Your current plan (${tierConfig.name}) allows up to ${tierConfig.maxStudents} active students. Please upgrade your subscription on the Payments page.`,
+        error: `Active student limit reached. Your current plan (${tierConfig.name}) allows up to ${tierConfig.maxStudents} active students. Please upgrade your subscription on the Settings page.`,
       };
     }
   }
@@ -1592,7 +1592,7 @@ export async function approveStudentApplication(studentId: string) {
     if (!countErr && count !== null && count >= tierConfig.maxStudents) {
       return {
         ok: false as const,
-        error: `Active student limit reached. Your current plan (${tierConfig.name}) allows up to ${tierConfig.maxStudents} active students. Please upgrade your subscription on the Payments page.`,
+        error: `Active student limit reached. Your current plan (${tierConfig.name}) allows up to ${tierConfig.maxStudents} active students. Please upgrade your subscription on the Settings page.`,
       };
     }
   }

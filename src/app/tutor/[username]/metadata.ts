@@ -71,8 +71,8 @@ export async function generateMetadata(
       images: [avatarImage],
     },
     robots: {
-      index: false,
-      follow: false,
+      index: true,
+      follow: true,
     },
   };
 }

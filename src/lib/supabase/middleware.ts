@@ -47,6 +47,13 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Optimize: Skip auth network call for anonymous visitors who do not have any Supabase cookies.
+  const cookiesList = request.cookies.getAll();
+  const hasSbCookie = cookiesList.some((c) => c.name.startsWith("sb-"));
+  if (!hasSbCookie) {
+    return supabaseResponse;
+  }
+
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

@@ -217,7 +217,7 @@ export default async function DashboardPage() {
                     : "Enjoy unlimited active students, custom branding, and team management tools!"}
                 </p>
               </div>
-              <Button size="sm" render={<Link href="/dashboard/payments#subscription" />}>
+              <Button size="sm" render={<Link href="/dashboard/settings" />}>
                 View / Upgrade Plan
               </Button>
             </div>

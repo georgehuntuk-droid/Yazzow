@@ -53,29 +53,57 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+  } | null>(null);
+
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
+
   async function handleApprove(studentId: string) {
     setProcessingId(studentId);
     setError(null);
     const result = await approveStudentApplication(studentId);
     setProcessingId(null);
     if (!result.ok) {
-      alert(result.error || "Failed to approve application.");
+      setAlertModal({
+        isOpen: true,
+        title: "Approve Failed",
+        message: result.error || "Failed to approve application."
+      });
     } else {
       router.refresh();
     }
   }
 
   async function handleReject(studentId: string) {
-    if (!confirm("Are you sure you want to decline and remove this student application?")) return;
-    setProcessingId(studentId);
-    setError(null);
-    const result = await rejectStudentApplication(studentId);
-    setProcessingId(null);
-    if (!result.ok) {
-      alert(result.error || "Failed to reject application.");
-    } else {
-      router.refresh();
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Decline Application",
+      message: "Are you sure you want to decline and remove this student application?",
+      onConfirm: async () => {
+        setProcessingId(studentId);
+        setError(null);
+        const result = await rejectStudentApplication(studentId);
+        setProcessingId(null);
+        if (!result.ok) {
+          setAlertModal({
+            isOpen: true,
+            title: "Decline Failed",
+            message: result.error || "Failed to reject application."
+          });
+        } else {
+          router.refresh();
+        }
+      }
+    });
   }
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savingNotesId, setSavingNotesId] = useState<string | null>(null);
@@ -284,20 +312,19 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   }
 
   async function handleArchive(studentId: string, studentLabel: string) {
-    if (
-      !confirm(
-        `Archive ${studentLabel}? They stay in your records but won't appear in your active list. You can restore them anytime.`,
-      )
-    ) {
-      return;
-    }
-
-    const result = await updateStudentStatus(studentId, "archived");
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    router.refresh();
+    setConfirmModal({
+      isOpen: true,
+      title: "Archive Student",
+      message: `Archive ${studentLabel}? They stay in your records but won't appear in your active list. You can restore them anytime.`,
+      onConfirm: async () => {
+        const result = await updateStudentStatus(studentId, "archived");
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        router.refresh();
+      }
+    });
   }
 
   async function handleRestore(studentId: string) {
@@ -310,20 +337,19 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
   }
 
   async function handleDelete(studentId: string, studentLabel: string) {
-    if (
-      !confirm(
-        `Permanently remove ${studentLabel} from your ledger? Lesson history stays in bookings.`,
-      )
-    ) {
-      return;
-    }
-
-    const result = await deleteStudent(studentId);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    router.refresh();
+    setConfirmModal({
+      isOpen: true,
+      title: "Remove Student Record",
+      message: `Permanently remove ${studentLabel} from your ledger? Lesson history stays in bookings.`,
+      onConfirm: async () => {
+        const result = await deleteStudent(studentId);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        router.refresh();
+      }
+    });
   }
 
   async function handleSaveFeedback(bookingId: string) {
@@ -522,6 +548,8 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             setOptimisticAttendanceStatus={setOptimisticAttendanceStatus}
             optimisticTaskStatus={optimisticTaskStatus}
             setOptimisticTaskStatus={setOptimisticTaskStatus}
+            setAlertModal={setAlertModal}
+            setConfirmModal={setConfirmModal}
           />
         </TabsContent>
         <TabsContent value="archived" className="mt-4 space-y-3">
@@ -563,9 +591,67 @@ export function StudentLedger({ students, currency }: StudentLedgerProps) {
             setOptimisticAttendanceStatus={setOptimisticAttendanceStatus}
             optimisticTaskStatus={optimisticTaskStatus}
             setOptimisticTaskStatus={setOptimisticTaskStatus}
+            setAlertModal={setAlertModal}
+            setConfirmModal={setConfirmModal}
           />
         </TabsContent>
       </Tabs>
+
+      {/* Custom Confirm Dialog Modal */}
+      {confirmModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in no-print">
+          <div className="bg-background border border-border rounded-2xl max-w-sm w-full shadow-2xl p-6 relative overflow-hidden flex flex-col gap-4 animate-scale-in">
+            <h3 className="font-heading text-lg font-bold text-foreground">{confirmModal.title}</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">{confirmModal.message}</p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (confirmModal.onCancel) confirmModal.onCancel();
+                  setConfirmModal(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  confirmModal.onConfirm();
+                  setConfirmModal(null);
+                }}
+                className="yazz-btn-primary font-semibold text-xs px-4"
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Dialog Modal */}
+      {alertModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in no-print">
+          <div className="bg-background border border-border rounded-2xl max-w-sm w-full shadow-2xl p-6 relative overflow-hidden flex flex-col gap-4 animate-scale-in">
+            <h3 className="font-heading text-lg font-bold text-foreground">{alertModal.title}</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">{alertModal.message}</p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => setAlertModal(null)}
+                className="yazz-btn-primary font-semibold text-xs px-4"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -604,6 +690,8 @@ function StudentList({
   setOptimisticAttendanceStatus,
   optimisticTaskStatus,
   setOptimisticTaskStatus,
+  setAlertModal,
+  setConfirmModal,
 }: {
   list: StudentWithLessons[];
   currency: string;
@@ -640,6 +728,8 @@ function StudentList({
   setOptimisticAttendanceStatus: React.Dispatch<React.SetStateAction<Record<string, "attended" | "late" | "absent">>>;
   optimisticTaskStatus: Record<string, "pending" | "completed">;
   setOptimisticTaskStatus: React.Dispatch<React.SetStateAction<Record<string, "pending" | "completed">>>;
+  setAlertModal: (modal: { isOpen: boolean; title: string; message: string } | null) => void;
+  setConfirmModal: (modal: { isOpen: boolean; title: string; message: string; onConfirm: () => void; onCancel?: () => void } | null) => void;
 }) {
   const router = useRouter();
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
@@ -1089,7 +1179,11 @@ function StudentList({
                                         delete next[task.id];
                                         return next;
                                       });
-                                      alert(res.error);
+                                      setAlertModal({
+                                        isOpen: true,
+                                        title: "Update Failed",
+                                        message: res.error
+                                      });
                                     } else {
                                       router.refresh();
                                     }
@@ -1101,11 +1195,16 @@ function StudentList({
                               <span className="text-muted-foreground/30">|</span>
                               <button
                                 type="button"
-                                onClick={async () => {
-                                  if (confirm("Delete this task?")) {
-                                    await deleteStudentTask(task.id);
-                                    router.refresh();
-                                  }
+                                onClick={() => {
+                                  setConfirmModal({
+                                    isOpen: true,
+                                    title: "Delete Task",
+                                    message: "Are you sure you want to delete this task? This cannot be undone.",
+                                    onConfirm: async () => {
+                                      await deleteStudentTask(task.id);
+                                      router.refresh();
+                                    }
+                                  });
                                 }}
                                 className="font-semibold text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
                               >

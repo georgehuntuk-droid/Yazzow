@@ -33,7 +33,13 @@ export function BookingCalendar({
   paymentsBlockedMessage,
   isDemo = false,
 }: BookingCalendarProps) {
-  const openSlots = slots.filter((slot) => slot.available);
+  // Filter out slots that have already passed (startsAt is in the past) and sort chronologically
+  const openSlots = useMemo(() => {
+    const now = new Date();
+    return slots
+      .filter((slot) => slot.available && new Date(slot.startsAt) >= now)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+  }, [slots]);
   
   // Group slots by their calendar date
   const groupedSlots = useMemo(() => {
@@ -53,25 +59,31 @@ export function BookingCalendar({
     return groups;
   }, [openSlots]);
 
-  const dateKeys = Object.keys(groupedSlots);
-  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(
-    dateKeys[0] ?? null
-  );
+  const dateKeys = useMemo(() => {
+    return Object.keys(groupedSlots).sort();
+  }, [groupedSlots]);
+
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+
+  // Set default selected date on mount or when dateKeys changes
+  useEffect(() => {
+    if (dateKeys.length > 0 && (!selectedDateKey || !dateKeys.includes(selectedDateKey))) {
+      setSelectedDateKey(dateKeys[0]);
+    }
+  }, [dateKeys, selectedDateKey]);
 
   const activeDateSlots = selectedDateKey ? groupedSlots[selectedDateKey] ?? [] : [];
-  const [selectedId, setSelectedId] = useState<string | null>(
-    activeDateSlots[0]?.id ?? null
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // If date selection changes, default to its first slot
+  // Default selectedId to first slot of active date if none is active or selectedId is invalid
   useEffect(() => {
     if (selectedDateKey && groupedSlots[selectedDateKey]) {
       const firstSlot = groupedSlots[selectedDateKey][0];
-      if (firstSlot && !groupedSlots[selectedDateKey].some(s => s.id === selectedId)) {
+      if (firstSlot && (!selectedId || !groupedSlots[selectedDateKey].some(s => s.id === selectedId))) {
         setSelectedId(firstSlot.id);
       }
     }
-  }, [selectedDateKey, groupedSlots]);
+  }, [selectedDateKey, groupedSlots, selectedId]);
 
   const selected = openSlots.find((slot) => slot.id === selectedId);
 

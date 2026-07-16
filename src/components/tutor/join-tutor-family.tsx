@@ -24,7 +24,6 @@ export function JoinTutorFamily({
 }: JoinTutorFamilyProps) {
   const router = useRouter();
   const [studentName, setStudentName] = useState("");
-  const [parentPhone, setParentPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +41,6 @@ export function JoinTutorFamily({
         body: JSON.stringify({
           parentEmail: currentUserEmail,
           studentName,
-          parentPhone,
         }),
       });
       
@@ -146,7 +144,7 @@ export function JoinTutorFamily({
         You are logged in as <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px]">{currentUserEmail}</code>. Enter your name below to link and activate your student workspace.
       </p>
 
-      <div className="grid gap-3 sm:grid-cols-3 max-w-2xl">
+      <div className="grid gap-3 sm:grid-cols-2 max-w-2xl">
         <div className="space-y-1.5">
           <label htmlFor="join-student-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
             Student Name
@@ -168,18 +166,6 @@ export function JoinTutorFamily({
             disabled
             value={currentUserEmail}
             className="opacity-75 bg-muted/30"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="join-parent-phone" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-            Mobile Number (for SMS alerts)
-          </label>
-          <Input
-            id="join-parent-phone"
-            type="tel"
-            placeholder="+37122416643"
-            value={parentPhone}
-            onChange={(e) => setParentPhone(e.target.value)}
           />
         </div>
       </div>

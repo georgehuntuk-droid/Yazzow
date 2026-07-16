@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone, CheckCircle, Sparkles, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, Mail, CheckCircle, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,6 @@ export function AcademyBookingForm({ academy, tutors, slots }: AcademyBookingFor
   // Form details
   const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
-  const [parentPhone, setParentPhone] = useState("");
   const [studentName, setStudentName] = useState("");
 
   const [selectedSlot, setSelectedSlot] = useState<any | null>(null);
@@ -68,7 +67,6 @@ export function AcademyBookingForm({ academy, tutors, slots }: AcademyBookingFor
           slotId: selectedSlot.id,
           tutorId: selectedSlot.tutor_id,
           parentEmail: parentEmail.trim().toLowerCase(),
-          parentPhone: parentPhone.trim(),
           studentName: studentName.trim(),
         }),
       });
@@ -273,20 +271,7 @@ export function AcademyBookingForm({ academy, tutors, slots }: AcademyBookingFor
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Parent Phone Number</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  required
-                  placeholder="+44 7123 456789"
-                  value={parentPhone}
-                  onChange={(e) => setParentPhone(e.target.value)}
-                  className="pl-9 text-xs"
-                />
-              </div>
-            </div>
+
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Student Full Name</label>

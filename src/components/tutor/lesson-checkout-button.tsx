@@ -36,7 +36,6 @@ export function LessonCheckoutButton({
   };
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
-  const [parentPhone, setParentPhone] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [creditChecking, setCreditChecking] = useState(false);
@@ -84,9 +83,6 @@ export function LessonCheckoutButton({
         if (data.studentName) {
           setStudentName(data.studentName);
         }
-        if (data.parentPhone) {
-          setParentPhone(data.parentPhone);
-        }
       }
     } catch {
       setAvailableCredits(null);
@@ -126,7 +122,6 @@ export function LessonCheckoutButton({
           slotId: slot.id,
           tutorId: tutor.id,
           parentEmail: email,
-          parentPhone: parentPhone || undefined,
           studentName: studentName || undefined,
           subscribeToAlerts,
         }),
@@ -172,7 +167,6 @@ export function LessonCheckoutButton({
             slotId: slot.id,
             tutorId: tutor.id,
             parentEmail: email,
-            parentPhone: parentPhone || undefined,
             studentName: studentName || undefined,
             subscribeToAlerts,
           }),
@@ -197,7 +191,6 @@ export function LessonCheckoutButton({
             slotId: slot.id,
             tutorUsername: tutor.username,
             parentEmail: email,
-            parentPhone: parentPhone || undefined,
             studentName: studentName || undefined,
             subscribeToAlerts,
           }),
@@ -291,21 +284,7 @@ export function LessonCheckoutButton({
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="parent-phone" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Mobile Number (for SMS alerts)
-        </label>
-        <div className="relative">
-          <Input
-            id="parent-phone"
-            type="tel"
-            value={parentPhone}
-            onChange={(e) => setParentPhone(e.target.value)}
-            placeholder="+44 7700 900077"
-            className="h-10 bg-background"
-          />
-        </div>
-      </div>
+
 
       <div className="flex items-start gap-2.5 pt-1 pb-1">
         <input

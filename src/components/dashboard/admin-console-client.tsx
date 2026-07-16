@@ -68,9 +68,8 @@ export type AdminTutorData = {
   stripeCustomerId?: string | null;
   lastLogin?: string | null;
   lessonsScheduledThisMonth?: number;
-  isStripeCompleted?: boolean;
   isCalendarActive?: boolean;
-  smsSentCount?: number;
+  isStripeCompleted?: boolean;
   googleConnected?: boolean;
 };
 
@@ -955,8 +954,7 @@ export function AdminConsoleClient({
                           </div>
                         </div>
 
-                        {/* Stats & Operational Metrics */}
-                        <div className="grid grid-cols-2 gap-4 border-y border-border/40 py-4 sm:grid-cols-3 lg:grid-cols-5 lg:border-y-0 lg:py-0 min-w-0 flex-1 lg:max-w-xl">
+                        <div className="grid grid-cols-2 gap-4 border-y border-border/40 py-4 sm:grid-cols-3 lg:grid-cols-4 lg:border-y-0 lg:py-0 min-w-0 flex-1 lg:max-w-xl">
                           <div>
                             <p className="text-xs text-muted-foreground">Lesson Vol (30d)</p>
                             <p className="text-sm font-bold text-foreground">{formatMoney(tutor.lessonVolumeCents, tutor.currency)}</p>
@@ -966,11 +964,6 @@ export function AdminConsoleClient({
                             <p className="text-xs text-muted-foreground">Scheduled (Mo)</p>
                             <p className="text-sm font-bold text-foreground">{tutor.lessonsScheduledThisMonth ?? 0}</p>
                             <p className="text-[10px] text-muted-foreground">This Calendar Month</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">SMS Sent</p>
-                            <p className="text-sm font-bold text-foreground">{tutor.smsSentCount ?? 0}</p>
-                            <p className="text-[10px] text-muted-foreground">This Billing Cycle</p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Last Login</p>

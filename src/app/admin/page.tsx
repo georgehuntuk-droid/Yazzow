@@ -273,7 +273,6 @@ export default async function AdminDashboardPage() {
       lessonsScheduledThisMonth: bStats.countThisMonth,
       isStripeCompleted: stripeStatusMap.get(p.id) === true,
       isCalendarActive: !!(p as any).google_refresh_token || !!(p as any).calendar_feed_token,
-      smsSentCount: (p as any).sms_sent_count || 0,
       googleConnected: !!(p as any).google_refresh_token,
     };
   });

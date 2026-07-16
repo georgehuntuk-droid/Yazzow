@@ -38,7 +38,7 @@ const plans = [
       "0% per-lesson platform fee",
       "Instant slot alerts included",
     ],
-    featured: false,
+    featured: true,
   },
   {
     icon: Sparkles,
@@ -54,7 +54,7 @@ const plans = [
       "0% per-lesson platform fee",
       "Instant slot alerts included",
     ],
-    featured: true,
+    featured: false,
   },
 ] as const;
 

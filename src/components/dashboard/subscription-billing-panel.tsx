@@ -271,7 +271,7 @@ export function SubscriptionBillingPanel({
           {(Object.keys(SUBSCRIPTION_TIERS) as Array<keyof typeof SUBSCRIPTION_TIERS>).map((tierKey) => {
             const tier = SUBSCRIPTION_TIERS[tierKey];
             const isCurrent = subscribed && currentTier === tierKey;
-            const isPopular = tierKey === "academy";
+            const isPopular = tierKey === "growth";
 
             return (
               <div

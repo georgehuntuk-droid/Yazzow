@@ -191,7 +191,7 @@ export function DemoGuideClient() {
                 <h2>Academy (Master Account) Architecture</h2>
               </div>
               <p>
-                The **Academy Membership (£79/month)** acts as a single, centralized **Master Account** designed to help tuition agencies scale.
+                The **Academy Membership (£50/month)** acts as a single, centralized **Master Account** designed to help tuition agencies scale.
               </p>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>
@@ -205,7 +205,7 @@ export function DemoGuideClient() {
                 </li>
               </ul>
               <p className="text-xs italic bg-muted/40 p-2.5 rounded-lg border border-border/50">
-                💡 Independent Members (£9/month) run a single-tutor profile without employee invitation or shared branding capability.
+                💡 Starter (£10/month) and Growth (£25/month) members run a single-tutor profile without employee invitation or shared branding capability.
               </p>
             </div>
 

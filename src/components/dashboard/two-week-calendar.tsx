@@ -96,7 +96,7 @@ export function TwoWeekCalendar({
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
   }, []);
   const [, startTransition] = useTransition();
-  const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2" | "week3" | "week4">("week1");
+  const [selectedWeek, setSelectedWeek] = useState<"week1" | "week2">("week1");
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null);
   const [mouseDownY, setMouseDownY] = useState<number | null>(null);
@@ -196,18 +196,15 @@ export function TwoWeekCalendar({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Calculate 28 days starting from Monday of current week
+  // Calculate 14 days starting from today (current date)
   const days = useMemo(() => {
     const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
     const resultList: Date[] = [];
-    for (let i = 0; i < 28; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
       resultList.push(d);
     }
     return resultList;
@@ -215,8 +212,6 @@ export function TwoWeekCalendar({
 
   const week1Days = days.slice(0, 7);
   const week2Days = days.slice(7, 14);
-  const week3Days = days.slice(14, 21);
-  const week4Days = days.slice(21, 28);
 
   // Calculate dynamic start/end hours for the calendar view
   const { minHour, maxHour } = useMemo(() => {
@@ -622,9 +617,7 @@ export function TwoWeekCalendar({
               className="size-8 rounded-xl border-border/80 hover:bg-muted text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               disabled={selectedWeek === "week1"}
               onClick={() => {
-                if (selectedWeek === "week2") setSelectedWeek("week1");
-                else if (selectedWeek === "week3") setSelectedWeek("week2");
-                else if (selectedWeek === "week4") setSelectedWeek("week3");
+                setSelectedWeek("week1");
               }}
             >
               <ChevronLeft className="size-4" />
@@ -634,11 +627,9 @@ export function TwoWeekCalendar({
               variant="outline"
               size="icon"
               className="size-8 rounded-xl border-border/80 hover:bg-muted text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              disabled={selectedWeek === "week4"}
+              disabled={selectedWeek === "week2"}
               onClick={() => {
-                if (selectedWeek === "week1") setSelectedWeek("week2");
-                else if (selectedWeek === "week2") setSelectedWeek("week3");
-                else if (selectedWeek === "week3") setSelectedWeek("week4");
+                setSelectedWeek("week2");
               }}
             >
               <ChevronRight className="size-4" />
@@ -935,16 +926,12 @@ export function TwoWeekCalendar({
 
   const currentWeekDays = useMemo(() => {
     if (selectedWeek === "week1") return week1Days;
-    if (selectedWeek === "week2") return week2Days;
-    if (selectedWeek === "week3") return week3Days;
-    return week4Days;
-  }, [selectedWeek, week1Days, week2Days, week3Days, week4Days]);
+    return week2Days;
+  }, [selectedWeek, week1Days, week2Days]);
 
   const currentWeekLabel = useMemo(() => {
     if (selectedWeek === "week1") return "This Week";
-    if (selectedWeek === "week2") return "Next Week";
-    if (selectedWeek === "week3") return "Week 3";
-    return "Week 4";
+    return "Next Week";
   }, [selectedWeek]);
 
   if (!mounted) {

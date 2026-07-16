@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { TrendingUp, Clock, CreditCard, CheckCircle2, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 
@@ -40,6 +40,7 @@ export function EarningsAnalytics({ bookings, purchases, currency }: EarningsAna
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [timeframe, setTimeframe] = useState<"7d" | "30d" | "12m">("7d");
+  const [selectedStudent, setSelectedStudent] = useState<string>("all");
   const [hoveredPoint, setHoveredPoint] = useState<{ index: number; x: number; y: number; amount: number; label: string } | null>(null);
 
   const format = (cents: number) => {
@@ -51,8 +52,23 @@ export function EarningsAnalytics({ bookings, purchases, currency }: EarningsAna
     }).format(cents / 100);
   };
 
+  // Extract unique student names for filtering
+  const studentsList = useMemo(() => {
+    const names = new Set<string>();
+    bookings.forEach((b) => {
+      if (b.student_name?.trim()) names.add(b.student_name.trim());
+    });
+    return Array.from(names).sort();
+  }, [bookings]);
+
+  // Filter bookings based on selected student
+  const filteredBookings = useMemo(() => {
+    if (selectedStudent === "all") return bookings;
+    return bookings.filter((b) => b.student_name?.trim() === selectedStudent);
+  }, [bookings, selectedStudent]);
+
   // 1. Calculate Summary Metrics
-  const activeBookings = bookings.filter((b) => b.status !== "cancelled");
+  const activeBookings = filteredBookings.filter((b) => b.status !== "cancelled");
   
   // Paid: Stripe checkouts + Paid Cash bookings + Digital resources
   const stripePaid = activeBookings
@@ -63,7 +79,8 @@ export function EarningsAnalytics({ bookings, purchases, currency }: EarningsAna
     .filter((b) => b.stripe_payment_intent_id === "cash" && b.is_paid)
     .reduce((sum, b) => sum + b.amount_cents, 0);
 
-  const digitalPaid = purchases.reduce((sum, p) => sum + p.amount_cents, 0);
+  // Digital resources do not have student names. Exclude them when a specific student is filtered.
+  const digitalPaid = selectedStudent === "all" ? purchases.reduce((sum, p) => sum + p.amount_cents, 0) : 0;
   const totalPaid = stripePaid + cashPaid + digitalPaid;
 
   // Due: Unpaid Cash bookings
@@ -277,31 +294,51 @@ export function EarningsAnalytics({ bookings, purchases, currency }: EarningsAna
               Visual overview of paid lessons and package purchases.
             </CardDescription>
           </div>
-          <div className="flex gap-1.5 bg-muted p-1 rounded-xl border border-border/40 shrink-0 self-start sm:self-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setTimeframe("7d"); setHoveredPoint(null); }}
-              className={cn("h-7 px-3 text-[10px] font-bold rounded-lg transition-all", timeframe === "7d" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+            {/* Timeframe buttons */}
+            <div className="flex gap-1 bg-muted p-1 rounded-xl border border-border/40">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => { setTimeframe("7d"); setHoveredPoint(null); }}
+                className={cn("h-7 px-3 text-[10px] font-bold rounded-lg transition-all", timeframe === "7d" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
+              >
+                7 Days
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => { setTimeframe("30d"); setHoveredPoint(null); }}
+                className={cn("h-7 px-3 text-[10px] font-bold rounded-lg transition-all", timeframe === "30d" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
+              >
+                30 Days
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => { setTimeframe("12m"); setHoveredPoint(null); }}
+                className={cn("h-7 px-3 text-[10px] font-bold rounded-lg transition-all", timeframe === "12m" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
+              >
+                12 Months
+              </Button>
+            </div>
+
+            {/* Student Dropdown Filter */}
+            <select
+              value={selectedStudent}
+              onChange={(e) => { setSelectedStudent(e.target.value); setHoveredPoint(null); }}
+              className="flex h-9 rounded-xl border border-border/60 bg-muted/40 px-3 text-[10px] font-bold outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground cursor-pointer"
             >
-              7 Days
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setTimeframe("30d"); setHoveredPoint(null); }}
-              className={cn("h-7 px-3 text-[10px] font-bold rounded-lg transition-all", timeframe === "30d" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
-            >
-              30 Days
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setTimeframe("12m"); setHoveredPoint(null); }}
-              className={cn("h-7 px-3 text-[10px] font-bold rounded-lg transition-all", timeframe === "12m" ? "bg-background text-primary shadow-sm" : "text-muted-foreground")}
-            >
-              12 Months
-            </Button>
+              <option value="all">All Students</option>
+              {studentsList.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </div>
         </CardHeader>
         <CardContent className="pt-2">

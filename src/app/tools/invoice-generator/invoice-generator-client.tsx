@@ -13,7 +13,10 @@ import {
   FileText, 
   Briefcase, 
   User, 
-  Receipt 
+  Receipt,
+  Send,
+  Mail,
+  Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -109,6 +112,82 @@ export function InvoiceGeneratorClient({
   const [taxPercent, setTaxPercent] = useState<number>(DEFAULT_INVOICE_DATA.taxPercent);
   const [paymentDetails, setPaymentDetails] = useState(DEFAULT_INVOICE_DATA.paymentDetails);
   const [notes, setNotes] = useState(DEFAULT_INVOICE_DATA.notes);
+  
+  // Email Send Modal State
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [emailTo, setEmailTo] = useState(clientEmail);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [attachHtml, setAttachHtml] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  // Sync emailTo when clientEmail changes
+  useEffect(() => {
+    setEmailTo(clientEmail);
+  }, [clientEmail]);
+
+  // Set default subject when values change
+  useEffect(() => {
+    setEmailSubject(`Invoice ${invoiceNumber || ""} from ${senderName || ""}`);
+  }, [invoiceNumber, senderName]);
+
+  const handleSendInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailTo) {
+      setSendError("Recipient email address is required.");
+      return;
+    }
+    
+    setIsSending(true);
+    setSendError(null);
+    setSendSuccess(false);
+
+    try {
+      const response = await fetch("/api/invoice/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: emailTo,
+          subject: emailSubject,
+          message: emailMessage,
+          invoiceNumber,
+          issueDate,
+          dueDate,
+          currency,
+          senderName,
+          senderBusiness,
+          senderEmail,
+          senderPhone,
+          senderAddress,
+          clientName,
+          clientAddress,
+          items,
+          taxPercent,
+          paymentDetails,
+          notes,
+          attachHtml
+        })
+      });
+
+      const res = await response.json();
+      if (response.ok && res.ok) {
+        setSendSuccess(true);
+        setTimeout(() => {
+          setShowSendModal(false);
+          setSendSuccess(false);
+          setEmailMessage("");
+        }, 2000);
+      } else {
+        setSendError(res.error || "Failed to send invoice email.");
+      }
+    } catch (err) {
+      setSendError("An unexpected network error occurred.");
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -393,6 +472,20 @@ export function InvoiceGeneratorClient({
                 >
                   <RotateCcw className="size-3.5 mr-1" /> Reset
                 </Button>
+                {isDashboard && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setSendError(null);
+                      setSendSuccess(false);
+                      setShowSendModal(true);
+                    }}
+                    className="text-xs border-primary/20 text-primary hover:bg-primary hover:text-white transition-all cursor-pointer"
+                  >
+                    <Mail className="size-3.5 mr-1.5" /> Send to Student
+                  </Button>
+                )}
                 <Button 
                   variant="default" 
                   size="sm" 
@@ -937,6 +1030,116 @@ export function InvoiceGeneratorClient({
 
         </div>
       </div>
+      {/* Send Invoice Modal Overlay */}
+      {showSendModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in no-print">
+          <div className="bg-background border border-border rounded-2xl max-w-md w-full shadow-2xl p-6 relative overflow-hidden flex flex-col gap-4 animate-scale-in">
+            <button 
+              type="button"
+              onClick={() => setShowSendModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+              <Mail className="size-5 text-primary" />
+              <h3 className="font-heading text-lg font-bold text-foreground">Send Invoice via Email</h3>
+            </div>
+
+            <form onSubmit={handleSendInvoice} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">To (Student/Parent Email)</label>
+                <Input 
+                  type="email"
+                  required
+                  placeholder="e.g. client@example.com"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Subject</label>
+                <Input 
+                  type="text"
+                  required
+                  placeholder="Invoice Subject"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground mb-1">Custom Message (Optional)</label>
+                <textarea
+                  className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 text-foreground"
+                  placeholder="Hello, please find my latest tutoring invoice details below..."
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input 
+                  type="checkbox"
+                  id="attach-html"
+                  checked={attachHtml}
+                  onChange={(e) => setAttachHtml(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary size-4"
+                />
+                <label htmlFor="attach-html" className="text-xs font-medium text-foreground cursor-pointer select-none">
+                  Attach standalone offline HTML sheet (.html)
+                </label>
+              </div>
+
+              {sendError && (
+                <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive font-bold">
+                  ⚠️ {sendError}
+                </div>
+              )}
+
+              {sendSuccess && (
+                <div className="p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 text-xs text-green-600 dark:text-green-400 font-bold">
+                  ✓ Invoice sent successfully!
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSendModal(false)}
+                  disabled={isSending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  variant="default"
+                  size="sm"
+                  disabled={isSending || sendSuccess}
+                  className="yazz-btn-primary h-9 font-semibold text-xs px-4"
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="size-3.5 mr-1.5" />
+                      Send Invoice
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

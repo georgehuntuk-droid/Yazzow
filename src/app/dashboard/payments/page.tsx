@@ -1,5 +1,5 @@
+import Link from "next/link";
 import { StripeConnectPanel } from "@/components/dashboard/stripe-connect-panel";
-import { SubscriptionBillingPanel } from "@/components/dashboard/subscription-billing-panel";
 import { EarningsAnalytics } from "@/components/dashboard/earnings-analytics";
 import { PlatformRevenuePanel } from "@/components/dashboard/platform-revenue-panel";
 import { isPlatformAdmin } from "@/lib/auth/platform-admin";
@@ -30,14 +30,7 @@ function stripeConfigHelpText(): string {
   return "Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in Netlify → Environment variables, scope All, then Deploys → Clear cache and deploy site.";
 }
 
-type PaymentsPageProps = {
-  searchParams: Promise<{ subscription?: string; connected?: string }>;
-};
-
-export default async function PaymentsPage({ searchParams }: PaymentsPageProps) {
-  const query = await searchParams;
-  const isSubscriptionSuccess = query.subscription === "active";
-  const isSubscriptionCancelled = query.subscription === "cancelled";
+export default async function PaymentsPage() {
 
   const { profile } = await requireTutorProfile();
   const configured = isStripeConfigured();
@@ -108,19 +101,11 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   return (
     <DashboardShell>
       <PageHeader
-        title="Payments & billing"
-        description="Step 1: subscribe to Yazzow. Step 2 (optional): connect Stripe when you want parents to pay for lessons on your portal."
+        title="My Earnings & Incomes"
+        description="Track your tutoring revenue, manage cash/bank transfer receipts, and connect Stripe payouts."
       />
       <div className="space-y-6">
         {admin && platformStats ? <PlatformRevenuePanel stats={platformStats} /> : null}
-        
-        <SubscriptionBillingPanel 
-          configured={configured} 
-          subscription={subscription} 
-          isAdmin={admin}
-          isSuccess={isSubscriptionSuccess}
-          isCancelled={isSubscriptionCancelled}
-        />
         
         {subscription.active ? (
           <>
@@ -141,9 +126,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             </div>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            After you subscribe, you can optionally connect Stripe payouts to accept paid lesson
-            bookings. Worksheet packs on your shelf never need Connect.
+          <p className="text-sm text-muted-foreground bg-muted/40 p-5 rounded-2xl border border-border/60">
+            Please subscribe to a plan in the <Link href="/dashboard/settings" className="text-primary font-bold hover:underline">Portal Settings</Link> tab to enable Stripe payouts connection and earnings analytics.
           </p>
         )}
       </div>
